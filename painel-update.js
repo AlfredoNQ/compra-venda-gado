@@ -39,6 +39,8 @@
       ['Total vendas', money.format(z.vend)],
       ['Custos lançados', money.format(z.cost)],
       ['Lucro realizado', money.format(z.luc)],
+      ['Preço médio compra/kg', money.format(avgKg('buy', list))],
+      ['Preço médio venda/kg', money.format(avgKg('sell', list))],
       ['Preço médio @ compra', money.format(avgArroba('buy', list))],
       ['Preço médio @ venda', money.format(avgArroba('sell', list))]
     ].map(x => `<div class="kpi"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
