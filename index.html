@@ -644,29 +644,20 @@ async function cloudSaveNow(){
 </script>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
-  var g=document.getElementById('gateLoginBtn');
-  if(g)g.onclick=openLoginModal;
-  var f=document.getElementById('forgotBtn');
-  if(f)f.onclick=forgotPassword;
-  var s=document.getElementById('saveNewPasswordBtn');
-  if(s)s.onclick=saveNewPassword;
-  var topLogin=document.getElementById('loginBtn');
-  if(topLogin)topLogin.onclick=openLoginModal;
-});
-</script>
-
-</body></html>
-<script>
-document.addEventListener('DOMContentLoaded',function(){
   setTimeout(function(){
     var b=document.getElementById('loginBtn');
     if(b){
       b.textContent='Entrar';
-      b.onclick=function(){ var m=document.getElementById('authModal'); if(m)m.classList.add('show'); };
+      b.onclick=function(){
+        var m=document.getElementById('authModal');
+        if(m)m.classList.add('show');
+      };
     }
   },1200);
 });
 </script>
+
 <script src="/painel-update.js"></script>
+
 </body>
 </html>
