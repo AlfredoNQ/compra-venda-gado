@@ -838,10 +838,19 @@ Escolha uma etapa da negociação. Os dados de Compra e Venda ficam em telas sep
 
 const MIGRATED=[];
 
+const LAST_USER_KEY='gado_last_authenticated_user_v76';
+function lastAuthenticatedUserId(){
+  try{return localStorage.getItem(LAST_USER_KEY)||'';}catch(e){return '';}
+}
+function rememberAuthenticatedUser(user){
+  try{if(user&&user.id)localStorage.setItem(LAST_USER_KEY,user.id);}catch(e){}
+}
 function userStorageSuffix(){
   try{
     if(cloudUser && cloudUser.id) return '__u_'+cloudUser.id;
   }catch(e){}
+  const lastId=lastAuthenticatedUserId();
+  if(lastId) return '__u_'+lastId;
   return '__guest';
 }
 
@@ -918,7 +927,7 @@ function calc(r){const qc=n(r.quantCompra), qv=n(r.quantVenda), pc=n(r.precoComp
 function load(){try{records=JSON.parse(userGet(KEY)||'null')||MIGRATED.map(x=>({...x,pesoKg:pesoKg(x),pgComprador:x.pgComprador||''}));costs=JSON.parse(userGet(COSTKEY)||'[]')}catch(e){records=MIGRATED.map(x=>({...x,pesoKg:pesoKg(x)}));costs=[]}renderAll()}
 function safetySnapshot(reason){
   try{
-    const key=userKey('gado_safety_snapshots_v74');
+    const key=userKey('gado_safety_snapshots_v76');
     const list=JSON.parse(localStorage.getItem(key)||'[]');
     list.unshift({at:new Date().toISOString(),reason:reason||'save',records:records,costs:costs});
     localStorage.setItem(key,JSON.stringify(list.slice(0,10)));
@@ -1553,6 +1562,7 @@ async function initCloud(){
 }
 async function onCloudSession(session){
   cloudUser=session?.user||null;
+  if(cloudUser) rememberAuthenticatedUser(cloudUser);
   if(!cloudUser){
     setAuthenticatedUI(false);
     setCloudStatus('Acesso protegido','warn');
@@ -1995,9 +2005,11 @@ document.addEventListener('DOMContentLoaded',function(){
     if(!p)return true;
     if(!navigator.onLine || !sb || !cloudUser)return false;
     const payload={user_id:cloudUser.id,records:p.records||records,costs:p.costs||costs,updated_at:p.updated_at||new Date().toISOString()};
-    const {error}=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'});
+    const {data,error}=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'}).select('user_id,updated_at').single();
     if(error)throw error;
+    if(!data||data.user_id!==cloudUser.id) throw new Error('A nuvem não confirmou o salvamento.');
     clearPending();
+    clearOfflineSyncFlags();
     return true;
   }
 
@@ -2072,6 +2084,16 @@ document.addEventListener('DOMContentLoaded',function(){
     if(!pendingState())markPending();
     await syncPendingNow(false);
   };
+
+  function flushLocalBeforeClose(){
+    try{
+      userSet(KEY,JSON.stringify(records));
+      userSet(COSTKEY,JSON.stringify(costs));
+      if(pendingState()) markPending();
+    }catch(e){}
+  }
+  window.addEventListener('pagehide',flushLocalBeforeClose);
+  window.addEventListener('beforeunload',flushLocalBeforeClose);
 
   window.addEventListener('online',function(){
     updateOfflineUI('Conexão voltou');
@@ -2161,6 +2183,11 @@ document.addEventListener('DOMContentLoaded',function(){
     if(!hasOfflineAuthorization()) return false;
 
     try{
+      const a=JSON.parse(localStorage.getItem(OFFLINE_AUTH_KEY)||'null');
+      if(a&&a.userId){
+        localStorage.setItem(LAST_USER_KEY,a.userId);
+      }
+      if(typeof loadScopedLocalData==='function') loadScopedLocalData();
       if(typeof setAuthenticatedUI === 'function') setAuthenticatedUI(true);
     }catch(e){}
 
@@ -2194,7 +2221,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
         window.sb.auth.getSession().then(function(res){
           var session = res && res.data && res.data.session;
-          if(session && session.user) markOfflineAuthorized(session.user);
+          if(session && session.user){ rememberAuthenticatedUser(session.user); markOfflineAuthorized(session.user); }
           else if(!navigator.onLine) showOfflineApp();
         }).catch(function(){
           if(!navigator.onLine) showOfflineApp();
