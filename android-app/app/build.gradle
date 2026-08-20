@@ -5,10 +5,10 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.alfredo.compravendagado'
+        applicationId 'com.alfredo.compravendagado.offline'
         minSdk 24
         targetSdk 35
-        versionCode 74
-        versionName '74.0'
+        versionCode 75
+        versionName '75.0'
     }
 }
