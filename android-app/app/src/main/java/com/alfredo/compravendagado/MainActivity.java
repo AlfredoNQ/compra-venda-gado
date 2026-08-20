@@ -26,7 +26,9 @@ import android.widget.Toast;
 import java.io.InputStream;
 
 public class MainActivity extends Activity {
-    private static final String HOME = "https://compra-venda-gado-app.pages.dev";
+    // v77: uma unica origem online para site, tablet, celular e APK.
+    private static final String HOME = "https://compra-venda-gado.vercel.app";
+    private static final String HOME_HOST = "compra-venda-gado.vercel.app";
     private static final int FILE_CHOOSER = 1001;
     private static final int PERMISSIONS = 1002;
     private WebView web;
@@ -42,10 +44,11 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
-        s.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+        // Online: busca a versao atual. Offline: WebViewClient entrega o pacote interno.
+        s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/74");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/77");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
 
@@ -55,8 +58,12 @@ public class MainActivity extends Activity {
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch(Exception ignored) {}
                 return true;
             }
-            @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) { return isOnline()?super.shouldInterceptRequest(view,request):offlineResponse(request.getUrl()); }
-            @Override public WebResourceResponse shouldInterceptRequest(WebView view, String url) { return isOnline()?super.shouldInterceptRequest(view,url):offlineResponse(Uri.parse(url)); }
+            @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return isOnline() ? super.shouldInterceptRequest(view,request) : offlineResponse(request.getUrl());
+            }
+            @Override public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                return isOnline() ? super.shouldInterceptRequest(view,url) : offlineResponse(Uri.parse(url));
+            }
         });
         web.setWebChromeClient(new WebChromeClient() {
             @Override public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> cb, FileChooserParams params) {
@@ -99,11 +106,22 @@ public class MainActivity extends Activity {
         try {
             String host=uri.getHost()==null?"":uri.getHost();
             String path=uri.getPath()==null?"/":uri.getPath();
-            if("cdn.jsdelivr.net".equals(host) && path.contains("supabase")) return new WebResourceResponse("application/javascript","UTF-8",getAssets().open("site/supabase.js"));
-            if(!"compra-venda-gado-app.pages.dev".equals(host)) return null;
-            if(path.equals("/")||path.isEmpty())path="/index.html"; if(path.startsWith("/"))path=path.substring(1); if(path.contains(".."))return null;
-            InputStream in=getAssets().open("site/"+path); String ext=MimeTypeMap.getFileExtensionFromUrl(path); String mime=MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
-            if(mime==null){if(path.endsWith(".js"))mime="application/javascript";else if(path.endsWith(".css"))mime="text/css";else if(path.endsWith(".html"))mime="text/html";else if(path.endsWith(".json")||path.endsWith(".webmanifest"))mime="application/json";else mime="application/octet-stream";}
+            if("cdn.jsdelivr.net".equals(host) && path.contains("supabase"))
+                return new WebResourceResponse("application/javascript","UTF-8",getAssets().open("site/supabase.js"));
+            if(!HOME_HOST.equals(host)) return null;
+            if(path.equals("/")||path.isEmpty())path="/index.html";
+            if(path.startsWith("/"))path=path.substring(1);
+            if(path.contains(".."))return null;
+            InputStream in=getAssets().open("site/"+path);
+            String ext=MimeTypeMap.getFileExtensionFromUrl(path);
+            String mime=MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
+            if(mime==null){
+                if(path.endsWith(".js"))mime="application/javascript";
+                else if(path.endsWith(".css"))mime="text/css";
+                else if(path.endsWith(".html"))mime="text/html";
+                else if(path.endsWith(".json")||path.endsWith(".webmanifest"))mime="application/json";
+                else mime="application/octet-stream";
+            }
             return new WebResourceResponse(mime,"UTF-8",in);
         } catch(Exception e){return null;}
     }
