@@ -1,0 +1,11 @@
+Compra e Venda de Gado v74 — Sincronização Segura
+
+Base: v73 confirmada como última versão oficial.
+Alterações de segurança:
+- após login, carrega primeiro o armazenamento do usuário correto antes de mesclar com a nuvem;
+- marcadores de sincronização e exclusões agora são separados por usuário;
+- snapshot local automático antes de salvar e antes de mesclar dados da nuvem (últimos 10);
+- status explícito “Salvo na nuvem ✓”;
+- cache do Service Worker atualizado para v74.
+
+A v73 deve ser mantida como rollback.

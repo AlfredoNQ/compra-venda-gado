@@ -1,0 +1,14 @@
+COMPRA E VENDA DE GADO — v8 Cloudflare + Offline
+
+Publicação: Cloudflare Pages > Criar implantação > upload direto deste ZIP.
+
+Inclui:
+- layout aprovado com números menores;
+- login e sincronização Supabase;
+- operação offline com fila de sincronização;
+- Service Worker para reabrir o sistema sem internet;
+- cotação PA/TO/MA, bezerro e garrote via /api/cotacoes;
+- última cotação salva para consulta offline;
+- _worker.js compatível com upload direto do Cloudflare Pages.
+
+Não é necessário editar código.
