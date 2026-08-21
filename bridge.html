@@ -1,45 +1,46 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Ponte Vercel → GitHub</title>
-  <style>
-    body{font-family:Arial,sans-serif;background:#f1f6f3;margin:0;padding:20px;color:#222}
-    .box{max-width:720px;margin:auto;background:white;padding:24px;border-radius:16px;box-shadow:0 3px 18px #0002}
-    h1{color:#176b45}
-    label{display:block;margin-top:16px;margin-bottom:6px}
-    input,select{width:100%;box-sizing:border-box;padding:13px;border:1px solid #ccc;border-radius:8px;font-size:16px}
-    button{width:100%;margin-top:20px;padding:15px;border:0;border-radius:8px;background:#176b45;color:white;font-weight:bold;font-size:16px}
-    button:disabled{opacity:.6}
-    #status{margin-top:18px;white-space:pre-wrap}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ponte Vercel → GitHub</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f1f6f3;margin:0;padding:20px;color:#222}
+.box{max-width:720px;margin:auto;background:#fff;padding:24px;border-radius:16px;box-shadow:0 3px 18px #0002}
+h1{color:#176b45}
+label{display:block;margin-top:16px;margin-bottom:6px}
+input,select{width:100%;box-sizing:border-box;padding:13px;border:1px solid #ccc;border-radius:8px;font-size:16px}
+button{width:100%;margin-top:20px;padding:15px;border:0;border-radius:8px;background:#176b45;color:#fff;font-weight:bold;font-size:16px}
+button:disabled{opacity:.6}
+#status{margin-top:18px;white-space:pre-wrap;font-weight:600}
+</style>
 </head>
+
 <body>
 <div class="box">
-  <h1>Compra e Venda de Gado</h1>
-  <p>Ponte Vercel → GitHub</p>
+<h1>Compra e Venda de Gado</h1>
+<p>Ponte Vercel → GitHub</p>
 
-  <label>Senha da ponte</label>
-  <input id="secret" type="password" autocomplete="off">
+<label>Senha da ponte</label>
+<input id="secret" type="password" autocomplete="off">
 
-  <label>Branch de destino</label>
-  <select id="branch">
-    <option value="android-apk">android-apk</option>
-    <option value="main">main</option>
-  </select>
+<label>Branch de destino</label>
+<select id="branch">
+<option value="android-apk">android-apk</option>
+<option value="main">main</option>
+</select>
 
-  <label>Arquivo ZIP</label>
-  <input id="zip" type="file" accept=".zip,application/zip">
+<label>Arquivo ZIP</label>
+<input id="zip" type="file" accept=".zip,application/zip">
 
-  <button id="send" onclick="publicar()">Publicar ZIP no GitHub</button>
+<button id="send" onclick="publicar()">Publicar ZIP no GitHub</button>
 
-  <div id="status"></div>
+<div id="status"></div>
 </div>
 
 <script>
 async function publicar(){
-  const secret=document.getElementById('secret').value;
+  const secret=document.getElementById('secret').value.trim();
   const branch=document.getElementById('branch').value;
   const file=document.getElementById('zip').files[0];
   const status=document.getElementById('status');
@@ -55,27 +56,54 @@ async function publicar(){
     return;
   }
 
-  const form=new FormData();
-  form.append('secret',secret);
-  form.append('branch',branch);
-  form.append('file',file);
-
   btn.disabled=true;
-  status.textContent='Publicando... aguarde.';
+  status.textContent='Lendo o ZIP...';
 
   try{
+    const bytes=new Uint8Array(await file.arrayBuffer());
+
+    let binary='';
+    const chunk=0x8000;
+
+    for(let i=0;i<bytes.length;i+=chunk){
+      binary+=String.fromCharCode.apply(
+        null,
+        bytes.subarray(i,Math.min(i+chunk,bytes.length))
+      );
+    }
+
+    status.textContent='Publicando no GitHub...';
+
     const r=await fetch('/api/publish-zip',{
       method:'POST',
-      body:form
+      headers:{
+        'Content-Type':'application/json',
+        'X-Bridge-Secret':secret
+      },
+      body:JSON.stringify({
+        branch:branch,
+        zip_b64:btoa(binary)
+      })
     });
 
     const text=await r.text();
 
-    if(!r.ok){
-      throw new Error(text || ('Erro HTTP '+r.status));
+    let data;
+    try{
+      data=JSON.parse(text);
+    }catch{
+      data={error:text};
     }
 
-    status.textContent='✅ Publicado com sucesso!\n'+text;
+    if(!r.ok || !data.ok){
+      throw new Error(data.error || ('Erro HTTP '+r.status));
+    }
+
+    status.textContent=
+      '✅ Publicado com sucesso!\n'+
+      data.files+' arquivos enviados.\n'+
+      'Branch: '+data.branch;
+
   }catch(e){
     status.textContent='❌ Erro: '+e.message;
   }finally{
