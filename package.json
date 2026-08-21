@@ -1,0 +1,11 @@
+{
+  "name": "compra-venda-gado-vercel-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16"
+  }
+}
