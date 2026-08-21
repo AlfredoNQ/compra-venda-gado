@@ -1,0 +1,41 @@
+name: Sincronizar versao Web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sync-web-version.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Sincronizar Web v84
+        shell: bash
+        run: |
+          set -e
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ('index.html','app-v68.html'):
+              p=Path(name)
+              s=p.read_text(encoding='utf-8')
+              s=s.replace('Sync v81','Sync v84')
+              s=s.replace('>v81</span>','>v84</span>')
+              s=s.replace('bootLoginApproved=false; // v81:', 'bootLoginApproved=false; // v84:')
+              p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html app-v68.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Web v84: sincroniza versao com Android'
+            git push origin main
+          fi
