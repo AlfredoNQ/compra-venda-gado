@@ -30,7 +30,7 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Preparar site offline v83
+      - name: Preparar site offline v84
         shell: bash
         run: |
           set -e
@@ -67,6 +67,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Compra-Venda-Gado-v83-Scot-Versao-Visivel
+          name: Compra-Venda-Gado-v84-Scot-Versao-Visivel
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
