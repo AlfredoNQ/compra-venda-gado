@@ -12,6 +12,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Baixar repositorio
         uses: actions/checkout@v4
@@ -41,24 +42,29 @@ jobs:
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"             -o android-app/app/src/main/assets/site/supabase.js
           cp app-boi-512.png android-app/app/src/main/res/drawable/app_boi.png
 
-      - name: Restaurar assinatura fixa
+      - name: Criar arquivo de assinatura
         shell: bash
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
         run: |
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > android-app/app-release.jks
+          set -e
+          test -n "$KEYSTORE_B64"
+          printf '%s' "$KEYSTORE_B64" | tr -d '\r\n ' | base64 --decode > android-app/app-release.jks
+          test -s android-app/app-release.jks
+          ls -lh android-app/app-release.jks
 
       - name: Gerar APK release assinado
         working-directory: android-app
         env:
-          ANDROID_KEYSTORE_FILE: app-release.jks
+          ANDROID_KEYSTORE_FILE: ../app-release.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: gradle assembleRelease
+        run: gradle clean assembleRelease
 
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
           name: Compra-Venda-Gado-v80-Assinado-Atualizavel
           path: android-app/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
