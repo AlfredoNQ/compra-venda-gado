@@ -2,6 +2,9 @@
   "functions": {
     "api/publish-zip.js": {
       "maxDuration": 60
+    },
+    "api/cotacoes.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
