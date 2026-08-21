@@ -47,7 +47,7 @@ public class MainActivity extends Activity {
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/83");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/84");
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
@@ -62,18 +62,15 @@ public class MainActivity extends Activity {
 
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-
-                // v83: mostra a versão do APK independentemente da versão WEB.
                 view.evaluateJavascript(
                     "(function(){"+
                     "try{"+
                     "var h=document.querySelector('header h1')||document.querySelector('h1');"+
-                    "if(h && !document.getElementById('androidAppVersionBadge')){"+
-                    "var b=document.createElement('span');"+
-                    "b.id='androidAppVersionBadge';"+
-                    "b.textContent='APP v83';"+
+                    "if(h){"+
+                    "var b=document.getElementById('androidAppVersionBadge');"+
+                    "if(!b){b=document.createElement('span');b.id='androidAppVersionBadge';h.appendChild(b);}"+
+                    "b.textContent='APP v84';"+
                     "b.style.cssText='display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);color:inherit;font-size:10px;font-weight:900;vertical-align:middle;white-space:nowrap';"+
-                    "h.appendChild(b);"+
                     "}"+
                     "}catch(e){}"+
                     "})();", null
@@ -168,7 +165,7 @@ public class MainActivity extends Activity {
             "}" +
             "}" +
             "}catch(e){}" +
-            "location.replace('/?app=v83&login=1&t='+Date.now());" +
+            "location.replace('/?app=v84&login=1&t='+Date.now());" +
             "})();</script></body></html>";
 
         web.loadDataWithBaseURL(
