@@ -30,26 +30,20 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Preparar site offline v82
+      - name: Preparar site offline v83
         shell: bash
         run: |
           set -e
           mkdir -p android-app/app/src/main/assets/site
           mkdir -p android-app/app/src/main/res/drawable
-
           for f in index.html app-v68.html painel-update-v63.js sw.js manifest.webmanifest icon.svg \
                    app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png \
                    apple-touch-icon.png favicon.png; do
-            if [ -f "$f" ]; then
-              cp "$f" android-app/app/src/main/assets/site/
-            fi
+            if [ -f "$f" ]; then cp "$f" android-app/app/src/main/assets/site/; fi
           done
-
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" \
             -o android-app/app/src/main/assets/site/supabase.js
-
-          cp app-boi-512.png \
-            android-app/app/src/main/res/drawable/app_boi.png
+          cp app-boi-512.png android-app/app/src/main/res/drawable/app_boi.png
 
       - name: Criar arquivo de assinatura
         shell: bash
@@ -58,10 +52,7 @@ jobs:
         run: |
           set -e
           test -n "$KEYSTORE_B64"
-          printf '%s' "$KEYSTORE_B64" \
-            | tr -d '\r\n ' \
-            | base64 --decode \
-            > android-app/app-release.jks
+          printf '%s' "$KEYSTORE_B64" | tr -d '\r\n ' | base64 --decode > android-app/app-release.jks
           test -s android-app/app-release.jks
 
       - name: Gerar APK release assinado
@@ -76,6 +67,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Compra-Venda-Gado-v82-Login-Obrigatorio
+          name: Compra-Venda-Gado-v83-Scot-Versao-Visivel
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
