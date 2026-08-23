@@ -8,6 +8,7 @@ on:
     paths:
       - "android-app/**"
       - "v85-fixes.js"
+      - "v89-reconnect.js"
       - ".github/workflows/build-android-apk.yml"
 
 jobs:
@@ -30,15 +31,27 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Preparar site offline v88
+      - name: Preparar site offline v89
         shell: bash
         run: |
           set -e
+          sed -i "s/CompraVendaGadoApp\/88/CompraVendaGadoApp\/89/g; s/APP v88/APP v89/g; s/app=v88/app=v89/g" android-app/app/src/main/java/com/alfredo/compravendagado/MainActivity.java
           mkdir -p android-app/app/src/main/assets/site
           mkdir -p android-app/app/src/main/res/drawable
-          for f in index.html app-v68.html painel-update-v63.js v85-fixes.js sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
+          for f in index.html app-v68.html painel-update-v63.js v85-fixes.js v89-reconnect.js sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
             if [ -f "$f" ]; then cp "$f" android-app/app/src/main/assets/site/; fi
           done
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ('index.html','app-v68.html'):
+              p=Path('android-app/app/src/main/assets/site')/name
+              if not p.exists(): continue
+              s=p.read_text(encoding='utf-8')
+              tag='<script src="/v89-reconnect.js?v=89"></script>'
+              if tag not in s:
+                  s=s.replace('</body>',tag+'\n</body>')
+              p.write_text(s,encoding='utf-8')
+          PY
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o android-app/app/src/main/assets/site/supabase.js
           cp app-boi-512.png android-app/app/src/main/res/drawable/app_boi.png
 
@@ -64,6 +77,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Compra-Venda-Gado-v88
+          name: Compra-Venda-Gado-v89
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
