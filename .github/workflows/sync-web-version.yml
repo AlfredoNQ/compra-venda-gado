@@ -18,24 +18,73 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-      - name: Sincronizar Web v84
+
+      - name: Web v86 - versao e reconexao sem logout
         shell: bash
         run: |
           set -e
           python3 - <<'PY'
           from pathlib import Path
+
           for name in ('index.html','app-v68.html'):
               p=Path(name)
               s=p.read_text(encoding='utf-8')
-              s=s.replace('Sync v81','Sync v84')
-              s=s.replace('>v81</span>','>v84</span>')
-              s=s.replace('bootLoginApproved=false; // v81:', 'bootLoginApproved=false; // v84:')
+
+              # Versao Web junto com APP.
+              s=s.replace('Sync v85','Sync v86')
+              s=s.replace('Sync v84','Sync v86')
+              s=s.replace('>v85</span>','>v86</span>')
+              s=s.replace('>v84</span>','>v86</span>')
+              s=s.replace('Compra e Venda de Gado — v85','Compra e Venda de Gado — v86')
+              s=s.replace('Compra e Venda de Gado — v84','Compra e Venda de Gado — v86')
+
+              # v86: internet voltando NAO reinicializa autenticacao.
+              # O initCloud() zera bootLoginApproved e fecha o app; na reconexao
+              # devemos apenas reutilizar a sessao existente e sincronizar.
+              old1="""window.addEventListener('online', function(){
+    try{
+      if(typeof initCloud === 'function') initCloud();
+    }catch(e){}
+    try{
+      if(typeof cloudLoad === 'function') setTimeout(cloudLoad, 900);
+    }catch(e){}
+  });"""
+              new1="""window.addEventListener('online', function(){
+    try{
+      if(window.cloudUser && typeof setAuthenticatedUI==='function') setAuthenticatedUI(true);
+    }catch(e){}
+    try{
+      if(typeof window.syncPendingNow==='function') setTimeout(function(){window.syncPendingNow(false)},250);
+      else if(typeof cloudLoad==='function') setTimeout(cloudLoad,500);
+    }catch(e){}
+  });"""
+              s=s.replace(old1,new1)
+
+              old2="""window.addEventListener('online',function(){
+    try{
+      if(typeof initCloud==='function') setTimeout(initCloud,300);
+    }catch(e){}
+  });"""
+              new2="""window.addEventListener('online',function(){
+    try{
+      if(window.cloudUser && typeof setAuthenticatedUI==='function') setAuthenticatedUI(true);
+      if(typeof window.syncPendingNow==='function') setTimeout(function(){window.syncPendingNow(false)},300);
+      else if(typeof cloudLoad==='function') setTimeout(cloudLoad,500);
+    }catch(e){}
+  });"""
+              s=s.replace(old2,new2)
+
+              # Identificacao interna da correcao.
+              s=s.replace('bootLoginApproved=false; // v84:', 'bootLoginApproved=false; // v86:')
+              s=s.replace('bootLoginApproved=false; // v85:', 'bootLoginApproved=false; // v86:')
+
               p.write_text(s,encoding='utf-8')
           PY
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html app-v68.html
           if ! git diff --cached --quiet; then
-            git commit -m 'Web v84: sincroniza versao com Android'
+            git commit -m 'v86 Web: reconecta e sincroniza sem derrubar sessao'
             git push origin main
           fi
