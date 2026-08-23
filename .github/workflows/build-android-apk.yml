@@ -13,7 +13,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Baixar repositorio
         uses: actions/checkout@v4
@@ -36,69 +35,14 @@ jobs:
         run: |
           set -e
           echo "Forcando build v86"
-          # APK real v86, mantendo a mesma assinatura/applicationId para instalar por cima.
           sed -i "s/versionCode 85/versionCode 86/; s/versionName '85.0'/versionName '86.0'/" android-app/app/build.gradle
           sed -i "s/CompraVendaGadoApp\/85/CompraVendaGadoApp\/86/g; s/APP v85/APP v86/g; s/app=v85/app=v86/g" android-app/app/src/main/java/com/alfredo/compravendagado/MainActivity.java
-
           mkdir -p android-app/app/src/main/assets/site
           mkdir -p android-app/app/src/main/res/drawable
-          for f in index.html app-v68.html painel-update-v63.js v85-fixes.js sw.js manifest.webmanifest icon.svg \
-                   app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png \
-                   apple-touch-icon.png favicon.png; do
+          for f in index.html app-v68.html painel-update-v63.js v85-fixes.js sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
             if [ -f "$f" ]; then cp "$f" android-app/app/src/main/assets/site/; fi
           done
-
-          python3 - <<'PY'
-          from pathlib import Path
-          base=Path('android-app/app/src/main/assets/site')
-          for name in ('index.html','app-v68.html'):
-              p=base/name
-              if not p.exists(): continue
-              s=p.read_text(encoding='utf-8')
-              s=s.replace('Sync v85','Sync v86').replace('Sync v84','Sync v86')
-              s=s.replace('>v85</span>','>v86</span>').replace('>v84</span>','>v86</span>')
-              s=s.replace('data-app-version="78"','data-app-version="86"')
-
-              old1="""window.addEventListener('online', function(){
-    try{
-      if(typeof initCloud === 'function') initCloud();
-    }catch(e){}
-    try{
-      if(typeof cloudLoad === 'function') setTimeout(cloudLoad, 900);
-    }catch(e){}
-  });"""
-              new1="""window.addEventListener('online', function(){
-    try{
-      if(window.cloudUser && typeof setAuthenticatedUI==='function') setAuthenticatedUI(true);
-    }catch(e){}
-    try{
-      if(typeof window.syncPendingNow==='function') setTimeout(function(){window.syncPendingNow(false)},250);
-      else if(typeof cloudLoad==='function') setTimeout(cloudLoad,500);
-    }catch(e){}
-  });"""
-              s=s.replace(old1,new1)
-
-              old2="""window.addEventListener('online',function(){
-    try{
-      if(typeof initCloud==='function') setTimeout(initCloud,300);
-    }catch(e){}
-  });"""
-              new2="""window.addEventListener('online',function(){
-    try{
-      if(window.cloudUser && typeof setAuthenticatedUI==='function') setAuthenticatedUI(true);
-      if(typeof window.syncPendingNow==='function') setTimeout(function(){window.syncPendingNow(false)},300);
-      else if(typeof cloudLoad==='function') setTimeout(cloudLoad,500);
-    }catch(e){}
-  });"""
-              s=s.replace(old2,new2)
-
-              tag='<script src="/v85-fixes.js?v=85"></script>'
-              if tag not in s: s=s.replace('</body>',tag+'\n</body>')
-              p.write_text(s,encoding='utf-8')
-          PY
-
-          curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" \
-            -o android-app/app/src/main/assets/site/supabase.js
+          curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o android-app/app/src/main/assets/site/supabase.js
           cp app-boi-512.png android-app/app/src/main/res/drawable/app_boi.png
 
       - name: Criar arquivo de assinatura
