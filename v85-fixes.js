@@ -1,6 +1,6 @@
-/* Compra e Venda de Gado — v85 fixes */
+/* Compra e Venda de Gado — v88 fixes */
 (function(){
-  window.APP_WEB_VERSION='85';
+  window.APP_WEB_VERSION='88';
 
   function dataUrlToBlob(dataUrl){
     var p=String(dataUrl||'').split(',');
@@ -19,14 +19,10 @@
       var doc=window.__pdfDocsV85[id];
       if(!doc||!doc.data) throw new Error('Documento não encontrado');
       var name=doc.name||'documento.pdf';
-
-      // APK: entrega o PDF ao Android para abrir no visualizador do aparelho.
       if(window.AndroidPdf && typeof window.AndroidPdf.openPdf==='function'){
         window.AndroidPdf.openPdf(doc.data,name);
         return;
       }
-
-      // Web/celular: Blob URL é mais confiável que abrir data: diretamente.
       var blob=dataUrlToBlob(doc.data);
       var url=URL.createObjectURL(blob);
       var w=window.open(url,'_blank');
@@ -45,7 +41,6 @@
     }
   };
 
-  // Substitui os links antigos data: por uma abertura compatível com Web e APK.
   window.fileLink=function(doc,label){
     if(!doc||!doc.data)return '—';
     var id='pdf85_'+Math.random().toString(36).slice(2)+Date.now().toString(36);
@@ -53,7 +48,6 @@
     return '<button type="button" class="mini" onclick="openStoredPdfV85(\''+id+'\')">Abrir PDF</button>';
   };
 
-  // A reconexão não deve reaplicar a trava de login da abertura inicial.
   var originalInitCloud=window.initCloud;
   window.initCloud=async function(){
     try{
@@ -76,18 +70,18 @@
 
   function forceVersion(){
     try{
-      document.body.setAttribute('data-app-version','85');
-      document.title='Compra e Venda de Gado — v85';
+      document.body.setAttribute('data-app-version','88');
+      document.title='Compra e Venda de Gado — v88';
       var h=document.querySelector('header h1');
       if(h){
         var spans=h.querySelectorAll('span');
         var found=false;
         spans.forEach(function(s){
-          if(/^v\d+$/i.test((s.textContent||'').trim())){s.textContent='v85';found=true;}
+          if(/^v\d+$/i.test((s.textContent||'').trim())){s.textContent='v88';found=true;}
         });
         if(!found){
           var b=document.createElement('span');
-          b.textContent='v85';
+          b.textContent='v88';
           b.style.cssText='font-size:12px;font-weight:800;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);vertical-align:middle;white-space:nowrap;margin-left:6px';
           h.appendChild(b);
         }
@@ -106,9 +100,7 @@
   setTimeout(refresh,1500);
   window.addEventListener('online',function(){
     setTimeout(function(){
-      try{
-        if(typeof window.syncPendingNow==='function') window.syncPendingNow(false);
-      }catch(e){}
+      try{if(typeof window.syncPendingNow==='function') window.syncPendingNow(false);}catch(e){}
     },250);
   });
 })();
