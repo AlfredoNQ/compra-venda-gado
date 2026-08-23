@@ -1,0 +1,1 @@
+Força build Android v86 via merge de Pull Request.
