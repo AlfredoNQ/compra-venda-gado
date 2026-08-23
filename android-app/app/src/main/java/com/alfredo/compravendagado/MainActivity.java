@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/85");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/88");
 
         web.addJavascriptInterface(new PdfBridge(), "AndroidPdf");
 
@@ -74,7 +74,7 @@ public class MainActivity extends Activity {
                     "var h=document.querySelector('header h1')||document.querySelector('h1');"+
                     "if(h){var b=document.getElementById('androidAppVersionBadge');"+
                     "if(!b){b=document.createElement('span');b.id='androidAppVersionBadge';h.appendChild(b);}"+
-                    "b.textContent='APP v85';"+
+                    "b.textContent='APP v88';"+
                     "b.style.cssText='display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);color:inherit;font-size:10px;font-weight:900;vertical-align:middle;white-space:nowrap';}"+
                     "}catch(e){}})();", null
                 );
@@ -127,9 +127,11 @@ public class MainActivity extends Activity {
             }
         });
 
-        if (isOnline()) openOnlineWithFreshLogin();
-        else if (savedInstanceState == null) web.loadUrl(HOME);
-        else web.restoreState(savedInstanceState);
+        if (savedInstanceState != null) {
+            web.restoreState(savedInstanceState);
+        } else {
+            web.loadUrl(HOME + "/?app=v88");
+        }
     }
 
     public class PdfBridge {
@@ -168,14 +170,6 @@ public class MainActivity extends Activity {
                 }
             });
         }
-    }
-
-    private void openOnlineWithFreshLogin() {
-        String bootstrap =
-            "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"+
-            "<style>body{margin:0;background:#eef3ef;font-family:Arial,sans-serif}.box{display:flex;min-height:100vh;align-items:center;justify-content:center;color:#17633f;font-weight:700}</style></head><body>"+
-            "<div class='box'>Protegendo acesso...</div><script>(function(){try{for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i)||'';if(/^sb-.*-auth-token$/i.test(k)||k.indexOf('supabase.auth.token')>=0){localStorage.removeItem(k);}}}catch(e){}location.replace('/?app=v85&login=1&t='+Date.now());})();</script></body></html>";
-        web.loadDataWithBaseURL(HOME + "/", bootstrap, "text/html", "UTF-8", null);
     }
 
     private boolean isOnline() {
