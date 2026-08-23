@@ -8,6 +8,7 @@ on:
     paths:
       - "android-app/**"
       - "v85-fixes.js"
+      - "v87-session-fix.js"
       - ".github/workflows/build-android-apk.yml"
 
 jobs:
@@ -30,18 +31,37 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Preparar Android v86
+      - name: Preparar Android v87
         shell: bash
         run: |
           set -e
-          echo "Forcando build v86"
-          sed -i "s/versionCode 85/versionCode 86/; s/versionName '85.0'/versionName '86.0'/" android-app/app/build.gradle
-          sed -i "s/CompraVendaGadoApp\/85/CompraVendaGadoApp\/86/g; s/APP v85/APP v86/g; s/app=v85/app=v86/g" android-app/app/src/main/java/com/alfredo/compravendagado/MainActivity.java
+          sed -i -E "s/versionCode [0-9]+/versionCode 87/; s/versionName '[0-9]+\.[0-9]+'/versionName '87.0'/" android-app/app/build.gradle
+          sed -i -E "s/CompraVendaGadoApp\/[0-9]+/CompraVendaGadoApp\/87/g; s/APP v[0-9]+/APP v87/g; s/app=v[0-9]+/app=v87/g" android-app/app/src/main/java/com/alfredo/compravendagado/MainActivity.java
+
           mkdir -p android-app/app/src/main/assets/site
           mkdir -p android-app/app/src/main/res/drawable
-          for f in index.html app-v68.html painel-update-v63.js v85-fixes.js sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
+          for f in index.html app-v68.html painel-update-v63.js v85-fixes.js v87-session-fix.js sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
             if [ -f "$f" ]; then cp "$f" android-app/app/src/main/assets/site/; fi
           done
+
+          python3 - <<'PY'
+          from pathlib import Path
+          base=Path('android-app/app/src/main/assets/site')
+          tag='<script src="/v87-session-fix.js?v=87"></script>'
+          for name in ('index.html','app-v68.html'):
+              p=base/name
+              if not p.exists():
+                  continue
+              s=p.read_text(encoding='utf-8')
+              import re
+              s=re.sub(r'>v\d+</span>', '>v87</span>', s)
+              s=re.sub(r'Sync v\d+', 'Sync v87', s)
+              s=re.sub(r'data-app-version="\d+"', 'data-app-version="87"', s)
+              if tag not in s:
+                  s=s.replace('<head>', '<head>\n'+tag, 1)
+              p.write_text(s,encoding='utf-8')
+          PY
+
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o android-app/app/src/main/assets/site/supabase.js
           cp app-boi-512.png android-app/app/src/main/res/drawable/app_boi.png
 
@@ -67,6 +87,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Compra-Venda-Gado-v86
+          name: Compra-Venda-Gado-v87
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
