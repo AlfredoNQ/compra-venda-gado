@@ -19,72 +19,41 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Web v86 - versao e reconexao sem logout
+      - name: Web v95 - cache novo e deleted_records
         shell: bash
         run: |
           set -e
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           for name in ('index.html','app-v68.html'):
               p=Path(name)
+              if not p.exists():
+                  continue
               s=p.read_text(encoding='utf-8')
+              s=re.sub(r'/v85-fixes\.js\?v=\d+', '/v85-fixes.js?v=95', s)
+              s=s.replace('Compra e Venda de Gado — v94','Compra e Venda de Gado — v95')
+              p.write_text(s,encoding='utf-8')
 
-              # Versao Web junto com APP.
-              s=s.replace('Sync v85','Sync v86')
-              s=s.replace('Sync v84','Sync v86')
-              s=s.replace('>v85</span>','>v86</span>')
-              s=s.replace('>v84</span>','>v86</span>')
-              s=s.replace('Compra e Venda de Gado — v85','Compra e Venda de Gado — v86')
-              s=s.replace('Compra e Venda de Gado — v84','Compra e Venda de Gado — v86')
-
-              # v86: internet voltando NAO reinicializa autenticacao.
-              # O initCloud() zera bootLoginApproved e fecha o app; na reconexao
-              # devemos apenas reutilizar a sessao existente e sincronizar.
-              old1="""window.addEventListener('online', function(){
-    try{
-      if(typeof initCloud === 'function') initCloud();
-    }catch(e){}
-    try{
-      if(typeof cloudLoad === 'function') setTimeout(cloudLoad, 900);
-    }catch(e){}
-  });"""
-              new1="""window.addEventListener('online', function(){
-    try{
-      if(window.cloudUser && typeof setAuthenticatedUI==='function') setAuthenticatedUI(true);
-    }catch(e){}
-    try{
-      if(typeof window.syncPendingNow==='function') setTimeout(function(){window.syncPendingNow(false)},250);
-      else if(typeof cloudLoad==='function') setTimeout(cloudLoad,500);
-    }catch(e){}
-  });"""
-              s=s.replace(old1,new1)
-
-              old2="""window.addEventListener('online',function(){
-    try{
-      if(typeof initCloud==='function') setTimeout(initCloud,300);
-    }catch(e){}
-  });"""
-              new2="""window.addEventListener('online',function(){
-    try{
-      if(window.cloudUser && typeof setAuthenticatedUI==='function') setAuthenticatedUI(true);
-      if(typeof window.syncPendingNow==='function') setTimeout(function(){window.syncPendingNow(false)},300);
-      else if(typeof cloudLoad==='function') setTimeout(cloudLoad,500);
-    }catch(e){}
-  });"""
-              s=s.replace(old2,new2)
-
-              # Identificacao interna da correcao.
-              s=s.replace('bootLoginApproved=false; // v84:', 'bootLoginApproved=false; // v86:')
-              s=s.replace('bootLoginApproved=false; // v85:', 'bootLoginApproved=false; // v86:')
-
+          p=Path('v85-fixes.js')
+          if p.exists():
+              s=p.read_text(encoding='utf-8')
+              s=s.replace('v94 fixes','v95 fixes')
+              s=s.replace("APP_WEB_VERSION='94'","APP_WEB_VERSION='95'")
+              s=s.replace("pdf94_","pdf95_")
+              s=s.replace("gado_deleted_records_permanent_v94","gado_deleted_records_permanent_v95")
+              s=s.replace("data-app-version','94'","data-app-version','95'")
+              s=s.replace("Compra e Venda de Gado — v94","Compra e Venda de Gado — v95")
+              s=s.replace("s.textContent='v94'","s.textContent='v95'")
+              s=s.replace("b.textContent='v94'","b.textContent='v95'")
               p.write_text(s,encoding='utf-8')
           PY
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html app-v68.html
+          git add index.html app-v68.html v85-fixes.js
           if ! git diff --cached --quiet; then
-            git commit -m 'v86 Web: reconecta e sincroniza sem derrubar sessao'
+            git commit -m 'v95 Web: força deleted_records sem cache antigo'
             git push origin main
           fi
