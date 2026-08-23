@@ -7,6 +7,7 @@ on:
       - android-apk
     paths:
       - "android-app/**"
+      - "v85-fixes.js"
       - ".github/workflows/build-android-apk.yml"
 
 jobs:
@@ -41,6 +42,17 @@ jobs:
                    apple-touch-icon.png favicon.png; do
             if [ -f "$f" ]; then cp "$f" android-app/app/src/main/assets/site/; fi
           done
+          python - <<'PY'
+          from pathlib import Path
+          for name in ['index.html','app-v68.html']:
+              p=Path('android-app/app/src/main/assets/site')/name
+              if not p.exists(): continue
+              s=p.read_text(encoding='utf-8')
+              s=s.replace('Sync v84','v85').replace('>v84</span>','>v85</span>').replace('data-app-version="78"','data-app-version="85"')
+              tag='<script src="/v85-fixes.js?v=85"></script>'
+              if tag not in s: s=s.replace('</body>',tag+'\n</body>')
+              p.write_text(s,encoding='utf-8')
+          PY
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" \
             -o android-app/app/src/main/assets/site/supabase.js
           cp app-boi-512.png android-app/app/src/main/res/drawable/app_boi.png
