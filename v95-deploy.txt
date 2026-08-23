@@ -1,0 +1,2 @@
+Compra e Venda de Gado v95
+Forca deploy da main apos cache-bust do sincronizador deleted_records.
