@@ -35,6 +35,7 @@ jobs:
         shell: bash
         run: |
           set -e
+          echo "Forcando build v86"
           # APK real v86, mantendo a mesma assinatura/applicationId para instalar por cima.
           sed -i "s/versionCode 85/versionCode 86/; s/versionName '85.0'/versionName '86.0'/" android-app/app/build.gradle
           sed -i "s/CompraVendaGadoApp\/85/CompraVendaGadoApp\/86/g; s/APP v85/APP v86/g; s/app=v85/app=v86/g" android-app/app/src/main/java/com/alfredo/compravendagado/MainActivity.java
