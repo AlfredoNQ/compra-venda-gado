@@ -30,12 +30,10 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Preparar site offline v90
+      - name: Preparar site offline v91
         shell: bash
         run: |
           set -e
-          sed -i "s/versionCode 89/versionCode 90/; s/versionName '89.0'/versionName '90.0'/" android-app/app/build.gradle
-          sed -i "s/CompraVendaGadoApp\/88/CompraVendaGadoApp\/90/g; s/APP v88/APP v90/g; s/app=v88/app=v90/g" android-app/app/src/main/java/com/alfredo/compravendagado/MainActivity.java
           mkdir -p android-app/app/src/main/assets/site
           mkdir -p android-app/app/src/main/res/drawable
           for f in index.html app-v68.html painel-update-v63.js v85-fixes.js sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
@@ -43,17 +41,14 @@ jobs:
           done
           python3 - <<'PY'
           from pathlib import Path
+          import re
           for name in ('index.html','app-v68.html'):
               p=Path('android-app/app/src/main/assets/site')/name
               if not p.exists(): continue
               s=p.read_text(encoding='utf-8')
-              s=s.replace('Sync v89','Sync v90').replace('Sync v88','Sync v90')
-              s=s.replace('>v89</span>','>v90</span>').replace('>v88</span>','>v90</span>')
-              tag='<script src="/v85-fixes.js?v=90"></script>'
-              import re
-              s=re.sub(r'<script src="/v85-fixes\.js\?v=\d+"></script>',tag,s)
-              s=re.sub(r'<script src="/v89-reconnect\.js\?v=89"></script>','',s)
-              if tag not in s: s=s.replace('</body>',tag+'\n</body>')
+              s=re.sub(r'<script src="/v85-fixes\.js\?v=\d+"></script>','<script src="/v85-fixes.js?v=91"></script>',s)
+              if '<script src="/v85-fixes.js?v=91"></script>' not in s:
+                  s=s.replace('</body>','<script src="/v85-fixes.js?v=91"></script>\n</body>')
               p.write_text(s,encoding='utf-8')
           PY
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o android-app/app/src/main/assets/site/supabase.js
@@ -81,6 +76,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Compra-Venda-Gado-v90
+          name: Compra-Venda-Gado-v91
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
