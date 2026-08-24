@@ -1,0 +1,53 @@
+name: Fix Version Flicker v112
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-version-flicker-v112.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fixar indicador visual em v112
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          for name in ('index.html','app-v68.html'):
+              p=Path(name)
+              if not p.exists():
+                  continue
+              s=p.read_text(encoding='utf-8')
+              s=re.sub(r'\s*<script src="/v113-pdf-mobile\.js\?v=113"></script>\s*', '\n', s)
+              s=re.sub(r'/v85-fixes\.js\?v=\d+', '/v85-fixes.js?v=112', s)
+              s=re.sub(r'/v103-pdf-open\.js\?v=\d+', '/v103-pdf-open.js?v=112', s)
+              s=re.sub(r'<title>Compra e Venda de Gado — v\d+</title>', '<title>Compra e Venda de Gado — v112</title>', s)
+              s=re.sub(r'(<h1>Compra e Venda de Gado <span[^>]*>)v\d+(</span></h1>)', r'\1v112\2', s)
+              p.write_text(s,encoding='utf-8')
+
+          p=Path('v85-fixes.js')
+          if p.exists():
+              s=p.read_text(encoding='utf-8')
+              s=s.replace("window.APP_WEB_VERSION='96'", "window.APP_WEB_VERSION='112'")
+              s=s.replace("data-app-version','96'", "data-app-version','112'")
+              s=s.replace("Compra e Venda de Gado — v96", "Compra e Venda de Gado — v112")
+              s=s.replace("s.textContent='v96'", "s.textContent='v112'")
+              s=s.replace("b.textContent='v96'", "b.textContent='v112'")
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html app-v68.html v85-fixes.js
+          git diff --cached --quiet || git commit -m 'Web v112: remove escritor v113 e flicker de versão'
+          git push
