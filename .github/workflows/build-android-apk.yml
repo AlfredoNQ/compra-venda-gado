@@ -8,7 +8,7 @@ on:
     paths:
       - "android-app/**"
       - "v85-fixes.js"
-      - "v98-reconnect-login.js"
+      - "v101-apk-session-guard.js"
       - ".github/workflows/build-android-apk.yml"
 
 jobs:
@@ -31,13 +31,13 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Preparar site offline v100
+      - name: Preparar site offline v101
         shell: bash
         run: |
           set -e
           mkdir -p android-app/app/src/main/assets/site
           mkdir -p android-app/app/src/main/res/drawable
-          for f in index.html app-v68.html painel-update-v63.js v85-fixes.js v98-reconnect-login.js sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
+          for f in index.html app-v68.html painel-update-v63.js v85-fixes.js v101-apk-session-guard.js sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
             if [ -f "$f" ]; then cp "$f" android-app/app/src/main/assets/site/; fi
           done
           python3 - <<'PY'
@@ -47,22 +47,11 @@ jobs:
               p=Path('android-app/app/src/main/assets/site')/name
               if not p.exists(): continue
               s=p.read_text(encoding='utf-8')
-              s=re.sub(
-                  r"\n\s*if\(navigator\.onLine\)\{\s*bootLoginApproved=false;\s*setAuthenticatedUI\(false\);\s*setCloudStatus\('Acesso protegido • entre novamente','warn'\);.*?\n\s*\}else\{\s*await onCloudSession\(session\);\s*\}",
-                  "\n  if(session && session.user){ bootLoginApproved=true; }\n  await onCloudSession(session);",
-                  s,
-                  flags=re.S
-              )
-              s=re.sub(
-                  r"\n\s*if\(navigator\.onLine && !bootLoginApproved\)\{\s*cloudUser=session\?\.user\|\|null;\s*setAuthenticatedUI\(false\);\s*setCloudStatus\('Acesso protegido • entre novamente','warn'\);\s*return;\s*\}",
-                  "\n    if(session && session.user){ bootLoginApproved=true; cloudUser=session.user; }",
-                  s,
-                  flags=re.S
-              )
-              s=s.replace("setInterval(()=>{if(navigator.onLine)sync(false)},8000);", "/* v100: polling legado desativado */")
-              s=re.sub(r'\s*<script src="/v85-fixes\.js\?v=\d+"></script>\s*', '\n', s)
               s=re.sub(r'\s*<script src="/v98-reconnect-login\.js\?v=\d+"></script>\s*', '\n', s)
-              s=s.replace('</body>','<script src="/v85-fixes.js?v=100"></script>\n<script src="/v98-reconnect-login.js?v=100"></script>\n</body>')
+              s=re.sub(r'\s*<script src="/v101-apk-session-guard\.js\?v=\d+"></script>\s*', '\n', s)
+              s=re.sub(r'\s*<script src="/v85-fixes\.js\?v=\d+"></script>\s*', '\n', s)
+              s=s.replace("setInterval(()=>{if(navigator.onLine)sync(false)},8000);", "/* v101: polling legado desativado */")
+              s=s.replace('</body>','<script src="/v85-fixes.js?v=101"></script>\n<script src="/v101-apk-session-guard.js?v=101"></script>\n</body>')
               p.write_text(s,encoding='utf-8')
           PY
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o android-app/app/src/main/assets/site/supabase.js
@@ -90,6 +79,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Compra-Venda-Gado-v100
+          name: Compra-Venda-Gado-v101
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
