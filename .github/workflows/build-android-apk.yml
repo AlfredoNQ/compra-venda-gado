@@ -47,9 +47,8 @@ jobs:
               if not p.exists(): continue
               s=p.read_text(encoding='utf-8')
               s=s.replace("setInterval(()=>{if(navigator.onLine)sync(false)},8000);", "/* v96: polling legado desativado */")
-              s=re.sub(r'<script src="/v85-fixes\.js\?v=\d+"></script>','<script src="/v85-fixes.js?v=96"></script>',s)
-              if '<script src="/v85-fixes.js?v=96"></script>' not in s:
-                  s=s.replace('</body>','<script src="/v85-fixes.js?v=96"></script>\n</body>')
+              s=re.sub(r'\s*<script src="/v85-fixes\.js\?v=\d+"></script>\s*', '\n', s)
+              s=s.replace('</body>','<script src="/v85-fixes.js?v=96"></script>\n</body>')
               p.write_text(s,encoding='utf-8')
           PY
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o android-app/app/src/main/assets/site/supabase.js
