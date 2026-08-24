@@ -1,6 +1,16 @@
-/* Compra e Venda de Gado — v112 leitor PDF móvel interno */
+/* Compra e Venda de Gado — v112 PDF Android interno + Safari iPhone */
 (function(){
+  function isIOS(){
+    var ua=navigator.userAgent||'';
+    return /iPhone|iPad|iPod/i.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  }
   function isMobile(){return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'') || window.innerWidth<=800;}
+  function openIOS(doc){
+    var bytes=bytesFromDataUrl(doc.data);
+    var blob=new Blob([bytes],{type:'application/pdf'});
+    var url=URL.createObjectURL(blob);
+    window.location.assign(url);
+  }
   function bytesFromDataUrl(dataUrl){
     var parts=String(dataUrl||'').split(',');
     if(parts.length<2) throw new Error('PDF sem conteúdo válido');
@@ -82,6 +92,7 @@
     try{
       var doc=(window.__pdfDocsV85||{})[id];
       if(!doc||!doc.data)throw new Error('Documento não encontrado');
+      if(isIOS()){openIOS(doc);return;}
       if(isMobile()){showMobile(doc);return;}
       if(window.AndroidPdf&&typeof window.AndroidPdf.openPdf==='function'){window.AndroidPdf.openPdf(doc.data,safeName(doc.name));return;}
       openDesktop(doc);
