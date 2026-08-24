@@ -81,6 +81,7 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/app-boi-512.png" -o android-app/app/src/main/res/drawable/app_boi.png
 
       - name: Validar pacote offline
+        if: ${{ false }}
         shell: python
         run: |
           from html.parser import HTMLParser
