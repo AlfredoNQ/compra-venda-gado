@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
     private static final int FILE_CHOOSER = 1001;
     private static final int PERMISSIONS = 1002;
     private WebView web;
+    private String webUserAgent="CompraVendaGadoApp/112";
     private ValueCallback<Uri[]> fileCallback;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +63,7 @@ public class MainActivity extends Activity {
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
         s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/112");
+        webUserAgent=s.getUserAgentString();
 
         web.addJavascriptInterface(new PdfBridge(), "AndroidPdf");
         web.addJavascriptInterface(new DownloadBridge(), "AndroidDownloads");
@@ -212,7 +214,7 @@ public class MainActivity extends Activity {
                     connection.setReadTimeout(60000);
                     connection.setRequestMethod(verb);
                     connection.setRequestProperty("Accept-Encoding","identity");
-                    connection.setRequestProperty("User-Agent",web.getSettings().getUserAgentString());
+                    connection.setRequestProperty("User-Agent",webUserAgent);
 
                     JSONObject headers=new JSONObject(headersJson==null?"{}":headersJson);
                     Iterator<String> keys=headers.keys();
