@@ -1,4 +1,4 @@
-name: Apply v101 Web Stable
+name: Apply v102 Web Stable
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restaurar login persistente do Web
+      - name: Corrigir reconexao sem derrubar login Web
         shell: python
         run: |
           from pathlib import Path
@@ -30,7 +30,7 @@ jobs:
                   continue
               s=p.read_text(encoding='utf-8')
 
-              # Web: sessão Supabase persistida deve manter a interface aberta.
+              # Sessao persistida valida libera a interface normalmente.
               s=re.sub(
                   r"\n\s*if\(navigator\.onLine\)\{\s*bootLoginApproved=false;\s*setAuthenticatedUI\(false\);\s*setCloudStatus\('Acesso protegido • entre novamente','warn'\);.*?\n\s*\}else\{\s*await onCloudSession\(session\);\s*\}",
                   "\n  if(session && session.user){ bootLoginApproved=true; }\n  await onCloudSession(session);",
@@ -44,14 +44,20 @@ jobs:
                   flags=re.S
               )
 
-              # Remove o experimento de reconexão v98 do Web para não interferir no navegador.
+              # BUG real: o listener legado reinicializava initCloud() ao voltar internet.
+              old_online = """  window.addEventListener('online',function(){\n    try{\n      if(typeof initCloud==='function') setTimeout(initCloud,300);\n    }catch(e){}\n  });"""
+              new_online = """  window.addEventListener('online',function(){\n    try{\n      setCloudStatus('Reconectando…','warn');\n      if(sb && sb.auth){\n        setTimeout(async function(){\n          try{\n            var result=await sb.auth.getSession();\n            var session=result&&result.data&&result.data.session;\n            if(session&&session.user){\n              cloudUser=session.user;\n              bootLoginApproved=true;\n              rememberAuthenticatedUser(session.user);\n              setAuthenticatedUI(true);\n              await cloudLoad();\n              return;\n            }\n            var refreshed=await sb.auth.refreshSession();\n            session=refreshed&&refreshed.data&&refreshed.data.session;\n            if(session&&session.user){\n              cloudUser=session.user;\n              bootLoginApproved=true;\n              rememberAuthenticatedUser(session.user);\n              setAuthenticatedUI(true);\n              await cloudLoad();\n            }\n          }catch(e){\n            console.warn('v102 web reconnect',e);\n          }\n        },300);\n      }\n    }catch(e){}\n  });"""
+              s=s.replace(old_online,new_online)
+
+              # Web nao carrega guards exclusivos do APK.
               s=re.sub(r'\s*<script src="/v98-reconnect-login\.js\?v=\d+"></script>\s*', '\n', s)
               s=re.sub(r'\s*<script src="/v101-apk-session-guard\.js\?v=\d+"></script>\s*', '\n', s)
               s=re.sub(r'\s*<script src="/v85-fixes\.js\?v=\d+"></script>\s*', '\n', s)
-              s=s.replace("setInterval(()=>{if(navigator.onLine)sync(false)},8000);", "/* v101: polling legado desativado */")
-              s=re.sub(r'manifest\.webmanifest\?v=\d+','manifest.webmanifest?v=101',s)
-              s=re.sub(r"navigator\.serviceWorker\.register\('/sw\.js\?v=\d+'","navigator.serviceWorker.register('/sw.js?v=101'",s)
-              s=s.replace('</body>','<script src="/v85-fixes.js?v=101"></script>\n</body>')
+              s=s.replace("setInterval(()=>{if(navigator.onLine)sync(false)},8000);", "/* v102: polling legado desativado */")
+              s=re.sub(r'<title>Compra e Venda de Gado — v\d+</title>','<title>Compra e Venda de Gado — v102</title>',s)
+              s=re.sub(r'manifest\.webmanifest\?v=\d+','manifest.webmanifest?v=102',s)
+              s=re.sub(r"navigator\.serviceWorker\.register\('/sw\.js\?v=\d+'","navigator.serviceWorker.register('/sw.js?v=102'",s)
+              s=s.replace('</body>','<script src="/v85-fixes.js?v=102"></script>\n</body>')
               p.write_text(s,encoding='utf-8')
 
       - name: Commit
@@ -59,5 +65,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html app-v68.html
-          git diff --cached --quiet || git commit -m "Web v101: restaurar sessão persistente sem guard do APK"
+          git diff --cached --quiet || git commit -m "Web v102: manter login ao reconectar sem reiniciar auth"
           git push
