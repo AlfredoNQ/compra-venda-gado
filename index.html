@@ -973,7 +973,10 @@ function badge(x){let k=String(x||'').toLowerCase();return `<span class="badge $
 
 function fileLink(doc,label){
  if(!doc||!doc.data)return '—';
- return `<a class="mini" href="${doc.data}" target="_blank" download="${esc(doc.name||label+'.pdf')}">Abrir PDF</a>`;
+ window.__pdfDocsV85=window.__pdfDocsV85||{};
+ let id='pdfList_'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+ window.__pdfDocsV85[id]=doc;
+ return `<button type="button" class="mini" onclick="openStoredPdfV85('${id}')">Abrir PDF</button>`;
 }
 function installmentSummary(r){
  let a=Array.isArray(r.installments)?r.installments:[];
@@ -3238,7 +3241,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 <script src="/v85-fixes.js?v=112"></script>
-<script src="/v103-pdf-open.js?v=112pdf5"></script>
-<script src="/v116-pdf-mobile.js?v=112pdf5"></script>
+<script src="/v103-pdf-open.js?v=112pdf6"></script>
+<script src="/v116-pdf-mobile.js?v=112pdf6"></script>
 </body>
 </html>
