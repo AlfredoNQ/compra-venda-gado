@@ -6,10 +6,25 @@
   }
   function isMobile(){return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'') || window.innerWidth<=800;}
   function openIOS(doc){
-    var bytes=bytesFromDataUrl(doc.data);
-    var blob=new Blob([bytes],{type:'application/pdf'});
-    var url=URL.createObjectURL(blob);
-    window.location.assign(url);
+    var tab=null;
+    try{tab=window.open('about:blank','_blank');}catch(e){}
+    try{
+      var bytes=bytesFromDataUrl(doc.data);
+      var blob=new Blob([bytes],{type:'application/pdf'});
+      var url=URL.createObjectURL(blob);
+      if(tab){
+        try{tab.opener=null;}catch(e){}
+        tab.location.replace(url);
+      }else{
+        var a=document.createElement('a');
+        a.href=url;a.target='_blank';a.rel='noopener';a.style.display='none';
+        document.body.appendChild(a);a.click();a.remove();
+      }
+      setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},600000);
+    }catch(e){
+      try{if(tab)tab.close();}catch(_){}
+      throw e;
+    }
   }
   function bytesFromDataUrl(dataUrl){
     var parts=String(dataUrl||'').split(',');
