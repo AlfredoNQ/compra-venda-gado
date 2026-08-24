@@ -1,5 +1,5 @@
-const CACHE='gado-app-v112-pay1';
-const APP_SHELL=['/index.html?v=112pdf6','/app-v68.html?v=112pdf6','/manifest.webmanifest?v=112pdf6','/v85-fixes.js?v=112','/v103-pdf-open.js?v=112pdf6','/v116-pdf-mobile.js?v=112pdf6','/v112-payments.js?v=112pay1','/icon.svg'];
+const CACHE='gado-app-v112-backup1';
+const APP_SHELL=['/index.html?v=112backup1','/app-v68.html?v=112backup1','/manifest.webmanifest?v=112pdf6','/v85-fixes.js?v=112','/v103-pdf-open.js?v=112pdf6','/v116-pdf-mobile.js?v=112pdf6','/v112-payments.js?v=112pay1','/v112-backup.js?v=112backup1','/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
@@ -18,7 +18,7 @@ self.addEventListener('activate',event=>{
     await self.clients.claim();
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     for(const client of clients){
-      try{client.postMessage({type:'CVG_CACHE_RESET',version:'112pdf6'});}catch(e){}
+      try{client.postMessage({type:'CVG_CACHE_RESET',version:'112backup1'});}catch(e){}
     }
   })());
 });
@@ -34,12 +34,12 @@ self.addEventListener('fetch',event=>{
         const fresh=await fetch(req,{cache:'no-store'});
         if(fresh.ok){
           const c=await caches.open(CACHE);
-          c.put('/index.html?v=112pdf6',fresh.clone());
+          c.put('/index.html?v=112backup1',fresh.clone());
         }
         return fresh;
       }catch(e){
         const c=await caches.open(CACHE);
-        return (await c.match('/index.html?v=112pdf6'))||(await c.match('/app-v68.html?v=112pdf6'))||Response.error();
+        return (await c.match('/index.html?v=112backup1'))||(await c.match('/app-v68.html?v=112backup1'))||Response.error();
       }
     })());
     return;
