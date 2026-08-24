@@ -1,4 +1,4 @@
-/* Compra e Venda de Gado — v109 PDF + restauração segura */
+/* Compra e Venda de Gado — v110 PDF mobile + restauração segura */
 (function(){
   function dataUrlToBlob(dataUrl){
     var parts=String(dataUrl||'').split(',');
@@ -16,17 +16,24 @@
     if(!/\.pdf$/i.test(n)) n+='.pdf';
     return n||'documento.pdf';
   }
+  function openWebPdf(doc){
+    var blob=dataUrlToBlob(doc.data),url=URL.createObjectURL(blob),w=null;
+    try{w=window.open(url,'_blank','noopener,noreferrer');}catch(e){}
+    if(!w){
+      try{window.location.assign(url);return;}catch(e){}
+      var a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+    }
+    setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},180000);
+  }
   window.openStoredPdfV85=function(id){
     try{
       var doc=(window.__pdfDocsV85||{})[id];
       if(!doc||!doc.data) throw new Error('Documento não encontrado');
       var name=safeName(doc.name);
       if(window.AndroidPdf && typeof window.AndroidPdf.openPdf==='function'){window.AndroidPdf.openPdf(doc.data,name);return;}
-      var blob=dataUrlToBlob(doc.data),url=URL.createObjectURL(blob),a=document.createElement('a');
-      a.href=url;a.target='_blank';a.rel='noopener';a.download='';a.style.display='none';document.body.appendChild(a);a.click();a.remove();
-      setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},120000);
+      openWebPdf(doc);
     }catch(e){
-      try{var doc=(window.__pdfDocsV85||{})[id];if(doc&&doc.data){var a=document.createElement('a');a.href=doc.data;a.target='_blank';a.rel='noopener';a.download=safeName(doc.name);document.body.appendChild(a);a.click();a.remove();return;}}catch(_){}
+      try{var doc=(window.__pdfDocsV85||{})[id];if(doc&&doc.data){window.location.href=doc.data;return;}}catch(_){}
       alert('Não foi possível abrir o PDF: '+(e&&e.message?e.message:e));
     }
   };
@@ -50,70 +57,16 @@
   var oldNew=window.newRecord;if(typeof oldNew==='function')window.newRecord=function(){var r=oldNew();setTimeout(function(){Object.keys(cfg).forEach(function(k){renderOne(k,null);});},0);return r;};
   Object.keys(cfg).forEach(function(k){var inp=document.getElementById(cfg[k].input);if(!inp)return;inp.addEventListener('change',function(){inp.dataset.deletePdf='0';var f=inp.files&&inp.files[0],st=document.getElementById(cfg[k].status);if(f&&st)st.innerHTML='<div class="hint" style="margin-top:6px">Novo arquivo: <b>'+htmlEsc(f.name)+'</b> — será salvo ao confirmar a negociação.</div>';});});
 
-  function itemKey(x){
-    if(x&&x.id!=null)return 'id:'+String(x.id);
-    try{return 'sig:'+JSON.stringify(x);}catch(e){return 'sig:'+String(x);}
-  }
+  function itemKey(x){if(x&&x.id!=null)return 'id:'+String(x.id);try{return 'sig:'+JSON.stringify(x);}catch(e){return 'sig:'+String(x);}}
   function ts(x){var t=Date.parse(x&&x.updatedAt||'');return isNaN(t)?0:t;}
-  function mergeSafe(current,incoming){
-    var map=new Map(),order=[];
-    (Array.isArray(current)?current:[]).forEach(function(x){var k=itemKey(x);if(!map.has(k))order.push(k);map.set(k,x);});
-    (Array.isArray(incoming)?incoming:[]).forEach(function(x){var k=itemKey(x);if(!map.has(k)){order.push(k);map.set(k,x);return;}var old=map.get(k);var a=ts(old),b=ts(x);if(b>a)map.set(k,x);});
-    return order.map(function(k){return map.get(k);});
-  }
-  function safetyBackup(){
-    try{
-      if(typeof download!=='function')return false;
-      var now=new Date().toISOString().replace(/[:.]/g,'-');
-      download('backup_antes_restaurar_'+now+'.json',JSON.stringify({records:records,costs:costs},null,2),'application/json');
-      return true;
-    }catch(e){return false;}
-  }
+  function mergeSafe(current,incoming){var map=new Map(),order=[];(Array.isArray(current)?current:[]).forEach(function(x){var k=itemKey(x);if(!map.has(k))order.push(k);map.set(k,x);});(Array.isArray(incoming)?incoming:[]).forEach(function(x){var k=itemKey(x);if(!map.has(k)){order.push(k);map.set(k,x);return;}var old=map.get(k);if(ts(x)>ts(old))map.set(k,x);});return order.map(function(k){return map.get(k);});}
+  function safetyBackup(){try{if(typeof download!=='function')return false;var now=new Date().toISOString().replace(/[:.]/g,'-');download('backup_antes_restaurar_'+now+'.json',JSON.stringify({records:records,costs:costs},null,2),'application/json');return true;}catch(e){return false;}}
   function installSafeRestore(){
-    var inp=document.getElementById('restore');if(!inp||inp.dataset.safeRestoreV109==='1')return;
-    inp.dataset.safeRestoreV109='1';
-    inp.addEventListener('change',function(e){
-      e.stopImmediatePropagation();
-      var f=inp.files&&inp.files[0];if(!f)return;
-      var rd=new FileReader();
-      rd.onload=function(){
-        try{
-          var x=JSON.parse(rd.result),incRecords,incCosts;
-          if(Array.isArray(x)){incRecords=x;incCosts=[];}else{incRecords=x&&x.records;incCosts=x&&x.costs;}
-          if(!Array.isArray(incRecords))throw new Error('Arquivo não contém uma lista válida de negociações.');
-          if(incCosts!=null&&!Array.isArray(incCosts))throw new Error('Lista de custos inválida.');
-          incCosts=Array.isArray(incCosts)?incCosts:[];
-          safetyBackup();
-          var mode=prompt('RESTAURAÇÃO SEGURA\n\nDigite MESCLAR para recuperar o backup sem apagar dados mais novos.\nDigite SUBSTITUIR para trocar toda a base atual pelo arquivo.\n\nRecomendado: MESCLAR','MESCLAR');
-          if(!mode){inp.value='';return;}
-          mode=String(mode).trim().toUpperCase();
-          if(mode==='MESCLAR'){
-            records=mergeSafe(records,incRecords);costs=mergeSafe(costs,incCosts);
-          }else if(mode==='SUBSTITUIR'){
-            if(!confirm('ATENÇÃO: SUBSTITUIR remove da base atual tudo que não estiver neste backup. Confirma?')){inp.value='';return;}
-            records=incRecords;costs=incCosts;
-          }else{alert('Opção inválida. Nada foi alterado.');inp.value='';return;}
-          persist();renderAll();
-          alert(mode==='MESCLAR'?'Backup mesclado com segurança. Os dados mais novos foram preservados.':'Backup substituído. Um backup preventivo foi gerado antes da restauração.');
-        }catch(err){alert('Backup inválido: '+(err&&err.message?err.message:err));}
-        inp.value='';
-      };
-      rd.onerror=function(){alert('Não foi possível ler o arquivo de backup.');inp.value='';};
-      rd.readAsText(f);
-    },true);
+    var inp=document.getElementById('restore');if(!inp||inp.dataset.safeRestoreV109==='1')return;inp.dataset.safeRestoreV109='1';
+    inp.addEventListener('change',function(e){e.stopImmediatePropagation();var f=inp.files&&inp.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var x=JSON.parse(rd.result),incRecords,incCosts;if(Array.isArray(x)){incRecords=x;incCosts=[];}else{incRecords=x&&x.records;incCosts=x&&x.costs;}if(!Array.isArray(incRecords))throw new Error('Arquivo não contém uma lista válida de negociações.');if(incCosts!=null&&!Array.isArray(incCosts))throw new Error('Lista de custos inválida.');incCosts=Array.isArray(incCosts)?incCosts:[];safetyBackup();var mode=prompt('RESTAURAÇÃO SEGURA\n\nDigite MESCLAR para recuperar o backup sem apagar dados mais novos.\nDigite SUBSTITUIR para trocar toda a base atual pelo arquivo.\n\nRecomendado: MESCLAR','MESCLAR');if(!mode){inp.value='';return;}mode=String(mode).trim().toUpperCase();if(mode==='MESCLAR'){records=mergeSafe(records,incRecords);costs=mergeSafe(costs,incCosts);}else if(mode==='SUBSTITUIR'){if(!confirm('ATENÇÃO: SUBSTITUIR remove da base atual tudo que não estiver neste backup. Confirma?')){inp.value='';return;}records=incRecords;costs=incCosts;}else{alert('Opção inválida. Nada foi alterado.');inp.value='';return;}persist();renderAll();alert(mode==='MESCLAR'?'Backup mesclado com segurança. Os dados mais novos foram preservados.':'Backup substituído. Um backup preventivo foi gerado antes da restauração.');}catch(err){alert('Backup inválido: '+(err&&err.message?err.message:err));}inp.value='';};rd.onerror=function(){alert('Não foi possível ler o arquivo de backup.');inp.value='';};rd.readAsText(f);},true);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSafeRestore);else installSafeRestore();
 
-  function forceWebVersion109(){
-    try{
-      document.title='Compra e Venda de Gado — v109';
-      var h=document.querySelector('header h1')||document.querySelector('h1');
-      if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\d+$/i.test((spans[i].textContent||'').trim()))spans[i].textContent='v109';}}
-    }catch(e){}
-  }
-  forceWebVersion109();
-  setTimeout(forceWebVersion109,1500);
-  setTimeout(forceWebVersion109,3000);
-  setInterval(forceWebVersion109,10000);
-  window.APP_WEB_VERSION='109';
+  function forceWebVersion110(){try{document.title='Compra e Venda de Gado — v110';var h=document.querySelector('header h1')||document.querySelector('h1');if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\d+$/i.test((spans[i].textContent||'').trim()))spans[i].textContent='v110';}}}catch(e){}}
+  forceWebVersion110();setTimeout(forceWebVersion110,1500);setTimeout(forceWebVersion110,3000);setInterval(forceWebVersion110,10000);window.APP_WEB_VERSION='110';
 })();
