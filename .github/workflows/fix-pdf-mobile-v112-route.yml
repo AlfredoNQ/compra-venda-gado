@@ -31,49 +31,49 @@ jobs:
           p=Path('_worker.js')
           s=p.read_text(encoding='utf-8')
           helper=r'''
-async function pdfOpenResponse(request) {
-  try {
-    const form = await request.formData();
-    const dataUrl = String(form.get('pdf') || '');
-    let name = String(form.get('name') || 'documento.pdf')
-      .replace(/[\\/:*?"<>|\r\n]+/g,'_')
-      .trim();
-    if (!name.toLowerCase().endsWith('.pdf')) name += '.pdf';
-    if (!dataUrl.startsWith('data:application/pdf;base64,')) {
-      return new Response('PDF inválido', {status:400});
-    }
-    const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
-    if (!b64 || b64.length > 22000000) {
-      return new Response('PDF vazio ou grande demais', {status:413});
-    }
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
-    return new Response(bytes, {
-      status:200,
-      headers:{
-        'Content-Type':'application/pdf',
-        'Content-Disposition':`inline; filename="${name.replace(/"/g,'')}"`,
-        'Cache-Control':'no-store, no-cache, must-revalidate, max-age=0',
-        'X-Content-Type-Options':'nosniff'
-      }
-    });
-  } catch (e) {
-    return new Response('Não foi possível abrir o PDF', {status:400});
-  }
-}
-'''
+          async function pdfOpenResponse(request) {
+            try {
+              const form = await request.formData();
+              const dataUrl = String(form.get('pdf') || '');
+              let name = String(form.get('name') || 'documento.pdf')
+                .replace(/[\\/:*?"<>|\r\n]+/g,'_')
+                .trim();
+              if (!name.toLowerCase().endsWith('.pdf')) name += '.pdf';
+              if (!dataUrl.startsWith('data:application/pdf;base64,')) {
+                return new Response('PDF inválido', {status:400});
+              }
+              const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+              if (!b64 || b64.length > 22000000) {
+                return new Response('PDF vazio ou grande demais', {status:413});
+              }
+              const binary = atob(b64);
+              const bytes = new Uint8Array(binary.length);
+              for (let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+              return new Response(bytes, {
+                status:200,
+                headers:{
+                  'Content-Type':'application/pdf',
+                  'Content-Disposition':`inline; filename="${name.replace(/"/g,'')}"`,
+                  'Cache-Control':'no-store, no-cache, must-revalidate, max-age=0',
+                  'X-Content-Type-Options':'nosniff'
+                }
+              });
+            } catch (e) {
+              return new Response('Não foi possível abrir o PDF', {status:400});
+            }
+          }
+          '''
           if 'async function pdfOpenResponse(request)' not in s:
               s=s.replace('\nexport default {', '\n'+helper+'\nexport default {')
 
           route=r'''
-    if (url.pathname === '/api/pdf-open' || url.pathname === '/api/pdf-open/') {
-      if (request.method !== 'POST') {
-        return new Response('Method Not Allowed', {status:405, headers:{'Allow':'POST'}});
-      }
-      return pdfOpenResponse(request);
-    }
-'''
+              if (url.pathname === '/api/pdf-open' || url.pathname === '/api/pdf-open/') {
+                if (request.method !== 'POST') {
+                  return new Response('Method Not Allowed', {status:405, headers:{'Allow':'POST'}});
+                }
+                return pdfOpenResponse(request);
+              }
+          '''
           if "url.pathname === '/api/pdf-open'" not in s:
               marker='    const url = new URL(request.url);\n'
               s=s.replace(marker, marker+route, 1)
@@ -83,58 +83,59 @@ async function pdfOpenResponse(request) {
           p=Path('v103-pdf-open.js')
           s=p.read_text(encoding='utf-8')
           new_mobile=r'''  function openPdfDirect(doc){
-    var target='gadoPdf_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-    var popup=null;
-    try{popup=window.open('about:blank',target);}catch(e){}
-    try{
-      if(popup){
-        popup.document.open();
-        popup.document.write('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Abrindo PDF...</title><body style="font-family:system-ui;padding:24px">Abrindo PDF...</body>');
-        popup.document.close();
-      }
-    }catch(e){}
-    var form=document.createElement('form');
-    form.method='POST';
-    form.action='/api/pdf-open';
-    form.target=popup?target:'_self';
-    form.enctype='multipart/form-data';
-    form.style.display='none';
-    var d=document.createElement('input');d.type='hidden';d.name='pdf';d.value=doc.data;
-    var n=document.createElement('input');n.type='hidden';n.name='name';n.value=safeName(doc.name);
-    form.appendChild(d);form.appendChild(n);document.body.appendChild(form);
-    form.submit();
-    setTimeout(function(){try{form.remove();}catch(e){}},1000);
-  }'''
-          s,n=re.subn(r'  function openPdfDirect\(doc\)\{.*?\n  \}',new_mobile,s,count=1,flags=re.S)
-          if n!=1:
-              raise SystemExit('openPdfDirect não encontrada em v103-pdf-open.js')
-          p.write_text(s,encoding='utf-8')
-
-          # 3) Só quebra o cache do script; a versão visual continua v112.
-          for name in ('index.html','app-v68.html'):
-              p=Path(name)
-              if not p.exists(): continue
-              s=p.read_text(encoding='utf-8')
-              s=re.sub(r'/v103-pdf-open\.js\?v=[^"\']+', '/v103-pdf-open.js?v=112pdf2', s)
-              p.write_text(s,encoding='utf-8')
-          PY
-
-      - name: Validar sintaxe básica
-        shell: bash
-        run: |
-          node --check _worker.js
-          node --check v103-pdf-open.js
-          grep -q "v112" index.html
-          grep -q "/api/pdf-open" _worker.js
-          grep -q "multipart/form-data" v103-pdf-open.js
-
-      - name: Commit
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add _worker.js v103-pdf-open.js index.html app-v68.html
-          if ! git diff --cached --quiet; then
-            git commit -m 'v112: abrir PDF móvel por rota Cloudflare inline'
-            git push origin main
-          fi
+              var target='gadoPdf_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+              var popup=null;
+              try{popup=window.open('about:blank',target);}catch(e){}
+              try{
+                if(popup){
+                  popup.document.open();
+                  popup.document.write('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Abrindo PDF...</title><body style="font-family:system-ui;padding:24px">Abrindo PDF...</body>');
+                  popup.document.close();
+                }
+              }catch(e){}
+              var form=document.createElement('form');
+              form.method='POST';
+              form.action='/api/pdf-open';
+              form.target=popup?target:'_self';
+              form.enctype='multipart/form-data';
+              form.style.display='none';
+              var d=document.createElement('input');d.type='hidden';d.name='pdf';d.value=doc.data;
+              var n=document.createElement('input');n.type='hidden';n.name='name';n.value=safeName(doc.name);
+              form.appendChild(d);form.appendChild(n);document.body.appendChild(form);
+              form.submit();
+              setTimeout(function(){try{form.remove();}catch(e){}},1000);
+            }'''
+                    s,n=re.subn(r'  function openPdfDirect\(doc\)\{.*?\n  \}',new_mobile,s,count=1,flags=re.S)
+                    if n!=1:
+                        raise SystemExit('openPdfDirect não encontrada em v103-pdf-open.js')
+                    p.write_text(s,encoding='utf-8')
+          
+                    # 3) Só quebra o cache do script; a versão visual continua v112.
+                    for name in ('index.html','app-v68.html'):
+                        p=Path(name)
+                        if not p.exists(): continue
+                        s=p.read_text(encoding='utf-8')
+                        s=re.sub(r'/v103-pdf-open\.js\?v=[^"\']+', '/v103-pdf-open.js?v=112pdf2', s)
+                        p.write_text(s,encoding='utf-8')
+                    PY
+          
+                - name: Validar sintaxe básica
+                  shell: bash
+                  run: |
+                    node --check _worker.js
+                    node --check v103-pdf-open.js
+                    grep -q "v112" index.html
+                    grep -q "/api/pdf-open" _worker.js
+                    grep -q "multipart/form-data" v103-pdf-open.js
+          
+                - name: Commit
+                  shell: bash
+                  run: |
+                    git config user.name 'github-actions[bot]'
+                    git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+                    git add _worker.js v103-pdf-open.js index.html app-v68.html
+                    if ! git diff --cached --quiet; then
+                      git commit -m 'v112: abrir PDF móvel por rota Cloudflare inline'
+                      git push origin main
+                    fi
+          
