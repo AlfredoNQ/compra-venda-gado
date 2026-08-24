@@ -135,7 +135,7 @@ public class MainActivity extends Activity {
         });
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
-        // Always use the bundled site so the APK contains the same sync fix
+        // Local v112 route: /?app=v112. Always use the bundled site so the APK contains the same sync fix
         // as the release being tested; cloud requests still go directly to Supabase.
         else web.loadUrl("file:///android_asset/site/index.html?app=v112");
     }
