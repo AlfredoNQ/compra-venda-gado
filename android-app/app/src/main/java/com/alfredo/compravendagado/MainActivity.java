@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/103");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/104");
 
         web.addJavascriptInterface(new PdfBridge(), "AndroidPdf");
 
@@ -72,11 +72,10 @@ public class MainActivity extends Activity {
                 view.evaluateJavascript(
                     "(function(){try{"+
                     "var h=document.querySelector('header h1')||document.querySelector('h1');"+
-                    "if(h){var b=document.getElementById('androidAppVersionBadge');"+
-                    "if(!b){b=document.createElement('span');b.id='androidAppVersionBadge';h.appendChild(b);}"+
-                    "b.textContent='APP v103';"+
-                    "b.style.cssText='display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);color:inherit;font-size:10px;font-weight:900;vertical-align:middle;white-space:nowrap';}"+
-                    "}catch(e){}})();", null
+                    "if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){var t=(spans[i].textContent||'').trim();if(/^v\\d+$/i.test(t)){spans[i].textContent='v104';break;}}"+
+                    "var b=document.getElementById('androidAppVersionBadge');if(!b){b=document.createElement('span');b.id='androidAppVersionBadge';h.appendChild(b);}b.textContent='APP v104';b.style.cssText='display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);color:inherit;font-size:10px;font-weight:900;vertical-align:middle;white-space:nowrap';}"+
+                    "window.openStoredPdfV85=function(id){try{var d=(window.__pdfDocsV85||{})[id];if(!d||!d.data){alert('Documento não encontrado');return;}if(window.AndroidPdf&&typeof window.AndroidPdf.openPdf==='function'){window.AndroidPdf.openPdf(d.data,d.name||'documento.pdf');return;}alert('Ponte PDF do aplicativo indisponível');}catch(e){alert('Erro ao abrir PDF: '+e.message);}};"+
+                    "}catch(e){console.log('v104 inject',e);}})();", null
                 );
             }
 
@@ -130,7 +129,7 @@ public class MainActivity extends Activity {
         if (savedInstanceState != null) {
             web.restoreState(savedInstanceState);
         } else {
-            web.loadUrl(HOME + "/?app=v103");
+            web.loadUrl(HOME + "/?app=v104");
         }
     }
 
