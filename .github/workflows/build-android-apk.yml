@@ -164,10 +164,10 @@ jobs:
           test -x "$APKSIGNER"
           test -x "$APKANALYZER"
           "$APKSIGNER" verify --verbose --print-certs "$APK"
-          test "$("$APKANALYZER" manifest application-id "$APK")" = "com.alfredo.compravendagado"
+          test "$("$APKANALYZER" manifest application-id "$APK")" = "com.alfredo.compravendagado.offline"
           test "$("$APKANALYZER" manifest version-code "$APK")" = "112"
           test "$("$APKANALYZER" manifest version-name "$APK")" = "112.0"
-          echo "APK assinado e confirmado como com.alfredo.compravendagado v112.0 (112)"
+          echo "APK assinado e confirmado como com.alfredo.compravendagado.offline v112.0 (112)"
 
       - name: Salvar APK
         uses: actions/upload-artifact@v4
