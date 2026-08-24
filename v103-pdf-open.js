@@ -1,4 +1,4 @@
-/* Compra e Venda de Gado — v106 PDF open/delete */
+/* Compra e Venda de Gado — v109 PDF + restauração segura */
 (function(){
   function dataUrlToBlob(dataUrl){
     var parts=String(dataUrl||'').split(',');
@@ -30,10 +30,9 @@
       alert('Não foi possível abrir o PDF: '+(e&&e.message?e.message:e));
     }
   };
+
   var cfg={gta:{input:'rgtaFile',status:'rgtaFileStatus',field:'gtaPdf',label:'GTA'},nota:{input:'rnotaFile',status:'rnotaFileStatus',field:'notaPdf',label:'Nota'},pay:{input:'rpayFile',status:'rpayFileStatus',field:'paymentPdf',label:'Comprovante'}};
-  function currentRecord(){
-    try{var id=(document.getElementById('rid')||{}).value||'';return (typeof records!=='undefined'&&Array.isArray(records))?records.find(function(x){return x.id===id;}):null;}catch(e){return null;}
-  }
+  function currentRecord(){try{var id=(document.getElementById('rid')||{}).value||'';return (typeof records!=='undefined'&&Array.isArray(records))?records.find(function(x){return x.id===id;}):null;}catch(e){return null;}}
   function registerDoc(doc){if(!doc||!doc.data)return null;window.__pdfDocsV85=window.__pdfDocsV85||{};var id='pdf-'+Math.random().toString(36).slice(2)+Date.now().toString(36);window.__pdfDocsV85[id]=doc;return id;}
   function htmlEsc(s){return String(s||'').replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
   function renderOne(key,doc){
@@ -50,6 +49,60 @@
   var oldEdit=window.editRecord;if(typeof oldEdit==='function')window.editRecord=function(id){var r=oldEdit(id);setTimeout(renderCurrentDocs,0);return r;};
   var oldNew=window.newRecord;if(typeof oldNew==='function')window.newRecord=function(){var r=oldNew();setTimeout(function(){Object.keys(cfg).forEach(function(k){renderOne(k,null);});},0);return r;};
   Object.keys(cfg).forEach(function(k){var inp=document.getElementById(cfg[k].input);if(!inp)return;inp.addEventListener('change',function(){inp.dataset.deletePdf='0';var f=inp.files&&inp.files[0],st=document.getElementById(cfg[k].status);if(f&&st)st.innerHTML='<div class="hint" style="margin-top:6px">Novo arquivo: <b>'+htmlEsc(f.name)+'</b> — será salvo ao confirmar a negociação.</div>';});});
-  try{var h=document.querySelector('header h1')||document.querySelector('h1');if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\d+$/i.test((spans[i].textContent||'').trim())){spans[i].textContent='v106';break;}}}}catch(e){}
-  window.APP_WEB_VERSION='106';
+
+  function itemKey(x){
+    if(x&&x.id!=null)return 'id:'+String(x.id);
+    try{return 'sig:'+JSON.stringify(x);}catch(e){return 'sig:'+String(x);}
+  }
+  function ts(x){var t=Date.parse(x&&x.updatedAt||'');return isNaN(t)?0:t;}
+  function mergeSafe(current,incoming){
+    var map=new Map(),order=[];
+    (Array.isArray(current)?current:[]).forEach(function(x){var k=itemKey(x);if(!map.has(k))order.push(k);map.set(k,x);});
+    (Array.isArray(incoming)?incoming:[]).forEach(function(x){var k=itemKey(x);if(!map.has(k)){order.push(k);map.set(k,x);return;}var old=map.get(k);var a=ts(old),b=ts(x);if(b>a)map.set(k,x);});
+    return order.map(function(k){return map.get(k);});
+  }
+  function safetyBackup(){
+    try{
+      if(typeof download!=='function')return false;
+      var now=new Date().toISOString().replace(/[:.]/g,'-');
+      download('backup_antes_restaurar_'+now+'.json',JSON.stringify({records:records,costs:costs},null,2),'application/json');
+      return true;
+    }catch(e){return false;}
+  }
+  function installSafeRestore(){
+    var inp=document.getElementById('restore');if(!inp||inp.dataset.safeRestoreV109==='1')return;
+    inp.dataset.safeRestoreV109='1';
+    inp.addEventListener('change',function(e){
+      e.stopImmediatePropagation();
+      var f=inp.files&&inp.files[0];if(!f)return;
+      var rd=new FileReader();
+      rd.onload=function(){
+        try{
+          var x=JSON.parse(rd.result),incRecords,incCosts;
+          if(Array.isArray(x)){incRecords=x;incCosts=[];}else{incRecords=x&&x.records;incCosts=x&&x.costs;}
+          if(!Array.isArray(incRecords))throw new Error('Arquivo não contém uma lista válida de negociações.');
+          if(incCosts!=null&&!Array.isArray(incCosts))throw new Error('Lista de custos inválida.');
+          incCosts=Array.isArray(incCosts)?incCosts:[];
+          safetyBackup();
+          var mode=prompt('RESTAURAÇÃO SEGURA\n\nDigite MESCLAR para recuperar o backup sem apagar dados mais novos.\nDigite SUBSTITUIR para trocar toda a base atual pelo arquivo.\n\nRecomendado: MESCLAR','MESCLAR');
+          if(!mode){inp.value='';return;}
+          mode=String(mode).trim().toUpperCase();
+          if(mode==='MESCLAR'){
+            records=mergeSafe(records,incRecords);costs=mergeSafe(costs,incCosts);
+          }else if(mode==='SUBSTITUIR'){
+            if(!confirm('ATENÇÃO: SUBSTITUIR remove da base atual tudo que não estiver neste backup. Confirma?')){inp.value='';return;}
+            records=incRecords;costs=incCosts;
+          }else{alert('Opção inválida. Nada foi alterado.');inp.value='';return;}
+          persist();renderAll();
+          alert(mode==='MESCLAR'?'Backup mesclado com segurança. Os dados mais novos foram preservados.':'Backup substituído. Um backup preventivo foi gerado antes da restauração.');
+        }catch(err){alert('Backup inválido: '+(err&&err.message?err.message:err));}
+        inp.value='';
+      };
+      rd.onerror=function(){alert('Não foi possível ler o arquivo de backup.');inp.value='';};
+      rd.readAsText(f);
+    },true);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSafeRestore);else installSafeRestore();
+
+  window.APP_WEB_VERSION='109';
 })();
