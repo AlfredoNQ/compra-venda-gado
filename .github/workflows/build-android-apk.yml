@@ -74,7 +74,7 @@ jobs:
         run: |
           from pathlib import Path
           s=Path('android-app/app/src/main/java/com/alfredo/compravendagado/MainActivity.java').read_text(encoding='utf-8')
-          if 'CompraVendaGadoApp/109' not in s:
+          if 'CompraVendaGadoApp/112' not in s:
               raise SystemExit('MainActivity nao esta em v112')
           if 'saveText' not in s or 'AndroidDownloads' not in s:
               raise SystemExit('Ponte direta de backup Android ausente')
