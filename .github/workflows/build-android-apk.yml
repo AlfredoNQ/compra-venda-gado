@@ -153,6 +153,22 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: gradle clean assembleRelease
 
+      - name: Verificar assinatura e versão do APK
+        shell: bash
+        run: |
+          set -e
+          APK="android-app/app/build/outputs/apk/release/app-release.apk"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          test -s "$APK"
+          test -x "$APKSIGNER"
+          test -x "$AAPT"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          grep -F "package: name='com.alfredo.compravendagado'" <<<"$BADGING"
+          grep -F "versionCode='112'" <<<"$BADGING"
+          grep -F "versionName='112.0'" <<<"$BADGING"
+
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
