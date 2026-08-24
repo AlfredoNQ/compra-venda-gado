@@ -306,12 +306,6 @@ async function cotacoesHistoricoMesResponse(request) {
   try {
     const url = new URL(request.url);
 
-    if (url.pathname === '/api/pdf-open' || url.pathname === '/api/pdf-open/') {
-      if (request.method !== 'POST') {
-        return new Response('Method Not Allowed', {status:405, headers:{'Allow':'POST'}});
-      }
-      return pdfOpenResponse(request);
-    }
     const year = Number(url.searchParams.get('year') || new Date().getFullYear());
     const month = Number(url.searchParams.get('month') || (new Date().getMonth()+1));
     const uf = String(url.searchParams.get('uf') || 'PA').toUpperCase();
