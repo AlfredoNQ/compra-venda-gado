@@ -1,70 +1,10 @@
-name: Apply v103 PDF Stable
+name: Legacy v103 Disabled
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "v85-fixes.js"
-      - "v103-pdf-open.js"
-      - "sw.js"
-      - "manifest.webmanifest"
-      - ".github/workflows/apply-v85.yml"
-
-permissions:
-  contents: write
 
 jobs:
-  apply:
+  info:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Manter reconexao e corrigir abertura de PDF
-        shell: python
-        run: |
-          from pathlib import Path
-          import re
-
-          for name in ['index.html','app-v68.html']:
-              p=Path(name)
-              if not p.exists():
-                  continue
-              s=p.read_text(encoding='utf-8')
-
-              s=re.sub(
-                  r"\n\s*if\(navigator\.onLine\)\{\s*bootLoginApproved=false;\s*setAuthenticatedUI\(false\);\s*setCloudStatus\('Acesso protegido • entre novamente','warn'\);.*?\n\s*\}else\{\s*await onCloudSession\(session\);\s*\}",
-                  "\n  if(session && session.user){ bootLoginApproved=true; }\n  await onCloudSession(session);",
-                  s,
-                  flags=re.S
-              )
-              s=re.sub(
-                  r"\n\s*if\(navigator\.onLine && !bootLoginApproved\)\{\s*cloudUser=session\?\.user\|\|null;\s*setAuthenticatedUI\(false\);\s*setCloudStatus\('Acesso protegido • entre novamente','warn'\);\s*return;\s*\}",
-                  "\n    if(session && session.user){ bootLoginApproved=true; cloudUser=session.user; }",
-                  s,
-                  flags=re.S
-              )
-
-              old_online = """  window.addEventListener('online',function(){\n    try{\n      if(typeof initCloud==='function') setTimeout(initCloud,300);\n    }catch(e){}\n  });"""
-              new_online = """  window.addEventListener('online',function(){\n    try{\n      setCloudStatus('Reconectando…','warn');\n      if(sb && sb.auth){\n        setTimeout(async function(){\n          try{\n            var result=await sb.auth.getSession();\n            var session=result&&result.data&&result.data.session;\n            if(session&&session.user){\n              cloudUser=session.user;\n              bootLoginApproved=true;\n              rememberAuthenticatedUser(session.user);\n              setAuthenticatedUI(true);\n              await cloudLoad();\n              return;\n            }\n            var refreshed=await sb.auth.refreshSession();\n            session=refreshed&&refreshed.data&&refreshed.data.session;\n            if(session&&session.user){\n              cloudUser=session.user;\n              bootLoginApproved=true;\n              rememberAuthenticatedUser(session.user);\n              setAuthenticatedUI(true);\n              await cloudLoad();\n            }\n          }catch(e){\n            console.warn('v103 web reconnect',e);\n          }\n        },300);\n      }\n    }catch(e){}\n  });"""
-              s=s.replace(old_online,new_online)
-
-              s=re.sub(r'\s*<script src="/v98-reconnect-login\.js\?v=\d+"></script>\s*', '\n', s)
-              s=re.sub(r'\s*<script src="/v101-apk-session-guard\.js\?v=\d+"></script>\s*', '\n', s)
-              s=re.sub(r'\s*<script src="/v85-fixes\.js\?v=\d+"></script>\s*', '\n', s)
-              s=re.sub(r'\s*<script src="/v103-pdf-open\.js\?v=\d+"></script>\s*', '\n', s)
-              s=re.sub(r'\s*<script id="force-web-version-v\d+">.*?</script>\s*', '\n', s, flags=re.S)
-              s=s.replace("setInterval(()=>{if(navigator.onLine)sync(false)},8000);", "/* v103: polling legado desativado */")
-              s=re.sub(r'<title>Compra e Venda de Gado — v\d+</title>','<title>Compra e Venda de Gado — v103</title>',s)
-              s=re.sub(r'(<h1>Compra e Venda de Gado <span[^>]*>)v\d+(</span></h1>)',r'\1v103\2',s)
-              s=re.sub(r'manifest\.webmanifest\?v=\d+','manifest.webmanifest?v=103',s)
-              s=re.sub(r"navigator\.serviceWorker\.register\('/sw\.js\?v=\d+'","navigator.serviceWorker.register('/sw.js?v=103'",s)
-              s=s.replace('</body>','<script src="/v85-fixes.js?v=103"></script>\n<script src="/v103-pdf-open.js?v=103"></script>\n<script id="force-web-version-v103">(function(){function f(){try{document.title=\'Compra e Venda de Gado — v103\';var h=document.querySelector(\'header h1\');if(!h)return;h.querySelectorAll(\'span\').forEach(function(x){if(/^v\\d+$/i.test((x.textContent||\'\').trim()))x.textContent=\'v103\';});}catch(e){}}f();setTimeout(f,400);setTimeout(f,1200);})();</script>\n</body>')
-              p.write_text(s,encoding='utf-8')
-
-      - name: Commit
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html app-v68.html
-          git diff --cached --quiet || git commit -m "Web v103: corrigir abertura de PDFs"
-          git push
+      - run: echo "Workflow legado v103 desativado; versão Web é controlada pela rotina estável atual."
