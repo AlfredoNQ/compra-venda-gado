@@ -31,7 +31,7 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Preparar site offline v103
+      - name: Preparar site offline v104
         shell: bash
         run: |
           set -e
@@ -55,7 +55,7 @@ jobs:
               s,_=re.subn(r'function fileLink\(doc,label\)\{.*?\n\}', replacement, s, count=1, flags=re.S)
               s=re.sub(r'\s*<script src="/v101-apk-session-guard\.js\?v=\d+"></script>\s*','\n',s)
               s=re.sub(r'\s*<script src="/v103-pdf-open\.js\?v=\d+"></script>\s*','\n',s)
-              s=s.replace('</body>','<script src="/v101-apk-session-guard.js?v=103"></script>\n<script src="/v103-pdf-open.js?v=103"></script>\n</body>')
+              s=s.replace('</body>','<script src="/v101-apk-session-guard.js?v=104"></script>\n<script src="/v103-pdf-open.js?v=104"></script>\n</body>')
               p.write_text(s,encoding='utf-8')
           PY
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o android-app/app/src/main/assets/site/supabase.js
@@ -83,6 +83,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Compra-Venda-Gado-v103
+          name: Compra-Venda-Gado-v104
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
