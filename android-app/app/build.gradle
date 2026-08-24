@@ -17,8 +17,8 @@ android {
         applicationId 'com.alfredo.compravendagado.offline'
         minSdk 24
         targetSdk 35
-        versionCode 96
-        versionName '96.0'
+        versionCode 98
+        versionName '98.0'
     }
 
     buildTypes {
