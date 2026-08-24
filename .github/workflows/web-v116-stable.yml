@@ -1,0 +1,69 @@
+name: Web v116 Stable
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/web-v116-stable.yml"
+      - "v116-pdf-mobile.js"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Limpar versões antigas e ativar v116
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          for name in ('index.html','app-v68.html'):
+              p=Path(name)
+              if not p.exists():
+                  continue
+              s=p.read_text(encoding='utf-8')
+
+              # Remove abridores/forçadores antigos
+              s=re.sub(r'\s*<script src="/v103-pdf-open\.js\?v=\d+"></script>\s*','\n',s)
+              s=re.sub(r'\s*<script src="/v113-pdf-mobile\.js\?v=\d+"></script>\s*','\n',s)
+              s=re.sub(r'\s*<script src="/v116-pdf-mobile\.js\?v=\d+"></script>\s*','\n',s)
+              s=re.sub(r'\s*<script id="force-web-version-v\d+">.*?</script>\s*','\n',s,flags=re.S)
+
+              # Uma única versão visível
+              s=re.sub(r'<title>Compra e Venda de Gado — v\d+</title>','<title>Compra e Venda de Gado — v116</title>',s)
+              s=re.sub(r'(<h1>Compra e Venda de Gado <span[^>]*>)v\d+(</span></h1>)',r'\1v116\2',s)
+              s=re.sub(r'manifest\.webmanifest\?v=\d+','manifest.webmanifest?v=116',s)
+              s=re.sub(r"navigator\.serviceWorker\.register\('/sw\.js\?v=\d+'","navigator.serviceWorker.register('/sw.js?v=116'",s)
+
+              # Leitor único por último, para não ser sobrescrito
+              s=s.replace('</body>','<script src="/v116-pdf-mobile.js?v=116"></script>\n</body>')
+              p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Atualizar service worker v116
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('sw.js')
+          if p.exists():
+              s=p.read_text(encoding='utf-8')
+              import re
+              s=re.sub(r"const CACHE='[^']+';","const CACHE='gado-app-v116-stable';",s)
+              s=re.sub(r"const APP_SHELL=\[[^\]]*\];","const APP_SHELL=['/index.html?v=116','/app-v68.html?v=116','/manifest.webmanifest?v=116','/v85-fixes.js?v=116','/v116-pdf-mobile.js?v=116','/icon.svg'];",s)
+              p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Commit estável
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html app-v68.html sw.js
+          git diff --cached --quiet || git commit -m "Web v116: versão única e PDF móvel estável"
+          git push
