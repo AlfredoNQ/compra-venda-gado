@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/102");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/103");
 
         web.addJavascriptInterface(new PdfBridge(), "AndroidPdf");
 
@@ -74,7 +74,7 @@ public class MainActivity extends Activity {
                     "var h=document.querySelector('header h1')||document.querySelector('h1');"+
                     "if(h){var b=document.getElementById('androidAppVersionBadge');"+
                     "if(!b){b=document.createElement('span');b.id='androidAppVersionBadge';h.appendChild(b);}"+
-                    "b.textContent='APP v102';"+
+                    "b.textContent='APP v103';"+
                     "b.style.cssText='display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);color:inherit;font-size:10px;font-weight:900;vertical-align:middle;white-space:nowrap';}"+
                     "}catch(e){}})();", null
                 );
@@ -130,7 +130,7 @@ public class MainActivity extends Activity {
         if (savedInstanceState != null) {
             web.restoreState(savedInstanceState);
         } else {
-            web.loadUrl(HOME + "/?app=v102");
+            web.loadUrl(HOME + "/?app=v103");
         }
     }
 
