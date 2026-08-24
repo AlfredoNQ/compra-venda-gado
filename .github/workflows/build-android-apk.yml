@@ -131,6 +131,8 @@ jobs:
               raise SystemExit('MainActivity nao esta em v112')
           if 'saveText' not in s or 'AndroidDownloads' not in s:
               raise SystemExit('Ponte direta de backup Android ausente')
+          if 'AndroidCloud' not in s or 'CLOUD_HOST' not in s:
+              raise SystemExit('Ponte nativa do Supabase ausente')
           if '/?app=v112' not in s:
               raise SystemExit('URL interna nao esta em v112')
 

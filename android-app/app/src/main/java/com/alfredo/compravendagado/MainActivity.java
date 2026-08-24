@@ -29,11 +29,19 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import javax.net.ssl.HttpsURLConnection;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private static final String HOME = "https://compra-venda-gado.vercel.app";
     private static final String HOME_HOST = "compra-venda-gado.vercel.app";
+    private static final String CLOUD_HOST = "bvqttwnxszsduhwiblmv.supabase.co";
     private static final int FILE_CHOOSER = 1001;
     private static final int PERMISSIONS = 1002;
     private WebView web;
@@ -57,6 +65,7 @@ public class MainActivity extends Activity {
 
         web.addJavascriptInterface(new PdfBridge(), "AndroidPdf");
         web.addJavascriptInterface(new DownloadBridge(), "AndroidDownloads");
+        web.addJavascriptInterface(new CloudBridge(), "AndroidCloud");
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
@@ -180,6 +189,85 @@ public class MainActivity extends Activity {
                     catch(Exception noViewer){ Toast.makeText(MainActivity.this,"PDF salvo em Downloads/CompraVendaGado",Toast.LENGTH_LONG).show(); }
                 }catch(Exception e){ Toast.makeText(MainActivity.this,"Erro ao abrir PDF: "+e.getMessage(),Toast.LENGTH_LONG).show(); }
             });
+        }
+    }
+
+    public class CloudBridge {
+        @JavascriptInterface public void request(String id,String url,String method,String headersJson,String body) {
+            new Thread(() -> {
+                JSONObject result=new JSONObject();
+                HttpsURLConnection connection=null;
+                try {
+                    URL target=new URL(url);
+                    if(!"https".equalsIgnoreCase(target.getProtocol())||!CLOUD_HOST.equalsIgnoreCase(target.getHost())) {
+                        throw new Exception("destino da nuvem não autorizado");
+                    }
+
+                    String verb=method==null?"GET":method.toUpperCase();
+                    if(!verb.matches("GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD")) throw new Exception("método não autorizado");
+
+                    connection=(HttpsURLConnection)target.openConnection();
+                    connection.setInstanceFollowRedirects(true);
+                    connection.setConnectTimeout(30000);
+                    connection.setReadTimeout(60000);
+                    connection.setRequestMethod(verb);
+                    connection.setRequestProperty("Accept-Encoding","identity");
+                    connection.setRequestProperty("User-Agent",web.getSettings().getUserAgentString());
+
+                    JSONObject headers=new JSONObject(headersJson==null?"{}":headersJson);
+                    Iterator<String> keys=headers.keys();
+                    while(keys.hasNext()) {
+                        String name=keys.next();
+                        if(name==null)continue;
+                        String lower=name.toLowerCase();
+                        if(lower.equals("host")||lower.equals("connection")||lower.equals("content-length")||lower.equals("accept-encoding")||lower.equals("user-agent"))continue;
+                        connection.setRequestProperty(name,headers.optString(name,""));
+                    }
+
+                    if(body!=null&&!body.isEmpty()&&!verb.equals("GET")&&!verb.equals("HEAD")) {
+                        connection.setDoOutput(true);
+                        byte[] bytes=body.getBytes(StandardCharsets.UTF_8);
+                        connection.setFixedLengthStreamingMode(bytes.length);
+                        try(OutputStream out=connection.getOutputStream()) { out.write(bytes); out.flush(); }
+                    }
+
+                    int status=connection.getResponseCode();
+                    InputStream stream=status>=400?connection.getErrorStream():connection.getInputStream();
+                    String responseBody="";
+                    if(stream!=null) {
+                        try(InputStream in=stream; ByteArrayOutputStream out=new ByteArrayOutputStream()) {
+                            byte[] buffer=new byte[8192]; int read;
+                            while((read=in.read(buffer))!=-1)out.write(buffer,0,read);
+                            responseBody=new String(out.toByteArray(),StandardCharsets.UTF_8);
+                        }
+                    }
+
+                    JSONObject responseHeaders=new JSONObject();
+                    for(Map.Entry<String,List<String>> entry:connection.getHeaderFields().entrySet()) {
+                        if(entry.getKey()!=null&&entry.getValue()!=null&&!entry.getValue().isEmpty()) {
+                            String lower=entry.getKey().toLowerCase();
+                            if(lower.equals("set-cookie")||lower.equals("set-cookie2")||lower.equals("content-length")||lower.equals("content-encoding")||lower.equals("transfer-encoding")||lower.equals("connection"))continue;
+                            responseHeaders.put(entry.getKey(),entry.getValue().get(0));
+                        }
+                    }
+                    result.put("ok",status>=200&&status<300);
+                    result.put("status",status);
+                    result.put("statusText",connection.getResponseMessage()==null?"":connection.getResponseMessage());
+                    result.put("headers",responseHeaders);
+                    result.put("body",responseBody);
+                } catch(Exception e) {
+                    try {
+                        result.put("ok",false);
+                        result.put("status",0);
+                        result.put("error",e.getMessage()==null?"falha de conexão":e.getMessage());
+                    } catch(Exception ignored) {}
+                } finally {
+                    if(connection!=null)connection.disconnect();
+                }
+
+                final String callback="window.__androidCloudFetchResult("+JSONObject.quote(id==null?"":id)+","+result.toString()+");";
+                runOnUiThread(() -> web.evaluateJavascript(callback,null));
+            },"gado-cloud-request").start();
         }
     }
 

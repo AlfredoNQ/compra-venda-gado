@@ -4,6 +4,84 @@
     var isApp=/CompraVendaGadoApp\//i.test(navigator.userAgent||'');
     if(!isApp)return;
 
+    /* Android WebView can complete a Supabase request but discard its response as
+       "Failed to fetch". Route this project's HTTPS calls through the native
+       connection and expose a normal Fetch Response back to supabase-js. */
+    (function installNativeCloudFetch(){
+      if(!window.AndroidCloud||typeof window.AndroidCloud.request!=='function'||typeof window.fetch!=='function')return;
+      var CLOUD_HOST='bvqttwnxszsduhwiblmv.supabase.co';
+      var originalFetch=window.fetch.bind(window);
+      var pending={};
+      var sequence=0;
+
+      window.__androidCloudFetchResult=function(id,result){
+        var item=pending[id];
+        if(!item)return;
+        delete pending[id];
+        clearTimeout(item.timer);
+        if(!result||Number(result.status)===0){
+          item.reject(new TypeError((result&&result.error)||'Falha na conexão com a nuvem'));
+          return;
+        }
+        try{
+          var status=Number(result.status)||500;
+          var responseBody=(status===204||status===205||status===304)?null:(result.body||'');
+          item.resolve(new Response(responseBody,{
+            status:status,
+            statusText:result.statusText||'',
+            headers:result.headers||{}
+          }));
+        }catch(e){item.reject(e);}
+      };
+
+      function toBody(value){
+        if(value==null)return Promise.resolve('');
+        if(typeof value==='string')return Promise.resolve(value);
+        if(typeof URLSearchParams!=='undefined'&&value instanceof URLSearchParams)return Promise.resolve(value.toString());
+        if(typeof Blob!=='undefined'&&value instanceof Blob&&typeof value.text==='function')return value.text();
+        return Promise.reject(new TypeError('Formato de envio não suportado pela ponte da nuvem'));
+      }
+
+      function nativeFetch(input,init){
+        init=init||{};
+        var request=(typeof Request!=='undefined'&&input instanceof Request)?input:null;
+        var url=request?request.url:String(input);
+        var method=String(init.method||(request&&request.method)||'GET').toUpperCase();
+        var headers=new Headers(request?request.headers:undefined);
+        if(init.headers)new Headers(init.headers).forEach(function(value,key){headers.set(key,value);});
+        var headerObject={};
+        headers.forEach(function(value,key){headerObject[key]=value;});
+        var bodyValue=Object.prototype.hasOwnProperty.call(init,'body')?init.body:null;
+        var bodyPromise;
+        if(bodyValue!=null)bodyPromise=toBody(bodyValue);
+        else if(request&&method!=='GET'&&method!=='HEAD')bodyPromise=request.clone().text();
+        else bodyPromise=Promise.resolve('');
+
+        return bodyPromise.then(function(body){
+          return new Promise(function(resolve,reject){
+            var id='cloud-'+Date.now().toString(36)+'-'+(++sequence).toString(36);
+            var timer=setTimeout(function(){
+              if(!pending[id])return;
+              delete pending[id];
+              reject(new TypeError('Tempo esgotado ao conectar com a nuvem'));
+            },65000);
+            pending[id]={resolve:resolve,reject:reject,timer:timer};
+            try{window.AndroidCloud.request(id,url,method,JSON.stringify(headerObject),body);}
+            catch(e){clearTimeout(timer);delete pending[id];reject(e);}
+          });
+        });
+      }
+
+      window.fetch=function(input,init){
+        var raw=(typeof Request!=='undefined'&&input instanceof Request)?input.url:String(input);
+        try{
+          var target=new URL(raw,window.location.href);
+          if(target.protocol==='https:'&&target.hostname===CLOUD_HOST)return nativeFetch(input,init);
+        }catch(e){}
+        return originalFetch(input,init);
+      };
+    })();
+
     var LAST='gado_last_authenticated_user_v78';
     var LAST_EMAIL='gado_last_auth_email_v112';
     var LEGACY_ACCESS='gado_access_token';
