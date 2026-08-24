@@ -31,7 +31,7 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Preparar site local v106
+      - name: Preparar site local v107
         shell: bash
         run: |
           set -e
@@ -49,41 +49,35 @@ jobs:
           from pathlib import Path
           import re
           replacement = "function fileLink(doc,label){\n if(!doc||!doc.data)return '—';\n window.__pdfDocsV85=window.__pdfDocsV85||{};\n var id='pdf-'+Math.random().toString(36).slice(2)+Date.now().toString(36);\n window.__pdfDocsV85[id]=doc;\n return '<button type=\"button\" class=\"mini\" onclick=\"openStoredPdfV85(&quot;'+id+'&quot;)\">Abrir PDF</button>';\n}"
-          force = "<script id=\"force-app-version-v106\">(function(){function f(){try{document.title='Compra e Venda de Gado — v106';var h=document.querySelector('header h1');if(!h)return;var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\\d+$/i.test((spans[i].textContent||'').trim())){spans[i].textContent='v106';break;}}}catch(e){}}f();setInterval(f,1200);})();</script>"
+          force = "<script id=\"force-app-version-v107\">(function(){function f(){try{document.title='Compra e Venda de Gado — v107';var h=document.querySelector('header h1');if(!h)return;var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\\d+$/i.test((spans[i].textContent||'').trim())){spans[i].textContent='v107';break;}}}catch(e){}}f();setInterval(f,1200);})();</script>"
           for name in ('index.html','app-v68.html'):
               p=Path('android-app/app/src/main/assets/site')/name
               s=p.read_text(encoding='utf-8')
               s,_=re.subn(r'function fileLink\(doc,label\)\{.*?\n\}', replacement, s, count=1, flags=re.S)
-              s=re.sub(r'<title>Compra e Venda de Gado — v\d+</title>','<title>Compra e Venda de Gado — v106</title>',s)
-              s=re.sub(r'(<h1>Compra e Venda de Gado <span[^>]*>)v\d+(</span></h1>)',r'\1v106\2',s)
+              s=re.sub(r'<title>Compra e Venda de Gado — v\d+</title>','<title>Compra e Venda de Gado — v107</title>',s)
+              s=re.sub(r'(<h1>Compra e Venda de Gado <span[^>]*>)v\d+(</span></h1>)',r'\1v107\2',s)
               s=re.sub(r'\s*<script src="/v101-apk-session-guard\.js\?v=\d+"></script>\s*','\n',s)
               s=re.sub(r'\s*<script src="/v103-pdf-open\.js\?v=\d+"></script>\s*','\n',s)
               s=re.sub(r'\s*<script id="force-web-version-v\d+">.*?</script>\s*','\n',s,flags=re.S)
               s=re.sub(r'if\s*\(\s*["\']serviceWorker["\']\s*in\s*navigator\s*\)\s*\{.*?\}','',s,flags=re.S)
-              s=s.replace('</body>','<script src="/v101-apk-session-guard.js?v=106"></script>\n<script src="/v103-pdf-open.js?v=106"></script>\n'+force+'\n</body>')
+              s=s.replace('</body>','<script src="/v101-apk-session-guard.js?v=107"></script>\n<script src="/v103-pdf-open.js?v=107"></script>\n'+force+'\n</body>')
               p.write_text(s,encoding='utf-8')
           PY
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o android-app/app/src/main/assets/site/supabase.js
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/app-boi-512.png" -o android-app/app/src/main/res/drawable/app_boi.png
 
-      - name: Ajustar WebView nativa v106
+      - name: Confirmar WebView nativa v107
         shell: python
         run: |
           from pathlib import Path
           p=Path('android-app/app/src/main/java/com/alfredo/compravendagado/MainActivity.java')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('CompraVendaGadoApp/104','CompraVendaGadoApp/106')
-          s=s.replace("b.textContent='APP v104'","b.textContent='APP v106'")
-          s=s.replace("spans[i].textContent='v104'","spans[i].textContent='v106'")
-          s=s.replace('/?app=v104','/?app=v106')
-          s=s.replace('return isOnline() ? super.shouldInterceptRequest(view, request) : offlineResponse(request.getUrl());', 'WebResourceResponse local=offlineResponse(request.getUrl()); if(local!=null)return local; return super.shouldInterceptRequest(view, request);')
-          s=s.replace('return isOnline() ? super.shouldInterceptRequest(view, url) : offlineResponse(Uri.parse(url));', 'WebResourceResponse local=offlineResponse(Uri.parse(url)); if(local!=null)return local; return super.shouldInterceptRequest(view, url);')
-          s=s.replace('runOnUiThread(() -> {\n                try {', 'runOnUiThread(() -> {\n                Toast.makeText(MainActivity.this,"PDF recebido • abrindo...",Toast.LENGTH_SHORT).show();\n                try {', 1)
-          s=s.replace('try {\n                        startActivity(intent);\n                    } catch(Exception noViewer) {\n                        Toast.makeText(MainActivity.this,"PDF salvo em Downloads/CompraVendaGado",Toast.LENGTH_LONG).show();\n                    }', 'try {\n                        startActivity(Intent.createChooser(intent,"Abrir PDF com"));\n                    } catch(Exception noViewer) {\n                        Toast.makeText(MainActivity.this,"PDF salvo em Downloads/CompraVendaGado",Toast.LENGTH_LONG).show();\n                    }')
-          marker='                );\n            }\n\n            @Override public WebResourceResponse shouldInterceptRequest'
-          inject='                );\n                view.evaluateJavascript("(function(){try{if(!sessionStorage.getItem(\'apk106fresh\')){sessionStorage.setItem(\'apk106fresh\',\'1\');var jobs=[];if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));}));if(window.caches&&caches.keys)jobs.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k);}));}));Promise.all(jobs).finally(function(){location.replace(location.origin+\'/?app=v106&local=1\');});}}catch(e){}})();", null);\n            }\n\n            @Override public WebResourceResponse shouldInterceptRequest'
-          s=s.replace(marker,inject,1)
-          p.write_text(s,encoding='utf-8')
+          if 'CompraVendaGadoApp/107' not in s:
+              raise SystemExit('MainActivity nao esta em v107')
+          if 'AndroidDownloads' not in s:
+              raise SystemExit('Ponte de backup Android ausente')
+          if '/?app=v107' not in s:
+              raise SystemExit('URL interna nao esta em v107')
 
       - name: Criar arquivo de assinatura
         shell: bash
@@ -107,6 +101,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Compra-Venda-Gado-v106
+          name: Compra-Venda-Gado-v107
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
