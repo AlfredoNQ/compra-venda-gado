@@ -1,6 +1,7 @@
 name: Build Android APK
 # sync-confirmation-small-response
 # rebuild-single-sync-indicator
+# build-confirmed-web-sync
 
 on:
   workflow_dispatch:
@@ -180,3 +181,4 @@ jobs:
           name: Compra-Venda-Gado-v112
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+
