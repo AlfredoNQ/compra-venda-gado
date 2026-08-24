@@ -230,7 +230,7 @@ tbody tr:hover{background:#f7fbf8!important}
 <meta name="theme-color" content="#17633f">
 
 
-<link rel="manifest" href="./manifest.webmanifest?v=23">
+<link rel="manifest" href="./manifest.webmanifest?v=101">
 <link rel="icon" type="image/png" href="./favicon.png?v=23">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=23">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png?v=23">
@@ -1555,19 +1555,8 @@ async function initCloud(){
   // v81: a sessão persistida não libera a tela automaticamente.
   cloudUser=session?.user||null;
   if(cloudUser) rememberAuthenticatedUser(cloudUser);
-
-  if(navigator.onLine){
-    bootLoginApproved=false;
-    setAuthenticatedUI(false);
-    setCloudStatus('Acesso protegido • entre novamente','warn');
-    if($('loginBtn')){
-      $('loginBtn').style.display='';
-      $('loginBtn').textContent='Entrar';
-    }
-    if($('logoutBtn')) $('logoutBtn').style.display='none';
-  }else{
-    await onCloudSession(session);
-  }
+  if(session && session.user){ bootLoginApproved=true; }
+  await onCloudSession(session);
 
   sb.auth.onAuthStateChange(async (event,session)=>{
     if(event==='PASSWORD_RECOVERY'){
@@ -1575,13 +1564,7 @@ async function initCloud(){
       openModal('resetPasswordModal');
       return;
     }
-
-    if(navigator.onLine && !bootLoginApproved){
-      cloudUser=session?.user||null;
-      setAuthenticatedUI(false);
-      setCloudStatus('Acesso protegido • entre novamente','warn');
-      return;
-    }
+    if(session && session.user){ bootLoginApproved=true; cloudUser=session.user; }
 
     await onCloudSession(session);
   });
@@ -3227,7 +3210,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
 })();
 </script>
-
-<script src="/v85-fixes.js?v=96"></script>
+<script src="/v85-fixes.js?v=101"></script>
 </body>
 </html>
