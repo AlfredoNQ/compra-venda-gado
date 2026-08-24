@@ -104,6 +104,18 @@
   }
 
   function downloadBlob(name,blob){
+    try{
+      if(window.AndroidDownloads&&typeof window.AndroidDownloads.saveBase64==='function'){
+        const reader=new FileReader();
+        reader.onloadend=function(){
+          try{window.AndroidDownloads.saveBase64(String(reader.result||''),name,blob.type||'application/octet-stream')}
+          catch(error){if(window.AndroidDownloads.error)window.AndroidDownloads.error(String(error&&error.message||error))}
+        };
+        reader.onerror=function(){if(window.AndroidDownloads.error)window.AndroidDownloads.error('Falha ao preparar o arquivo')};
+        reader.readAsDataURL(blob);
+        return;
+      }
+    }catch(error){console.warn('Ponte de download Android:',error)}
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url;
