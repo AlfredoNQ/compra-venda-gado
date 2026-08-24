@@ -20,23 +20,22 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import re
           for name in ['index.html','app-v68.html']:
               p=Path(name)
               if not p.exists():
                   continue
               s=p.read_text(encoding='utf-8')
-              # Desativa polling legado que fazia GET/POST em loop a cada 8 segundos.
               s=s.replace("setInterval(()=>{if(navigator.onLine)sync(false)},8000);", "/* v96: polling legado desativado; sincronização fica por alteração/reconexão */")
-              # Força carregamento do sincronizador corrigido, evitando cache antigo.
-              import re
-              s=re.sub(r'<script src="/v85-fixes\.js\?v=\d+"></script>', '<script src="/v85-fixes.js?v=96"></script>', s)
-              if '<script src="/v85-fixes.js?v=96"></script>' not in s:
-                  s=s.replace('</body>','<script src="/v85-fixes.js?v=96"></script>\n</body>')
+              # Remove qualquer quantidade de tags antigas/duplicadas do sincronizador.
+              s=re.sub(r'\s*<script src="/v85-fixes\.js\?v=\d+"></script>\s*', '\n', s)
+              # Adiciona exatamente uma tag imediatamente antes do fechamento do body.
+              s=s.replace('</body>','<script src="/v85-fixes.js?v=96"></script>\n</body>')
               p.write_text(s,encoding='utf-8')
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html app-v68.html
-          git diff --cached --quiet || git commit -m "Web v96: sincronização sem loop"
+          git diff --cached --quiet || git commit -m "Web v96: sincronizador único"
           git push
