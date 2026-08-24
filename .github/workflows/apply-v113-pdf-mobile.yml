@@ -1,40 +1,10 @@
-name: Apply v113 PDF Mobile
+name: Legacy v113 Disabled
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/apply-v113-pdf-mobile.yml"
-      - "v113-pdf-mobile.js"
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  apply:
+  info:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Inserir leitor PDF v113
-        shell: bash
-        run: |
-          python3 <<'PY'
-          from pathlib import Path
-          for name in ('index.html','app-v68.html'):
-              p=Path(name)
-              if not p.exists():
-                  continue
-              s=p.read_text(encoding='utf-8')
-              s=s.replace('Compra e Venda de Gado — v112','Compra e Venda de Gado — v113')
-              if '/v113-pdf-mobile.js?v=113' not in s:
-                  s=s.replace('</body>','<script src="/v113-pdf-mobile.js?v=113"></script>\n</body>')
-              p.write_text(s,encoding='utf-8')
-          PY
-      - name: Commit
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html app-v68.html
-          git diff --cached --quiet || git commit -m "Web v113: ativar leitor PDF próprio no celular"
-          git push
+      - run: echo "Workflow legado v113 desativado."
