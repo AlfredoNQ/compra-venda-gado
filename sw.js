@@ -1,5 +1,5 @@
 const CACHE='gado-app-v112-pdf4';
-const APP_SHELL=['/index.html?v=112pdf6','/app-v68.html?v=112pdf6','/manifest.webmanifest?v=112pdf6','/v85-fixes.js?v=112','/v103-pdf-open.js?v=112pdf6','/v116-pdf-mobile.js?v=112pdf6','/icon.svg'];
+const APP_SHELL=['/index.html?v=112pdf6','/app-v68.html?v=112pdf6','/manifest.webmanifest?v=112pdf6','/v85-fixes.js?v=112','/v103-pdf-open.js?v=112pdf6','/v116-pdf-mobile.js?v=112pdf6','/v112-payments.js?v=112pay1','/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
