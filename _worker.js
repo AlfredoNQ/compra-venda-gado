@@ -305,6 +305,13 @@ async function cotacoesResponse() {
 async function cotacoesHistoricoMesResponse(request) {
   try {
     const url = new URL(request.url);
+
+    if (url.pathname === '/api/pdf-open' || url.pathname === '/api/pdf-open/') {
+      if (request.method !== 'POST') {
+        return new Response('Method Not Allowed', {status:405, headers:{'Allow':'POST'}});
+      }
+      return pdfOpenResponse(request);
+    }
     const year = Number(url.searchParams.get('year') || new Date().getFullYear());
     const month = Number(url.searchParams.get('month') || (new Date().getMonth()+1));
     const uf = String(url.searchParams.get('uf') || 'PA').toUpperCase();
@@ -532,6 +539,39 @@ async function cotacoesHistoricoMesResponse(request) {
       ok:false,
       error:error && error.message ? error.message : 'Erro no histórico Scot'
     }, {status:500});
+  }
+}
+
+
+async function pdfOpenResponse(request) {
+  try {
+    const form = await request.formData();
+    const dataUrl = String(form.get('pdf') || '');
+    let name = String(form.get('name') || 'documento.pdf')
+      .replace(/[\\/:*?"<>|\r\n]+/g,'_')
+      .trim();
+    if (!name.toLowerCase().endsWith('.pdf')) name += '.pdf';
+    if (!dataUrl.startsWith('data:application/pdf;base64,')) {
+      return new Response('PDF inválido', {status:400});
+    }
+    const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+    if (!b64 || b64.length > 22000000) {
+      return new Response('PDF vazio ou grande demais', {status:413});
+    }
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    return new Response(bytes, {
+      status:200,
+      headers:{
+        'Content-Type':'application/pdf',
+        'Content-Disposition':`inline; filename="${name.replace(/"/g,'')}"`,
+        'Cache-Control':'no-store, no-cache, must-revalidate, max-age=0',
+        'X-Content-Type-Options':'nosniff'
+      }
+    });
+  } catch (e) {
+    return new Response('Não foi possível abrir o PDF', {status:400});
   }
 }
 

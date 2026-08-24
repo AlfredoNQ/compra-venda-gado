@@ -26,14 +26,27 @@
     setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},120000);
   }
   function openPdfDirect(doc){
-    var blob=dataUrlToBlob(doc.data),url=URL.createObjectURL(blob);
+    var target='gadoPdf_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    var popup=null;
+    try{popup=window.open('about:blank',target);}catch(e){}
     try{
-      window.location.href=url;
-      setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},300000);
-    }catch(e){
-      try{URL.revokeObjectURL(url);}catch(_){}
-      downloadPdf(doc);
-    }
+      if(popup){
+        popup.document.open();
+        popup.document.write('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Abrindo PDF...</title><body style="font-family:system-ui;padding:24px">Abrindo PDF...</body>');
+        popup.document.close();
+      }
+    }catch(e){}
+    var form=document.createElement('form');
+    form.method='POST';
+    form.action='/api/pdf-open';
+    form.target=popup?target:'_self';
+    form.enctype='multipart/form-data';
+    form.style.display='none';
+    var d=document.createElement('input');d.type='hidden';d.name='pdf';d.value=doc.data;
+    var n=document.createElement('input');n.type='hidden';n.name='name';n.value=safeName(doc.name);
+    form.appendChild(d);form.appendChild(n);document.body.appendChild(form);
+    form.submit();
+    setTimeout(function(){try{form.remove();}catch(e){}},1000);
   }
   function openPdfDesktop(doc){
     var blob=dataUrlToBlob(doc.data),url=URL.createObjectURL(blob),w=null;
