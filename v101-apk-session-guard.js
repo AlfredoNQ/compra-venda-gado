@@ -86,6 +86,7 @@
     var LAST_EMAIL='gado_last_auth_email_v112';
     var LEGACY_ACCESS='gado_access_token';
     var LEGACY_REFRESH='gado_refresh_token';
+    var LAST_SYNC='gado_last_cloud_sync_v112';
     var explicitLogout=false;
     var recovering=false;
     var syncTimer=null;
@@ -94,6 +95,75 @@
     function write(key,value){try{localStorage.setItem(key,value);}catch(e){}}
     function remove(key){try{localStorage.removeItem(key);}catch(e){}}
     function hasLocalAuth(){return !!read(LAST);}
+
+    function formatTime(value){
+      try{return new Date(Number(value)).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}
+    }
+
+    function cloudIndicator(){
+      var el=document.getElementById('apkCloudIndicator');
+      if(el)return el;
+      var row=document.querySelector('header .head > div:last-child');
+      if(!row)return null;
+      var style=document.getElementById('apkCloudIndicatorStyle');
+      if(!style){
+        style=document.createElement('style');
+        style.id='apkCloudIndicatorStyle';
+        style.textContent='#apkCloudIndicator{display:inline-flex;align-items:center;min-height:34px;padding:7px 12px;border:1px solid rgba(255,255,255,.38);border-radius:999px;background:#fff;color:#175b42;font:800 12px/1 system-ui,-apple-system,sans-serif;letter-spacing:.05px;box-shadow:0 2px 9px rgba(0,0,0,.16);white-space:nowrap;cursor:pointer}#apkCloudIndicator.sync{background:#fff3cf;color:#775300}#apkCloudIndicator.pending{background:#ffe4df;color:#9c2d1c}#apkCloudIndicator.offline{background:#e9edf1;color:#425366}@media(max-width:700px){#apkCloudIndicator{font-size:11px;padding:6px 9px;min-height:31px}}';
+        var holder=document.head||document.documentElement;
+        if(holder&&holder.appendChild)holder.appendChild(style);
+      }
+      el=document.createElement('button');
+      el.id='apkCloudIndicator';
+      el.type='button';
+      if(el.setAttribute)el.setAttribute('aria-label','Status da sincronização');
+      el.onclick=function(){
+        var mode=el.dataset.mode||'';
+        if(mode==='reconnect'){authModal();return;}
+        try{if(typeof window.syncPendingNow==='function')window.syncPendingNow(true);}catch(e){}
+      };
+      if(row.insertBefore)row.insertBefore(el,row.firstChild);else if(row.appendChild)row.appendChild(el);
+      return el;
+    }
+
+    function paintCloudStatus(text,kind){
+      var el=cloudIndicator();
+      if(!el)return;
+      var raw=String(text||'');
+      var lower=raw.toLowerCase();
+      var mode='sync', label='☁ Sincronizando…';
+      if(/salvo na nuvem|dados sincronizados/.test(lower)){
+        write(LAST_SYNC,String(Date.now()));
+        mode='ok';
+        label='☁ Salvo • '+formatTime(read(LAST_SYNC));
+      }else if(/offline/.test(lower)){
+        mode='offline';
+        label='☁ Offline • dados no aparelho';
+      }else if(/pendente|erro na nuvem/.test(lower)){
+        mode='pending';
+        label='☁ Pendente • toque para enviar';
+      }else if(/sessão expirada|reconecte|acesso protegido/.test(lower)){
+        mode='pending';
+        label='☁ Reconectar nuvem';
+        el.dataset.mode='reconnect';
+      }
+      if(mode!=='pending'||el.dataset.mode!=='reconnect')el.dataset.mode='';
+      el.className=mode==='ok'?'':mode;
+      el.textContent=label;
+      el.title=raw||label;
+    }
+
+    function installCloudStatusVisual(){
+      if(typeof window.setCloudStatus!=='function'||window.setCloudStatus.__apkVisual)return;
+      var original=window.setCloudStatus;
+      function wrapped(text,kind){
+        var result=original.apply(this,arguments);
+        paintCloudStatus(text,kind);
+        return result;
+      }
+      wrapped.__apkVisual=true;
+      window.setCloudStatus=wrapped;
+    }
 
     function keepAppOpen(){
       if(!hasLocalAuth()||explicitLogout)return;
@@ -149,6 +219,7 @@
         button.style.display='';
         button.onclick=authModal;
       }
+      paintCloudStatus('Sessão expirada • reconecte a nuvem','warn');
     }
 
     function restoreSyncButton(){
@@ -215,6 +286,11 @@
         return oldSet(ok);
       };
     }
+
+    installCloudStatusVisual();
+    var previousSync=read(LAST_SYNC);
+    if(previousSync)paintCloudStatus('Salvo na nuvem • última sincronização '+formatTime(previousSync),'ok');
+    else paintCloudStatus('Conectando à nuvem…','warn');
 
     if(typeof window.onCloudSession==='function'){
       var oldSession=window.onCloudSession;
