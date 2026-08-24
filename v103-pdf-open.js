@@ -104,5 +104,16 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSafeRestore);else installSafeRestore();
 
+  function forceWebVersion109(){
+    try{
+      document.title='Compra e Venda de Gado — v109';
+      var h=document.querySelector('header h1')||document.querySelector('h1');
+      if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\d+$/i.test((spans[i].textContent||'').trim()))spans[i].textContent='v109';}}
+    }catch(e){}
+  }
+  forceWebVersion109();
+  setTimeout(forceWebVersion109,1500);
+  setTimeout(forceWebVersion109,3000);
+  setInterval(forceWebVersion109,10000);
   window.APP_WEB_VERSION='109';
 })();
