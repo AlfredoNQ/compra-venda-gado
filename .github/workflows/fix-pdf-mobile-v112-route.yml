@@ -105,37 +105,36 @@ jobs:
               form.submit();
               setTimeout(function(){try{form.remove();}catch(e){}},1000);
             }'''
-                    s,n=re.subn(r'  function openPdfDirect\(doc\)\{.*?\n  \}',new_mobile,s,count=1,flags=re.S)
-                    if n!=1:
-                        raise SystemExit('openPdfDirect não encontrada em v103-pdf-open.js')
-                    p.write_text(s,encoding='utf-8')
-          
-                    # 3) Só quebra o cache do script; a versão visual continua v112.
-                    for name in ('index.html','app-v68.html'):
-                        p=Path(name)
-                        if not p.exists(): continue
-                        s=p.read_text(encoding='utf-8')
-                        s=re.sub(r'/v103-pdf-open\.js\?v=[^"\']+', '/v103-pdf-open.js?v=112pdf2', s)
-                        p.write_text(s,encoding='utf-8')
-                    PY
-          
-                - name: Validar sintaxe básica
-                  shell: bash
-                  run: |
-                    node --check _worker.js
-                    node --check v103-pdf-open.js
-                    grep -q "v112" index.html
-                    grep -q "/api/pdf-open" _worker.js
-                    grep -q "multipart/form-data" v103-pdf-open.js
-          
-                - name: Commit
-                  shell: bash
-                  run: |
-                    git config user.name 'github-actions[bot]'
-                    git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-                    git add _worker.js v103-pdf-open.js index.html app-v68.html
-                    if ! git diff --cached --quiet; then
-                      git commit -m 'v112: abrir PDF móvel por rota Cloudflare inline'
-                      git push origin main
-                    fi
-          
+          s,n=re.subn(r'  function openPdfDirect\(doc\)\{.*?\n  \}',new_mobile,s,count=1,flags=re.S)
+          if n!=1:
+              raise SystemExit('openPdfDirect não encontrada em v103-pdf-open.js')
+          p.write_text(s,encoding='utf-8')
+
+          # 3) Só quebra o cache do script; a versão visual continua v112.
+          for name in ('index.html','app-v68.html'):
+              p=Path(name)
+              if not p.exists(): continue
+              s=p.read_text(encoding='utf-8')
+              s=re.sub(r'/v103-pdf-open\.js\?v=[^"\']+', '/v103-pdf-open.js?v=112pdf2', s)
+              p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Validar sintaxe básica
+        shell: bash
+        run: |
+          node --check _worker.js
+          node --check v103-pdf-open.js
+          grep -q "v112" index.html
+          grep -q "/api/pdf-open" _worker.js
+          grep -q "multipart/form-data" v103-pdf-open.js
+
+      - name: Commit
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add _worker.js v103-pdf-open.js index.html app-v68.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'v112: abrir PDF móvel por rota Cloudflare inline'
+            git push origin main
+          fi
