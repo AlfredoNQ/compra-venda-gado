@@ -17,27 +17,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Corrigir botão Abrir PDF
-        shell: python
+        shell: bash
         run: |
+          python3 <<'PY'
           from pathlib import Path
           import re
-          replacement = r'''function fileLink(doc,label){
- if(!doc||!doc.data)return '—';
- window.__pdfDocsV85=window.__pdfDocsV85||{};
- var id='pdf-'+Math.random().toString(36).slice(2)+Date.now().toString(36);
- window.__pdfDocsV85[id]=doc;
- return `<button type="button" class="mini" onclick="openStoredPdfV85('${id}')">Abrir PDF</button>`;
-}'''
+
+          replacement = """function fileLink(doc,label){
+           if(!doc||!doc.data)return '—';
+           window.__pdfDocsV85=window.__pdfDocsV85||{};
+           var id='pdf-'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+           window.__pdfDocsV85[id]=doc;
+           return `<button type=\"button\" class=\"mini\" onclick=\"openStoredPdfV85('${id}')\">Abrir PDF</button>`;
+          }"""
+
           for name in ('index.html','app-v68.html'):
               p=Path(name)
-              if not p.exists(): continue
+              if not p.exists():
+                  continue
               s=p.read_text(encoding='utf-8')
-              s,n = re.subn(r'function fileLink\(doc,label\)\{.*?\n\}', replacement, s, count=1, flags=re.S)
+              s,n=re.subn(r'function fileLink\\(doc,label\\)\\{.*?\\n\\}',replacement,s,count=1,flags=re.S)
               if n != 1:
                   raise SystemExit(f'fileLink não encontrada em {name}')
               if '/v103-pdf-open.js?v=103' not in s:
-                  s=s.replace('</body>','<script src="/v103-pdf-open.js?v=103"></script>\n</body>')
+                  s=s.replace('</body>','<script src=\"/v103-pdf-open.js?v=103\"></script>\\n</body>')
               p.write_text(s,encoding='utf-8')
+          PY
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
