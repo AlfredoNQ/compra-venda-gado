@@ -48,13 +48,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-          replacement = r'''function fileLink(doc,label){
- if(!doc||!doc.data)return '—';
- window.__pdfDocsV85=window.__pdfDocsV85||{};
- var id='pdf-'+Math.random().toString(36).slice(2)+Date.now().toString(36);
- window.__pdfDocsV85[id]=doc;
- return `<button type="button" class="mini" onclick="openStoredPdfV85('${id}')">Abrir PDF</button>`;
-}'''
+          replacement = "function fileLink(doc,label){\n if(!doc||!doc.data)return '—';\n window.__pdfDocsV85=window.__pdfDocsV85||{};\n var id='pdf-'+Math.random().toString(36).slice(2)+Date.now().toString(36);\n window.__pdfDocsV85[id]=doc;\n return '<button type=\"button\" class=\"mini\" onclick=\"openStoredPdfV85(&quot;'+id+'&quot;)\">Abrir PDF</button>';\n}"
           for name in ('index.html','app-v68.html'):
               p=Path('android-app/app/src/main/assets/site')/name
               s=p.read_text(encoding='utf-8')
