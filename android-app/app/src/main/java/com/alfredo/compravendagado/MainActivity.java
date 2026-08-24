@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/109");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/112");
 
         web.addJavascriptInterface(new PdfBridge(), "AndroidPdf");
         web.addJavascriptInterface(new DownloadBridge(), "AndroidDownloads");
@@ -74,11 +74,11 @@ public class MainActivity extends Activity {
                 view.evaluateJavascript(
                     "(function(){try{"+
                     "var h=document.querySelector('header h1')||document.querySelector('h1');"+
-                    "if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){var t=(spans[i].textContent||'').trim();if(/^v\\d+$/i.test(t)){spans[i].textContent='v109';break;}}"+
-                    "var b=document.getElementById('androidAppVersionBadge');if(!b){b=document.createElement('span');b.id='androidAppVersionBadge';h.appendChild(b);}b.textContent='APP v109';b.style.cssText='display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);color:inherit;font-size:10px;font-weight:900;vertical-align:middle;white-space:nowrap';}"+
+                    "if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){var t=(spans[i].textContent||'').trim();if(/^v\\d+$/i.test(t)){spans[i].textContent='v112';break;}}"+
+                    "var b=document.getElementById('androidAppVersionBadge');if(!b){b=document.createElement('span');b.id='androidAppVersionBadge';h.appendChild(b);}b.textContent='APP v112';b.style.cssText='display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);color:inherit;font-size:10px;font-weight:900;vertical-align:middle;white-space:nowrap';}"+
                     "window.openStoredPdfV85=function(id){try{var d=(window.__pdfDocsV85||{})[id];if(!d||!d.data){alert('Documento não encontrado');return;}if(window.AndroidPdf&&typeof window.AndroidPdf.openPdf==='function'){window.AndroidPdf.openPdf(d.data,d.name||'documento.pdf');return;}alert('Ponte PDF do aplicativo indisponível');}catch(e){alert('Erro ao abrir PDF: '+e.message);}};"+
                     "window.download=function(name,text,type){try{if(window.AndroidDownloads&&typeof window.AndroidDownloads.saveText==='function'){window.AndroidDownloads.saveText(String(text==null?'':text),String(name||'arquivo.txt'),String(type||'text/plain;charset=utf-8'));return;}throw new Error('ponte Android indisponível');}catch(e){alert('Falha ao salvar arquivo: '+e.message);}};"+
-                    "}catch(e){console.log('v109 inject',e);}})();", null
+                    "}catch(e){console.log('v112 inject',e);}})();", null
                 );
             }
 
@@ -124,7 +124,7 @@ public class MainActivity extends Activity {
         });
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
-        else web.loadUrl(HOME + "/?app=v109");
+        else web.loadUrl(HOME + "/?app=v112");
     }
 
     private Uri saveBytes(byte[] bytes,String fileName,String mimeType) throws Exception {

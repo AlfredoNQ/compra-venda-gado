@@ -31,7 +31,7 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Preparar site local v109
+      - name: Preparar site local v112
         shell: bash
         run: |
           set -e
@@ -42,6 +42,9 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v85-fixes.js" -o android-app/app/src/main/assets/site/v85-fixes.js
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/android-apk/v101-apk-session-guard.js" -o android-app/app/src/main/assets/site/v101-apk-session-guard.js
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v103-pdf-open.js" -o android-app/app/src/main/assets/site/v103-pdf-open.js
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v116-pdf-mobile.js" -o android-app/app/src/main/assets/site/v116-pdf-mobile.js
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v112-payments.js" -o android-app/app/src/main/assets/site/v112-payments.js
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v112-backup.js" -o android-app/app/src/main/assets/site/v112-backup.js
           for f in sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
             curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/$f" -o "android-app/app/src/main/assets/site/$f" || true
           done
@@ -49,13 +52,13 @@ jobs:
           from pathlib import Path
           import re
           replacement = "function fileLink(doc,label){\n if(!doc||!doc.data)return '—';\n window.__pdfDocsV85=window.__pdfDocsV85||{};\n var id='pdf-'+Math.random().toString(36).slice(2)+Date.now().toString(36);\n window.__pdfDocsV85[id]=doc;\n return '<button type=\"button\" class=\"mini\" onclick=\"openStoredPdfV85(&quot;'+id+'&quot;)\">Abrir PDF</button>';\n}"
-          force = "<script id=\"force-app-version-v109\">(function(){function f(){try{document.title='Compra e Venda de Gado — v109';var h=document.querySelector('header h1');if(!h)return;var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\\d+$/i.test((spans[i].textContent||'').trim())){spans[i].textContent='v109';break;}}}catch(e){}}f();setInterval(f,1200);})();</script>"
+          force = "<script id=\"force-app-version-v112\">(function(){function f(){try{document.title='Compra e Venda de Gado — v112';var h=document.querySelector('header h1');if(!h)return;var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\\d+$/i.test((spans[i].textContent||'').trim())){spans[i].textContent='v112';break;}}}catch(e){}}f();setInterval(f,1200);})();</script>"
           for name in ('index.html','app-v68.html'):
               p=Path('android-app/app/src/main/assets/site')/name
               s=p.read_text(encoding='utf-8')
               s,_=re.subn(r'function fileLink\(doc,label\)\{.*?\n\}', replacement, s, count=1, flags=re.S)
-              s=re.sub(r'<title>Compra e Venda de Gado — v\d+</title>','<title>Compra e Venda de Gado — v109</title>',s)
-              s=re.sub(r'(<h1>Compra e Venda de Gado <span[^>]*>)v\d+(</span></h1>)',r'\1v109\2',s)
+              s=re.sub(r'<title>Compra e Venda de Gado — v\d+</title>','<title>Compra e Venda de Gado — v112</title>',s)
+              s=re.sub(r'(<h1>Compra e Venda de Gado <span[^>]*>)v\d+(</span></h1>)',r'\1v112\2',s)
               s=re.sub(r'\s*<script src="/v101-apk-session-guard\.js\?v=\d+"></script>\s*','\n',s)
               s=re.sub(r'\s*<script src="/v103-pdf-open\.js\?v=\d+"></script>\s*','\n',s)
               s=re.sub(r'\s*<script id="force-web-version-v\d+">.*?</script>\s*','\n',s,flags=re.S)
@@ -63,20 +66,20 @@ jobs:
               s=s.replace('</body>','<script src="/v101-apk-session-guard.js?v=109"></script>\n<script src="/v103-pdf-open.js?v=109"></script>\n'+force+'\n</body>')
               p.write_text(s,encoding='utf-8')
           PY
-          curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o android-app/app/src/main/assets/site/supabase.js
+          curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4" -o android-app/app/src/main/assets/site/supabase.js
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/app-boi-512.png" -o android-app/app/src/main/res/drawable/app_boi.png
 
-      - name: Confirmar WebView nativa v109
+      - name: Confirmar WebView nativa v112
         shell: python
         run: |
           from pathlib import Path
           s=Path('android-app/app/src/main/java/com/alfredo/compravendagado/MainActivity.java').read_text(encoding='utf-8')
           if 'CompraVendaGadoApp/109' not in s:
-              raise SystemExit('MainActivity nao esta em v109')
+              raise SystemExit('MainActivity nao esta em v112')
           if 'saveText' not in s or 'AndroidDownloads' not in s:
               raise SystemExit('Ponte direta de backup Android ausente')
-          if '/?app=v109' not in s:
-              raise SystemExit('URL interna nao esta em v109')
+          if '/?app=v112' not in s:
+              raise SystemExit('URL interna nao esta em v112')
 
       - name: Criar arquivo de assinatura
         shell: bash
@@ -100,6 +103,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Compra-Venda-Gado-v109
+          name: Compra-Venda-Gado-v112
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
