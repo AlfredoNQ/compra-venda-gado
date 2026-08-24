@@ -1,0 +1,47 @@
+name: Fix v103 PDF Button
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fix-v103-pdf-button.yml"
+      - "v103-pdf-open.js"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Corrigir botão Abrir PDF
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          replacement = r'''function fileLink(doc,label){
+ if(!doc||!doc.data)return '—';
+ window.__pdfDocsV85=window.__pdfDocsV85||{};
+ var id='pdf-'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+ window.__pdfDocsV85[id]=doc;
+ return `<button type="button" class="mini" onclick="openStoredPdfV85('${id}')">Abrir PDF</button>`;
+}'''
+          for name in ('index.html','app-v68.html'):
+              p=Path(name)
+              if not p.exists(): continue
+              s=p.read_text(encoding='utf-8')
+              s,n = re.subn(r'function fileLink\(doc,label\)\{.*?\n\}', replacement, s, count=1, flags=re.S)
+              if n != 1:
+                  raise SystemExit(f'fileLink não encontrada em {name}')
+              if '/v103-pdf-open.js?v=103' not in s:
+                  s=s.replace('</body>','<script src="/v103-pdf-open.js?v=103"></script>\n</body>')
+              p.write_text(s,encoding='utf-8')
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html app-v68.html
+          git diff --cached --quiet || git commit -m "v103: botão Abrir PDF funcional"
+          git push
