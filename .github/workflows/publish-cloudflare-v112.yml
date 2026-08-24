@@ -1,40 +1,10 @@
-name: Publicar Web v112 Cloudflare
+name: Legacy v112 Disabled
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/publish-cloudflare-v112.yml"
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  prepare:
+  info:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Atualizar versão Web e cache do PDF
-        shell: bash
-        run: |
-          python3 <<'PY'
-          from pathlib import Path
-          for name in ('index.html','app-v68.html'):
-              p=Path(name)
-              if not p.exists():
-                  continue
-              s=p.read_text(encoding='utf-8')
-              s=s.replace('Compra e Venda de Gado — v103','Compra e Venda de Gado — v112')
-              s=s.replace('/v103-pdf-open.js?v=103','/v103-pdf-open.js?v=112')
-              if '/v103-pdf-open.js?v=112' not in s:
-                  s=s.replace('</body>','<script src="/v103-pdf-open.js?v=112"></script>\n</body>')
-              p.write_text(s,encoding='utf-8')
-          PY
-      - name: Commit para disparar Cloudflare
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html app-v68.html
-          git diff --cached --quiet || git commit -m "Web v112: publicar direto no Cloudflare"
-          git push
+      - run: echo "Publicador legado v112 desativado."
