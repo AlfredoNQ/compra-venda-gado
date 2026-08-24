@@ -1,6 +1,6 @@
-/* Compra e Venda de Gado — v116 PDF Web unico */
+/* Compra e Venda de Gado — v112 leitor PDF móvel interno */
 (function(){
-  function isMobile(){return !window.AndroidPdf && (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'') || window.innerWidth<=800);}
+  function isMobile(){return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'') || window.innerWidth<=800;}
   function bytesFromDataUrl(dataUrl){
     var parts=String(dataUrl||'').split(',');
     if(parts.length<2) throw new Error('PDF sem conteúdo válido');
@@ -82,16 +82,17 @@
     try{
       var doc=(window.__pdfDocsV85||{})[id];
       if(!doc||!doc.data)throw new Error('Documento não encontrado');
+      if(isMobile()){showMobile(doc);return;}
       if(window.AndroidPdf&&typeof window.AndroidPdf.openPdf==='function'){window.AndroidPdf.openPdf(doc.data,safeName(doc.name));return;}
-      if(isMobile())showMobile(doc);else openDesktop(doc);
+      openDesktop(doc);
     }catch(e){alert('Não foi possível abrir o PDF: '+(e&&e.message?e.message:e));}
   };
   function forceVersion(){
     try{
-      document.title='Compra e Venda de Gado — v116';
+      document.title='Compra e Venda de Gado — v112';
       var h=document.querySelector('header h1')||document.querySelector('h1');
-      if(h)h.querySelectorAll('span').forEach(function(s){if(/^v\d+$/i.test((s.textContent||'').trim()))s.textContent='v116';});
+      if(h)h.querySelectorAll('span').forEach(function(s){if(/^v\d+$/i.test((s.textContent||'').trim()))s.textContent='v112';});
     }catch(e){}
   }
-  forceVersion();setTimeout(forceVersion,300);setTimeout(forceVersion,1000);window.APP_WEB_VERSION='116';
+  forceVersion();setTimeout(forceVersion,300);setTimeout(forceVersion,1000);window.APP_WEB_VERSION='112';
 })();
