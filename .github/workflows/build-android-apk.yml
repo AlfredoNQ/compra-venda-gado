@@ -31,31 +31,41 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Preparar site offline v101
+      - name: Preparar site offline v103
         shell: bash
         run: |
           set -e
           mkdir -p android-app/app/src/main/assets/site
           mkdir -p android-app/app/src/main/res/drawable
-          for f in index.html app-v68.html painel-update-v63.js v85-fixes.js v101-apk-session-guard.js sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
-            if [ -f "$f" ]; then cp "$f" android-app/app/src/main/assets/site/; fi
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/index.html" -o android-app/app/src/main/assets/site/index.html
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/app-v68.html" -o android-app/app/src/main/assets/site/app-v68.html
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v85-fixes.js" -o android-app/app/src/main/assets/site/v85-fixes.js
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v101-apk-session-guard.js" -o android-app/app/src/main/assets/site/v101-apk-session-guard.js
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v103-pdf-open.js" -o android-app/app/src/main/assets/site/v103-pdf-open.js
+          for f in sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
+            curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/$f" -o "android-app/app/src/main/assets/site/$f" || true
           done
           python3 - <<'PY'
           from pathlib import Path
           import re
+          replacement = r'''function fileLink(doc,label){
+ if(!doc||!doc.data)return '—';
+ window.__pdfDocsV85=window.__pdfDocsV85||{};
+ var id='pdf-'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+ window.__pdfDocsV85[id]=doc;
+ return `<button type="button" class="mini" onclick="openStoredPdfV85('${id}')">Abrir PDF</button>`;
+}'''
           for name in ('index.html','app-v68.html'):
               p=Path('android-app/app/src/main/assets/site')/name
-              if not p.exists(): continue
               s=p.read_text(encoding='utf-8')
-              s=re.sub(r'\s*<script src="/v98-reconnect-login\.js\?v=\d+"></script>\s*', '\n', s)
-              s=re.sub(r'\s*<script src="/v101-apk-session-guard\.js\?v=\d+"></script>\s*', '\n', s)
-              s=re.sub(r'\s*<script src="/v85-fixes\.js\?v=\d+"></script>\s*', '\n', s)
-              s=s.replace("setInterval(()=>{if(navigator.onLine)sync(false)},8000);", "/* v101: polling legado desativado */")
-              s=s.replace('</body>','<script src="/v85-fixes.js?v=101"></script>\n<script src="/v101-apk-session-guard.js?v=101"></script>\n</body>')
+              s,_=re.subn(r'function fileLink\(doc,label\)\{.*?\n\}', replacement, s, count=1, flags=re.S)
+              s=re.sub(r'\s*<script src="/v101-apk-session-guard\.js\?v=\d+"></script>\s*','\n',s)
+              s=re.sub(r'\s*<script src="/v103-pdf-open\.js\?v=\d+"></script>\s*','\n',s)
+              s=s.replace('</body>','<script src="/v101-apk-session-guard.js?v=103"></script>\n<script src="/v103-pdf-open.js?v=103"></script>\n</body>')
               p.write_text(s,encoding='utf-8')
           PY
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o android-app/app/src/main/assets/site/supabase.js
-          cp app-boi-512.png android-app/app/src/main/res/drawable/app_boi.png
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/app-boi-512.png" -o android-app/app/src/main/res/drawable/app_boi.png
 
       - name: Criar arquivo de assinatura
         shell: bash
@@ -79,6 +89,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Compra-Venda-Gado-v101
+          name: Compra-Venda-Gado-v103
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
