@@ -1,4 +1,4 @@
-name: Apply v96 Web
+name: Apply v97 Web
 
 on:
   workflow_dispatch:
@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - "v85-fixes.js"
+      - "sw.js"
+      - "manifest.webmanifest"
       - ".github/workflows/apply-v85.yml"
 
 permissions:
@@ -16,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Aplicar v96 nos HTMLs
+      - name: Aplicar v97 nos HTMLs
         shell: python
         run: |
           from pathlib import Path
@@ -26,16 +28,23 @@ jobs:
               if not p.exists():
                   continue
               s=p.read_text(encoding='utf-8')
-              s=s.replace("setInterval(()=>{if(navigator.onLine)sync(false)},8000);", "/* v96: polling legado desativado; sincronização fica por alteração/reconexão */")
-              # Remove qualquer quantidade de tags antigas/duplicadas do sincronizador.
+              s=s.replace("setInterval(()=>{if(navigator.onLine)sync(false)},8000);", "/* v97: polling legado desativado */")
               s=re.sub(r'\s*<script src="/v85-fixes\.js\?v=\d+"></script>\s*', '\n', s)
-              # Adiciona exatamente uma tag imediatamente antes do fechamento do body.
-              s=s.replace('</body>','<script src="/v85-fixes.js?v=96"></script>\n</body>')
+              s=s.replace('manifest.webmanifest?v=23','manifest.webmanifest?v=97')
+              s=s.replace('</body>','''<script>
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/sw.js?v=97',{updateViaCache:'none'}).then(function(reg){
+    try{reg.update();}catch(e){}
+  }).catch(function(){});
+})();
+</script>
+<script src="/v85-fixes.js?v=97"></script>\n</body>''')
               p.write_text(s,encoding='utf-8')
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html app-v68.html
-          git diff --cached --quiet || git commit -m "Web v96: sincronizador único"
+          git diff --cached --quiet || git commit -m "Web v97: renovar cache PWA do iPhone"
           git push
