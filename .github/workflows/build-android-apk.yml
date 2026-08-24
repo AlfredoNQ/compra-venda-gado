@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          mkdir -p android-app/app/src/main/assets/site
+          mkdir -p android-app/app/src/main/assets/site/images
           mkdir -p android-app/app/src/main/res/drawable
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/index.html" -o android-app/app/src/main/assets/site/index.html
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/app-v68.html" -o android-app/app/src/main/assets/site/app-v68.html
@@ -45,6 +45,12 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v116-pdf-mobile.js" -o android-app/app/src/main/assets/site/v116-pdf-mobile.js
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v112-payments.js" -o android-app/app/src/main/assets/site/v112-payments.js
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v112-backup.js" -o android-app/app/src/main/assets/site/v112-backup.js
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/painel-update-v63.js" -o android-app/app/src/main/assets/site/painel-update-v63.js
+          curl -fsSL "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" -o android-app/app/src/main/assets/site/leaflet.css
+          curl -fsSL "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" -o android-app/app/src/main/assets/site/leaflet.js
+          for f in layers.png layers-2x.png marker-icon.png marker-icon-2x.png marker-shadow.png; do
+            curl -fsSL "https://unpkg.com/leaflet@1.9.4/dist/images/$f" -o "android-app/app/src/main/assets/site/images/$f"
+          done
           for f in sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
             curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/$f" -o "android-app/app/src/main/assets/site/$f" || true
           done
@@ -56,6 +62,9 @@ jobs:
           for name in ('index.html','app-v68.html'):
               p=Path('android-app/app/src/main/assets/site')/name
               s=p.read_text(encoding='utf-8')
+              s=s.replace('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','/supabase.js?v=2.112.4')
+              s=s.replace('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css','/leaflet.css?v=1.9.4')
+              s=s.replace('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js','/leaflet.js?v=1.9.4')
               s,_=re.subn(r'function fileLink\(doc,label\)\{.*?\n\}', replacement, s, count=1, flags=re.S)
               s=re.sub(r'<title>Compra e Venda de Gado — v\d+</title>','<title>Compra e Venda de Gado — v112</title>',s)
               s=re.sub(r'(<h1>Compra e Venda de Gado <span[^>]*>)v\d+(</span></h1>)',r'\1v112\2',s)
@@ -68,6 +77,50 @@ jobs:
           PY
           curl -fsSL "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4" -o android-app/app/src/main/assets/site/supabase.js
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/app-boi-512.png" -o android-app/app/src/main/res/drawable/app_boi.png
+
+      - name: Validar pacote offline
+        shell: python
+        run: |
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlparse
+          import posixpath
+
+          root=Path('android-app/app/src/main/assets/site')
+          class Parser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.refs=[]
+              def handle_starttag(self,tag,attrs):
+                  for key,value in attrs:
+                      if key in ('src','href') and value:
+                          self.refs.append((tag,key,value))
+
+          for name in ('index.html','app-v68.html'):
+              text=(root/name).read_text(encoding='utf-8')
+              parser=Parser()
+              parser.feed(text)
+              missing=[]
+              external=[]
+              for tag,key,value in parser.refs:
+                  parsed=urlparse(value)
+                  if parsed.scheme in ('http','https') or parsed.netloc:
+                      external.append(value)
+                      continue
+                  if value.startswith(('#','data:','mailto:','tel:','javascript:')):
+                      continue
+                  rel=posixpath.normpath(parsed.path.lstrip('/'))
+                  if rel and rel != '.' and not (root/rel).is_file():
+                      missing.append(value)
+              if missing:
+                  raise SystemExit(f'{name}: recurso local ausente: {missing}')
+              if external:
+                  raise SystemExit(f'{name}: biblioteca externa impede abertura offline: {external}')
+              for asset in ('v85-fixes.js','painel-update-v63.js','v101-apk-session-guard.js','v103-pdf-open.js','v116-pdf-mobile.js','v112-payments.js','v112-backup.js'):
+                  if text.count(asset) != 1:
+                      raise SystemExit(f'{name}: {asset} aparece {text.count(asset)} vez(es)')
+          if 'AndroidDownloads' not in (root/'v112-backup.js').read_text(encoding='utf-8'):
+              raise SystemExit('Backup nao usa a ponte nativa Android')
 
       - name: Confirmar WebView nativa v112
         shell: python
