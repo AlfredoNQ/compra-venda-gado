@@ -74,9 +74,12 @@ jobs:
                 return pdfOpenResponse(request);
               }
           '''
-          if "url.pathname === '/api/pdf-open'" not in s:
-              marker='    const url = new URL(request.url);\n'
-              s=s.replace(marker, marker+route, 1)
+          global_marker="export default {\n  async fetch(request, env) {\n    const url = new URL(request.url);\n"
+          global_route_marker=global_marker+"\n    if (url.pathname === '/api/pdf-open'"
+          if global_route_marker not in s:
+              if global_marker not in s:
+                  raise SystemExit('Entrada global do Worker não encontrada')
+              s=s.replace(global_marker, global_marker+route, 1)
           p.write_text(s,encoding='utf-8')
 
           # 2) Frontend: no Web móvel usa POST para a rota do próprio Cloudflare.
