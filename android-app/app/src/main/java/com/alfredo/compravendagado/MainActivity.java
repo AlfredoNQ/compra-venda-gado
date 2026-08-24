@@ -29,6 +29,7 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
     private static final String HOME = "https://compra-venda-gado.vercel.app";
@@ -52,7 +53,7 @@ public class MainActivity extends Activity {
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/107");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/108");
 
         web.addJavascriptInterface(new PdfBridge(), "AndroidPdf");
         web.addJavascriptInterface(new DownloadBridge(), "AndroidDownloads");
@@ -73,11 +74,11 @@ public class MainActivity extends Activity {
                 view.evaluateJavascript(
                     "(function(){try{"+
                     "var h=document.querySelector('header h1')||document.querySelector('h1');"+
-                    "if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){var t=(spans[i].textContent||'').trim();if(/^v\\d+$/i.test(t)){spans[i].textContent='v107';break;}}"+
-                    "var b=document.getElementById('androidAppVersionBadge');if(!b){b=document.createElement('span');b.id='androidAppVersionBadge';h.appendChild(b);}b.textContent='APP v107';b.style.cssText='display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);color:inherit;font-size:10px;font-weight:900;vertical-align:middle;white-space:nowrap';}"+
+                    "if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){var t=(spans[i].textContent||'').trim();if(/^v\\d+$/i.test(t)){spans[i].textContent='v108';break;}}"+
+                    "var b=document.getElementById('androidAppVersionBadge');if(!b){b=document.createElement('span');b.id='androidAppVersionBadge';h.appendChild(b);}b.textContent='APP v108';b.style.cssText='display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);color:inherit;font-size:10px;font-weight:900;vertical-align:middle;white-space:nowrap';}"+
                     "window.openStoredPdfV85=function(id){try{var d=(window.__pdfDocsV85||{})[id];if(!d||!d.data){alert('Documento não encontrado');return;}if(window.AndroidPdf&&typeof window.AndroidPdf.openPdf==='function'){window.AndroidPdf.openPdf(d.data,d.name||'documento.pdf');return;}alert('Ponte PDF do aplicativo indisponível');}catch(e){alert('Erro ao abrir PDF: '+e.message);}};"+
-                    "if(!window.__cvDownloadBridge){window.__cvDownloadBridge=true;document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[download]'):null;if(!a||!a.href||a.href.indexOf('blob:')!==0)return;e.preventDefault();var name=a.getAttribute('download')||'backup-compra-venda-gado.json';fetch(a.href).then(function(r){return r.blob()}).then(function(blob){var fr=new FileReader();fr.onloadend=function(){AndroidDownloads.saveBase64(fr.result,name,blob.type||'application/octet-stream')};fr.readAsDataURL(blob)}).catch(function(){AndroidDownloads.error('Falha ao preparar arquivo')});},true);}"+
-                    "}catch(e){console.log('v107 inject',e);}})();", null
+                    "window.download=function(name,text,type){try{if(window.AndroidDownloads&&typeof window.AndroidDownloads.saveText==='function'){window.AndroidDownloads.saveText(String(text==null?'':text),String(name||'arquivo.txt'),String(type||'text/plain;charset=utf-8'));return;}throw new Error('ponte Android indisponível');}catch(e){alert('Falha ao salvar arquivo: '+e.message);}};"+
+                    "}catch(e){console.log('v108 inject',e);}})();", null
                 );
             }
 
@@ -105,13 +106,11 @@ public class MainActivity extends Activity {
         });
 
         web.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
-            if(url!=null && url.startsWith("blob:")) {
-                String name=android.webkit.URLUtil.guessFileName(url,contentDisposition,mimeType);
-                String js="fetch("+org.json.JSONObject.quote(url)+").then(r=>r.blob()).then(b=>{let f=new FileReader();f.onloadend=()=>AndroidDownloads.saveBase64(f.result,"+org.json.JSONObject.quote(name)+",b.type||'application/octet-stream');f.readAsDataURL(b)}).catch(()=>AndroidDownloads.error('Falha ao baixar arquivo'))";
-                web.evaluateJavascript(js,null);
-                return;
-            }
             try {
+                if(url!=null && url.startsWith("blob:")) {
+                    Toast.makeText(this,"Use os botões Backup sistema ou Backup Excel",Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 DownloadManager.Request r = new DownloadManager.Request(Uri.parse(url));
                 r.addRequestHeader("Cookie", CookieManager.getInstance().getCookie(url));
                 r.addRequestHeader("User-Agent", userAgent);
@@ -125,50 +124,57 @@ public class MainActivity extends Activity {
         });
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
-        else web.loadUrl(HOME + "/?app=v107");
+        else web.loadUrl(HOME + "/?app=v108");
+    }
+
+    private Uri saveBytes(byte[] bytes,String fileName,String mimeType) throws Exception {
+        String safe=(fileName==null||fileName.trim().isEmpty())?"arquivo":fileName.replaceAll("[\\\\/:*?\"<>|]","_");
+        ContentValues values=new ContentValues();
+        values.put(MediaStore.Downloads.DISPLAY_NAME,safe);
+        values.put(MediaStore.Downloads.MIME_TYPE,(mimeType==null||mimeType.isEmpty())?"application/octet-stream":mimeType.split(";")[0]);
+        values.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS+"/CompraVendaGado");
+        Uri uri=getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values);
+        if(uri==null)throw new Exception("não foi possível criar arquivo");
+        try(OutputStream out=getContentResolver().openOutputStream(uri)){
+            if(out==null)throw new Exception("não foi possível gravar arquivo");
+            out.write(bytes); out.flush();
+        }
+        return uri;
     }
 
     public class DownloadBridge {
+        @JavascriptInterface public void saveText(String text,String fileName,String mimeType){
+            runOnUiThread(() -> {
+                try {
+                    byte[] bytes=(text==null?"":text).getBytes(StandardCharsets.UTF_8);
+                    saveBytes(bytes,fileName,mimeType);
+                    Toast.makeText(MainActivity.this,"Arquivo salvo em Downloads/CompraVendaGado: "+fileName,Toast.LENGTH_LONG).show();
+                }catch(Exception e){ Toast.makeText(MainActivity.this,"Erro ao salvar arquivo: "+e.getMessage(),Toast.LENGTH_LONG).show(); }
+            });
+        }
         @JavascriptInterface public void saveBase64(String dataUrl,String fileName,String mimeType){
             runOnUiThread(() -> {
                 try {
                     int comma=dataUrl==null?-1:dataUrl.indexOf(',');
                     if(comma<0)throw new Exception("arquivo inválido");
                     byte[] bytes=Base64.decode(dataUrl.substring(comma+1),Base64.DEFAULT);
-                    String safe=(fileName==null||fileName.trim().isEmpty())?"backup-compra-venda-gado.json":fileName.replaceAll("[\\\\/:*?\"<>|]","_");
-                    ContentValues values=new ContentValues();
-                    values.put(MediaStore.Downloads.DISPLAY_NAME,safe);
-                    values.put(MediaStore.Downloads.MIME_TYPE,(mimeType==null||mimeType.isEmpty())?"application/octet-stream":mimeType);
-                    values.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS+"/CompraVendaGado");
-                    Uri uri=getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values);
-                    if(uri==null)throw new Exception("não foi possível criar arquivo");
-                    try(OutputStream out=getContentResolver().openOutputStream(uri)){
-                        if(out==null)throw new Exception("não foi possível gravar arquivo");
-                        out.write(bytes); out.flush();
-                    }
-                    Toast.makeText(MainActivity.this,"Backup salvo em Downloads/CompraVendaGado",Toast.LENGTH_LONG).show();
-                }catch(Exception e){ Toast.makeText(MainActivity.this,"Erro no backup: "+e.getMessage(),Toast.LENGTH_LONG).show(); }
+                    saveBytes(bytes,fileName,mimeType);
+                    Toast.makeText(MainActivity.this,"Arquivo salvo em Downloads/CompraVendaGado",Toast.LENGTH_LONG).show();
+                }catch(Exception e){ Toast.makeText(MainActivity.this,"Erro ao salvar arquivo: "+e.getMessage(),Toast.LENGTH_LONG).show(); }
             });
         }
-        @JavascriptInterface public void error(String msg){ runOnUiThread(() -> Toast.makeText(MainActivity.this,msg==null?"Falha ao gerar backup":msg,Toast.LENGTH_LONG).show()); }
+        @JavascriptInterface public void error(String msg){ runOnUiThread(() -> Toast.makeText(MainActivity.this,msg==null?"Falha ao gerar arquivo":msg,Toast.LENGTH_LONG).show()); }
     }
 
     public class PdfBridge {
         @JavascriptInterface public void openPdf(String dataUrl, String fileName) {
             runOnUiThread(() -> {
-                Toast.makeText(MainActivity.this,"PDF recebido • abrindo...",Toast.LENGTH_SHORT).show();
                 try {
                     int comma=dataUrl.indexOf(','); if(comma<0)throw new Exception("PDF inválido");
                     byte[] bytes=Base64.decode(dataUrl.substring(comma+1),Base64.DEFAULT);
                     String safe=(fileName==null||fileName.trim().isEmpty())?"documento.pdf":fileName.replaceAll("[^a-zA-Z0-9._-]","_");
                     if(!safe.toLowerCase().endsWith(".pdf"))safe+=".pdf";
-                    ContentValues values=new ContentValues();
-                    values.put(MediaStore.Downloads.DISPLAY_NAME,safe);
-                    values.put(MediaStore.Downloads.MIME_TYPE,"application/pdf");
-                    values.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS+"/CompraVendaGado");
-                    Uri uri=getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values);
-                    if(uri==null)throw new Exception("Não foi possível criar o arquivo");
-                    try(OutputStream out=getContentResolver().openOutputStream(uri)){ if(out==null)throw new Exception("Não foi possível gravar o PDF"); out.write(bytes); out.flush(); }
+                    Uri uri=saveBytes(bytes,safe,"application/pdf");
                     Intent intent=new Intent(Intent.ACTION_VIEW); intent.setDataAndType(uri,"application/pdf"); intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     try{ startActivity(Intent.createChooser(intent,"Abrir PDF com")); }
                     catch(Exception noViewer){ Toast.makeText(MainActivity.this,"PDF salvo em Downloads/CompraVendaGado",Toast.LENGTH_LONG).show(); }
