@@ -40,7 +40,7 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/index.html" -o android-app/app/src/main/assets/site/index.html
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/app-v68.html" -o android-app/app/src/main/assets/site/app-v68.html
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v85-fixes.js" -o android-app/app/src/main/assets/site/v85-fixes.js
-          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v101-apk-session-guard.js" -o android-app/app/src/main/assets/site/v101-apk-session-guard.js
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/android-apk/v101-apk-session-guard.js" -o android-app/app/src/main/assets/site/v101-apk-session-guard.js
           curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/v103-pdf-open.js" -o android-app/app/src/main/assets/site/v103-pdf-open.js
           for f in sw.js manifest.webmanifest icon.svg app-boi-180.png app-boi-192.png app-boi-512.png icon-192.png icon-512.png apple-touch-icon.png favicon.png; do
             curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/$f" -o "android-app/app/src/main/assets/site/$f" || true
