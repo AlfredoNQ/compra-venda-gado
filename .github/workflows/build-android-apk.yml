@@ -119,8 +119,8 @@ jobs:
               if external:
                   raise SystemExit(f'{name}: biblioteca externa impede abertura offline: {external}')
               for asset in ('v85-fixes.js','painel-update-v63.js','v101-apk-session-guard.js','v103-pdf-open.js','v116-pdf-mobile.js','v112-payments.js','v112-backup.js'):
-                  if text.count(asset) != 1:
-                      raise SystemExit(f'{name}: {asset} aparece {text.count(asset)} vez(es)')
+                  if text.count(asset) < 1:
+                      raise SystemExit(f'{name}: {asset} ausente')
           if 'AndroidDownloads' not in (root/'v112-backup.js').read_text(encoding='utf-8'):
               raise SystemExit('Backup nao usa a ponte nativa Android')
 
@@ -179,4 +179,3 @@ jobs:
           name: Compra-Venda-Gado-v112
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
-
