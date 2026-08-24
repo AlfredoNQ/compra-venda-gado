@@ -12,8 +12,10 @@ import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.Base64;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
+import android.webkit.JavascriptInterface;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
@@ -23,10 +25,11 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 
 public class MainActivity extends Activity {
-    // v77: uma unica origem online para site, tablet, celular e APK.
     private static final String HOME = "https://compra-venda-gado.vercel.app";
     private static final String HOME_HOST = "compra-venda-gado.vercel.app";
     private static final int FILE_CHOOSER = 1001;
@@ -44,19 +47,23 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
-        // Online: busca a versao atual. Offline: WebViewClient entrega o pacote interno.
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/77");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/78");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
+        web.addJavascriptInterface(new AndroidDownloads(), "AndroidDownloads");
 
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url.startsWith("http://") || url.startsWith("https://")) return false;
+                if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:")) return false;
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch(Exception ignored) {}
                 return true;
+            }
+            @Override public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view,url);
+                installBlobDownloadBridge();
             }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 return isOnline() ? super.shouldInterceptRequest(view,request) : offlineResponse(request.getUrl());
@@ -79,18 +86,47 @@ public class MainActivity extends Activity {
             }
         });
         web.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
+            if (url != null && url.startsWith("blob:")) { downloadBlob(url, contentDisposition, mimeType); return; }
             try {
                 DownloadManager.Request r = new DownloadManager.Request(Uri.parse(url));
                 r.addRequestHeader("Cookie", CookieManager.getInstance().getCookie(url));
                 r.addRequestHeader("User-Agent", userAgent);
                 r.setMimeType(mimeType);
                 r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "compra-venda-gado-arquivo");
+                String name = android.webkit.URLUtil.guessFileName(url, contentDisposition, mimeType);
+                r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name);
                 ((DownloadManager)getSystemService(Context.DOWNLOAD_SERVICE)).enqueue(r);
                 Toast.makeText(this,"Download iniciado",Toast.LENGTH_SHORT).show();
-            } catch(Exception e) { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
+            } catch(Exception e) { Toast.makeText(this,"Nao foi possivel baixar o arquivo",Toast.LENGTH_LONG).show(); }
         });
         if (savedInstanceState == null) web.loadUrl(HOME); else web.restoreState(savedInstanceState);
+    }
+
+    private void installBlobDownloadBridge() {
+        web.evaluateJavascript("(function(){if(window.__cvBlobBridge)return;window.__cvBlobBridge=true;document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[download]');if(!a||!a.href||a.href.indexOf('blob:')!==0)return;e.preventDefault();var u=a.href,n=a.getAttribute('download')||'backup-compra-venda-gado.json';fetch(u).then(function(r){return r.blob()}).then(function(b){var fr=new FileReader();fr.onloadend=function(){AndroidDownloads.saveBase64(fr.result,n,b.type||'application/octet-stream')};fr.readAsDataURL(b)}).catch(function(){AndroidDownloads.error()});},true)})()", null);
+    }
+
+    private void downloadBlob(String url, String contentDisposition, String mimeType) {
+        String name = android.webkit.URLUtil.guessFileName(url, contentDisposition, mimeType);
+        String js = "fetch(" + org.json.JSONObject.quote(url) + ").then(r=>r.blob()).then(b=>{let f=new FileReader();f.onloadend=()=>AndroidDownloads.saveBase64(f.result," + org.json.JSONObject.quote(name) + ",b.type||" + org.json.JSONObject.quote(mimeType == null ? "application/octet-stream" : mimeType) + ");f.readAsDataURL(b)}).catch(()=>AndroidDownloads.error())";
+        web.evaluateJavascript(js,null);
+    }
+
+    public class AndroidDownloads {
+        @JavascriptInterface public void saveBase64(String dataUrl, String fileName, String mime) {
+            try {
+                int comma=dataUrl.indexOf(',');
+                String payload=comma>=0?dataUrl.substring(comma+1):dataUrl;
+                byte[] bytes=Base64.decode(payload,Base64.DEFAULT);
+                String safe=(fileName==null||fileName.trim().isEmpty())?"backup-compra-venda-gado.json":fileName.replaceAll("[\\\\/:*?\"<>|]","_");
+                File dir=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                if(!dir.exists())dir.mkdirs();
+                File out=new File(dir,safe);
+                FileOutputStream fos=new FileOutputStream(out); fos.write(bytes); fos.flush(); fos.close();
+                runOnUiThread(() -> Toast.makeText(MainActivity.this,"Backup salvo em Downloads: "+safe,Toast.LENGTH_LONG).show());
+            } catch(Exception e) { error(); }
+        }
+        @JavascriptInterface public void error() { runOnUiThread(() -> Toast.makeText(MainActivity.this,"Falha ao gerar o backup no APK",Toast.LENGTH_LONG).show()); }
     }
 
     private boolean isOnline() {
@@ -106,8 +142,7 @@ public class MainActivity extends Activity {
         try {
             String host=uri.getHost()==null?"":uri.getHost();
             String path=uri.getPath()==null?"/":uri.getPath();
-            if("cdn.jsdelivr.net".equals(host) && path.contains("supabase"))
-                return new WebResourceResponse("application/javascript","UTF-8",getAssets().open("site/supabase.js"));
+            if("cdn.jsdelivr.net".equals(host) && path.contains("supabase")) return new WebResourceResponse("application/javascript","UTF-8",getAssets().open("site/supabase.js"));
             if(!HOME_HOST.equals(host)) return null;
             if(path.equals("/")||path.isEmpty())path="/index.html";
             if(path.startsWith("/"))path=path.substring(1);
@@ -115,13 +150,7 @@ public class MainActivity extends Activity {
             InputStream in=getAssets().open("site/"+path);
             String ext=MimeTypeMap.getFileExtensionFromUrl(path);
             String mime=MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
-            if(mime==null){
-                if(path.endsWith(".js"))mime="application/javascript";
-                else if(path.endsWith(".css"))mime="text/css";
-                else if(path.endsWith(".html"))mime="text/html";
-                else if(path.endsWith(".json")||path.endsWith(".webmanifest"))mime="application/json";
-                else mime="application/octet-stream";
-            }
+            if(mime==null){ if(path.endsWith(".js"))mime="application/javascript"; else if(path.endsWith(".css"))mime="text/css"; else if(path.endsWith(".html"))mime="text/html"; else if(path.endsWith(".json")||path.endsWith(".webmanifest"))mime="application/json"; else mime="application/octet-stream"; }
             return new WebResourceResponse(mime,"UTF-8",in);
         } catch(Exception e){return null;}
     }
