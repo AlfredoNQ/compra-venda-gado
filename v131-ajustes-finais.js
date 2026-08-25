@@ -11,8 +11,6 @@
    if(s==='Venda / Comprador') e.textContent='Venda';
    if(s==='Vendedor') e.textContent='Cliente';
    if(s==='Comprador') e.textContent='Cliente';
-   if(s==='Clientes'&&e.closest('.tabs')) e.textContent='Cadastro';
-   if(s==='Estoque atual'&&e.closest('.tabs')) e.textContent='Estoque';
    if(s==='A receber do comprador'){
     var card=e.closest('.neg-v66-card,.panel,.calc,.summary-card,.field')||e.parentElement;
     if(card)card.style.display='none';
@@ -41,7 +39,6 @@
   cleanText();
   syncClientNames();
   var t=document.querySelector('.tabs'),p=t&&t.querySelector('[data-tab="painel"]');if(!t||!p)return;
-  var oldNeg=t.querySelector('[data-tab="negociacoes"]');if(oldNeg)oldNeg.style.display='none';
   function add(id,label,view){var b=document.getElementById(id);if(!b){b=document.createElement('button');b.id=id;b.type='button';b.className='tabbtn';b.textContent=label;b.onclick=function(){document.querySelectorAll('.tabbtn').forEach(function(x){x.classList.remove('active')});b.classList.add('active');var s=document.getElementById('negociacoes');if(s)s.classList.add('active');var q=document.querySelector('.neg-list-tab[data-listview="'+view+'"]');if(q)q.click();var n=document.getElementById('newBtn');if(n)n.textContent=view==='seller'?'+ Nova compra':'+ Nova venda'};t.appendChild(b)}return b}
   var cad=t.querySelector('[data-tab="cadastrosV120"]')||byText('Cadastro'),ani=t.querySelector('[data-tab="animaisV121"]')||byText('Animais'),co=add('compraTelaV128','Compra','seller'),ve=add('vendaTelaV128','Venda','buyer'),es=t.querySelector('[data-tab="estoque"]')||byText('Estoque'),cu=t.querySelector('[data-tab="custos"]')||byText('$ Custos'),ma=t.querySelector('[data-tab="mapa"]')||byText('Mapa'),re=t.querySelector('[data-tab="relatorios"]')||byText('Relatório');
   var cur=p;[cad,co,ve,es,ani,cu,ma,re].filter(Boolean).forEach(function(x){t.insertBefore(x,cur.nextSibling);cur=x});
