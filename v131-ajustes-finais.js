@@ -61,7 +61,7 @@
   window.__modeV127=isVenda?'venda':'compra';
   var tabs=document.querySelector('.neg-v66-tabs');if(tabs)tabs.style.display='none';
   var st=s&&s.querySelector('.neg-v66-title');if(st)st.textContent=isVenda?'Documentos e fechamento da venda':'Documentos e fechamento da compra';
-  var totals=document.getElementById('installmentTotals');if(totals){Array.from(totals.children).forEach(function(card){var txt=(card.textContent||'').toLowerCase();card.style.display=(isVenda?txt.indexOf('receber do comprador')<0:txt.indexOf('pagar ao vendedor')<0)?'none':'';});}
+  var totals=document.getElementById('installmentTotals');if(totals){var cards=Array.from(totals.querySelectorAll('div')).filter(function(e){var t=(e.textContent||'').trim().toLowerCase();return (t.indexOf('a pagar ao vendedor')===0||t.indexOf('a receber do comprador')===0)&&e.children.length>0;});cards.forEach(function(card){var t=(card.textContent||'').toLowerCase();card.style.display=(isVenda?t.indexOf('a receber do comprador')!==0:t.indexOf('a pagar ao vendedor')!==0)?'none':'';});}
   hydrateSaleLots(r);
   try{if(typeof updateEditorSummary==='function')updateEditorSummary();}catch(e){}
  }
