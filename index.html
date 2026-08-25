@@ -2683,7 +2683,7 @@ document.addEventListener('DOMContentLoaded',function(){
     // Landscape A4 in points.
     var W=842, H=595;
     var margin=26;
-    var rowH=16;
+    var rowH=26;
     var rowsPerPage=25;
 
     var pages=[];
@@ -2766,7 +2766,10 @@ document.addEventListener('DOMContentLoaded',function(){
           cut(c.status||'-',10)
         ];
         vals.forEach(function(v,i){text(cols[i][0],y,7,v,false)});
-        line(margin,y-4,W-margin,y-4);
+        var pay=String(r.paymentSell||r.formaPagamentoVenda||'').trim()||'Não informado';
+        var parts=(typeof installmentSummary==='function'?installmentSummary(r):'')||'Sem parcelas';
+        text(margin,y-9,6,'Pagamento: '+pay+' | '+parts,false);
+        line(margin,y-14,W-margin,y-14);
         y-=rowH;
       });
 
