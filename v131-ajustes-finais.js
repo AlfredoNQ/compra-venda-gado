@@ -32,6 +32,9 @@
   if(document.querySelector('.tabs')?.dataset.v131Locked==='1')return;
   var legacy=document.getElementById('v66-neg-separate');
   if(legacy)legacy.remove();
+  var legacyStyle=document.getElementById('v66-neg-separate-style');
+  if(legacyStyle)legacyStyle.remove();
+  document.querySelectorAll('.neg-v66-tab,[data-negv66-go]').forEach(function(x){x.onclick=null;x.style.display='none'});
   ['rSellerIdV121','rBuyerIdV121'].forEach(function(id){var e=document.getElementById(id);if(e&&e.closest('.field'))e.closest('.field').remove()});
   cleanText();
   syncClientNames();
