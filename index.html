@@ -2687,7 +2687,20 @@ document.addEventListener('DOMContentLoaded',function(){
     var rowsPerPage=25;
 
     var pages=[];
-    var sorted=list.slice().sort(function(a,b){
+    /* Most sales can draw from several purchase lots. Keep one PDF row per
+       source lot so the report identifies every lot without duplicating totals
+       in the summary. */
+    var expanded=[];
+    list.forEach(function(r){
+      var lots=Array.isArray(r.animalLotsSold)?r.animalLotsSold:(Array.isArray(r.sourceLots)?r.sourceLots:[]);
+      if(!lots.length){ expanded.push(r); return; }
+      lots.forEach(function(x){
+        var qty=Number(x.quantity||x.quantidade||0);
+        var lot=(records||[]).find(function(z){return z.id===(x.lotId||x.id)})||{};
+        expanded.push({...r,quantVenda:qty,totalLotSale:qty*Number(r.precoVenda||0),vendedor:lot.vendedor||r.vendedor, data:lot.data||r.data, era:lot.era||r.era, pesoKg:lot.pesoKg||r.pesoKg});
+      });
+    });
+    var sorted=expanded.sort(function(a,b){
       return String(b.data||'').localeCompare(String(a.data||''));
     });
 
@@ -2746,13 +2759,13 @@ document.addEventListener('DOMContentLoaded',function(){
         var c=calc(r);
         var vals=[
           cut(fmtDate(r.data),10),
-          cut(r.vendedor||'-',18),
+          cut((r.vendedor||'-')+(r.totalLotSale!=null?' • lote':'') ,18),
           cut(r.era||'-',12),
           cut(r.comprador||'-',19),
           cut(r.marca||'-',13),
           cut(num.format(c.qc),8),
           cut(num.format(c.sold),8),
-          cut(money.format(c.totalV),15),
+          cut(money.format(r.totalLotSale!=null?r.totalLotSale:c.totalV),15),
           cut(money.format(c.lucro),15),
           cut(c.status||'-',10)
         ];
