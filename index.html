@@ -978,10 +978,10 @@ function fileLink(doc,label){
  return `<button type="button" class="mini" onclick="openStoredPdfV85('${id}')">Abrir PDF</button>`;
 }
 function installmentSummary(r){
- let a=Array.isArray(r.installments)?r.installments:[];
+ let a=Array.isArray(r.installments)?r.installments:(Array.isArray(r.parcelas)?r.parcelas:[]);
  if(!a.length)return '—';
  let paid=a.filter(x=>x.paid).length,total=a.reduce((s,x)=>s+n(x.value),0),done=a.filter(x=>x.paid).reduce((s,x)=>s+n(x.value),0);
- let dates=a.map((x,i)=>`${i+1}ª ${x.date?fmtDate(x.date):'sem data'} ${money.format(n(x.value))} ${x.paid?'pago':'pendente'}`).join(' | ');
+ let dates=a.map((x,i)=>`${i+1}ª ${(x.date||x.vencimento)?fmtDate(x.date||x.vencimento):'sem data'} ${money.format(n(x.value||x.valor))} ${x.paid?'pago':'pendente'}`).join(' | ');
  return `${dates} • ${paid}/${a.length} baixadas • ${money.format(total-done)} pendente`;
 }
 function renderInstallmentsEditor(list=[]){
