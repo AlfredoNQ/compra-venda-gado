@@ -627,9 +627,8 @@ tbody tr:hover{background:#f7fbf8!important}
       <div class="field"><label>Ano</label><select id="reportYearFilter"><option value="">Todos os anos</option></select></div>
       <div class="field"><label>Categoria</label><select id="reportCategoryFilter"><option value="">Todas as categorias</option></select></div>
 
-      <div class="field"><label>Comprador</label><select id="reportBuyerFilter"><option value="">Todos os compradores</option></select></div>
+      <div class="field"><label>Cliente</label><select id="reportClientFilter"><option value="">Todos os clientes</option></select></div>
       <div class="field"><label>Marca</label><select id="reportBrandFilter"><option value="">Todas as marcas</option></select></div>
-      <div class="field"><label>Vendedor</label><select id="reportSellerFilter"><option value="">Todos os vendedores</option></select></div>
       <div class="field"><label>Intermediário</label><select id="reportPartnerFilter"><option value="">Todos os intermediários</option></select></div>
 
       <div class="field"><label>Status</label><select id="reportStatusFilter"><option value="">Todos os status</option><option>Vendido</option><option>Parcial</option><option>Em estoque</option><option>Conferir</option></select></div>
@@ -1114,9 +1113,8 @@ function reportFilteredRecords(){
   let dateTo=$('reportDateTo')?$('reportDateTo').value:'';
   let year=$('reportYearFilter')?$('reportYearFilter').value:'';
   let category=$('reportCategoryFilter')?$('reportCategoryFilter').value:'';
-  let buyer=($('reportBuyerFilter')?$('reportBuyerFilter').value:'').toLowerCase().trim();
+  let client=($('reportClientFilter')?$('reportClientFilter').value:'').toLowerCase().trim();
   let brand=($('reportBrandFilter')?$('reportBrandFilter').value:'').toLowerCase().trim();
-  let seller=($('reportSellerFilter')?$('reportSellerFilter').value:'').toLowerCase().trim();
   let partner=($('reportPartnerFilter')?$('reportPartnerFilter').value:'').toLowerCase().trim();
   let status=$('reportStatusFilter')?$('reportStatusFilter').value:'';
   let pgSeller=$('reportPgSellerFilter')?$('reportPgSellerFilter').value:'';
@@ -1137,9 +1135,8 @@ function reportFilteredRecords(){
            (!dateTo||data<=dateTo) &&
            (!year||data.startsWith(year)) &&
            (!category||(r.era||'')===category) &&
-           (!buyer||buyerName.includes(buyer)) &&
+           (!client||(buyerName.includes(client)||sellerName.includes(client))) &&
            (!brand||brandName.includes(brand)) &&
-           (!seller||sellerName.includes(seller)) &&
            (!partner||partnerName.includes(partner)) &&
            (!status||c.status===status) &&
            (!pgSeller||rpg===pgSeller) &&
@@ -2528,11 +2525,7 @@ document.addEventListener('DOMContentLoaded',function(){
       'Todas as categorias'
     );
 
-    fillSelect(
-      'reportBuyerFilter',
-      uniq(r.map(function(x){ return x.comprador || ''; })),
-      'Todos os compradores'
-    );
+    fillSelect('reportClientFilter', uniq(r.flatMap(function(x){ return [x.comprador || '', x.vendedor || '']; })), 'Todos os clientes');
 
     fillSelect(
       'reportBrandFilter',
@@ -2540,11 +2533,6 @@ document.addEventListener('DOMContentLoaded',function(){
       'Todas as marcas'
     );
 
-    fillSelect(
-      'reportSellerFilter',
-      uniq(r.map(function(x){ return x.vendedor || ''; })),
-      'Todos os vendedores'
-    );
 
     fillSelect(
       'reportPartnerFilter',
@@ -2565,7 +2553,7 @@ document.addEventListener('DOMContentLoaded',function(){
   function bind(){
     var ids = [
       'reportDateFrom','reportDateTo','reportYearFilter','reportCategoryFilter',
-      'reportBuyerFilter','reportBrandFilter','reportSellerFilter','reportPartnerFilter',
+      'reportClientFilter','reportBrandFilter','reportPartnerFilter',
       'reportStatusFilter','reportPgSellerFilter','reportPgBuyerFilter','reportStockFilter'
     ];
 
@@ -2663,9 +2651,8 @@ document.addEventListener('DOMContentLoaded',function(){
     var pairs=[
       ['Ano','reportYearFilter'],
       ['Categoria','reportCategoryFilter'],
-      ['Comprador','reportBuyerFilter'],
+      ['Cliente','reportClientFilter'],
       ['Marca','reportBrandFilter'],
-      ['Vendedor','reportSellerFilter'],
       ['Intermediario','reportPartnerFilter'],
       ['Status','reportStatusFilter']
     ];
