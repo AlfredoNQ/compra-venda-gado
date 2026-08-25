@@ -18,10 +18,6 @@
    if(s==='Comprador') e.textContent='Cliente';
    if(s==='Clientes'&&e.closest('.tabs')) e.textContent='Cadastro';
    if(s==='Estoque atual'&&e.closest('.tabs')) e.textContent='Estoque';
-   if(s==='A receber do comprador'){
-    var card=e.closest('.neg-v66-card,.panel,.calc,.summary-card,.field')||e.parentElement;
-    if(card)card.style.display='none';
-   }
   });
   document.querySelectorAll('.neg-v66-top + div').forEach(function(e){if((e.textContent||'').indexOf('Escolha uma etapa da negociação')>=0)e.style.display='none'});
   document.querySelectorAll('.neg-v66-title').forEach(function(e){var s=(e.textContent||'').trim();if(s==='Compra / Vendedor')e.textContent='Compra';if(s==='Venda / Comprador')e.textContent='Venda'});
@@ -57,7 +53,7 @@
  function normalizeEditModal(){
   var title=document.getElementById('modalTitle'),rid=document.getElementById('rid');
   if(!title||title.textContent.indexOf('Editar')<0)return;
-  var list=(typeof records!=='undefined'&&Array.isArray(records)?records:(window.records||[]));var r=list.find(function(x){return x.id===(rid&&rid.value)}),isVenda=!!(r&&Number(r.quantVenda||0)>0&&!Number(r.quantCompra||0));
+  var list=(typeof records!=='undefined'&&Array.isArray(records)?records:(window.records||[]));var r=list.find(function(x){return x.id===(rid&&rid.value)}),isVenda=!!(r&&(window.__negListView==='buyer'||(Number(r.quantVenda||0)>0&&!Number(r.quantCompra||0))));
   var c=document.getElementById('negV66Compra'),v=document.getElementById('negV66Venda'),s=document.getElementById('negV66Resumo');
   if(c)c.style.display=isVenda?'none':'block'; if(v)v.style.display=isVenda?'block':'none'; if(s)s.style.display='block';
   var buyClient=document.getElementById('rclienteCompra'),sellClient=document.getElementById('rclienteVenda');if(buyClient)buyClient.required=!isVenda;if(sellClient)sellClient.required=isVenda;
@@ -65,7 +61,11 @@
   window.__modeV127=isVenda?'venda':'compra';
   var tabs=document.querySelector('.neg-v66-tabs');if(tabs)tabs.style.display='none';
   var st=s&&s.querySelector('.neg-v66-title');if(st)st.textContent=isVenda?'Documentos e fechamento da venda':'Documentos e fechamento da compra';
+  var totals=document.getElementById('installmentTotals');if(totals){Array.from(totals.children).forEach(function(card){var txt=(card.textContent||'').toLowerCase();card.style.display=(isVenda?txt.indexOf('receber do comprador')<0:txt.indexOf('pagar ao vendedor')<0)?'none':'';});}
+  hydrateSaleLots(r);
+  try{if(typeof updateEditorSummary==='function')updateEditorSummary();}catch(e){}
  }
+ function hydrateSaleLots(r){var rows=document.getElementById('loteRows130');if(!rows||!r)return;var saved=r.animalLotsSold||r.sourceLots||[];if(!Array.isArray(saved)||!saved.length)return;var all=Array.from(rows.querySelectorAll('.field'));saved.forEach(function(item,i){var id=item.lotId||item.id,qty=Number(item.quantity||item.quantidade||0),row=all[i];if(!row){var add=document.getElementById('addLote130');if(add)add.click();all=Array.from(rows.querySelectorAll('.field'));row=all[i];}var sel=row&&row.querySelector('.lote130'),q=row&&row.querySelector('.qtdLote130');if(sel){sel.value=id;sel.dispatchEvent(new Event('change',{bubbles:true}));}if(q)q.value=qty;});}
  function setModeRequirements(mode){var sale=mode==='venda',a=document.getElementById('rclienteCompra'),b=document.getElementById('rclienteVenda');if(a)a.required=!sale;if(b)b.required=sale;window.__modeV127=mode}
  function addLotPicker(){
   var box=document.getElementById('negV66Venda');if(!box||document.getElementById('v131LotPicker'))return;
