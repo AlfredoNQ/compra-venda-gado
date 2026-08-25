@@ -12,6 +12,8 @@
    if(s==='📋 Negociações completas') e.style.display='none';
    if(s==='Compra / Vendedor') e.textContent='Compra';
    if(s==='Venda / Comprador') e.textContent='Venda';
+   if(s==='🐂 Compra / Vendedor') e.textContent='Compra';
+   if(s==='💰 Venda / Comprador') e.textContent='Venda';
    if(s==='Vendedor') e.textContent='Cliente';
    if(s==='Comprador') e.textContent='Cliente';
    if(s==='Clientes'&&e.closest('.tabs')) e.textContent='Cadastro';
@@ -21,6 +23,8 @@
     if(card)card.style.display='none';
    }
   });
+  document.querySelectorAll('.neg-v66-top + div').forEach(function(e){if((e.textContent||'').indexOf('Escolha uma etapa da negociação')>=0)e.style.display='none'});
+  var side=document.getElementById('paymentPlanSide');if(side&&side.closest('.field'))side.closest('.field').style.display='none';
   document.querySelectorAll('.neg-v66-tab,[data-negv66="resumo"]').forEach(function(e){e.style.display='none'});
   document.querySelectorAll('.neg-list-tabs').forEach(function(e){e.style.display='none'});
  }
