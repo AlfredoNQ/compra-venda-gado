@@ -43,11 +43,13 @@
   var cad=t.querySelector('[data-tab="cadastrosV120"]')||byText('Cadastro'),ani=t.querySelector('[data-tab="animaisV121"]')||byText('Animais'),co=add('compraTelaV128','Compra','seller'),ve=add('vendaTelaV128','Venda','buyer'),es=t.querySelector('[data-tab="estoque"]')||byText('Estoque'),cu=t.querySelector('[data-tab="custos"]')||byText('$ Custos'),ma=t.querySelector('[data-tab="mapa"]')||byText('Mapa'),re=t.querySelector('[data-tab="relatorios"]')||byText('Relatório');
   var cur=p;[cad,co,ve,es,ani,cu,ma,re].filter(Boolean).forEach(function(x){t.insertBefore(x,cur.nextSibling);cur=x});
   t.dataset.v131Locked='1';
+  t.style.visibility='';
  }
  document.addEventListener('click',function(ev){
   var x=ev.target&&ev.target.closest&&ev.target.closest('.neg-v66-tab,[data-negv66-go],[data-negv66="resumo"]');
   if(x){ev.preventDefault();ev.stopImmediatePropagation();x.style.display='none';}
  },true);
- setTimeout(run,0);
+ var initialTabs=document.querySelector('.tabs');if(initialTabs)initialTabs.style.visibility='hidden';
+ setTimeout(run,800);
  new MutationObserver(function(){cleanText()}).observe(document.body,{subtree:true,childList:true});
 })();
