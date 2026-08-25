@@ -12,5 +12,5 @@ function apply(){
  return true;
 }
  function loop(){if(!apply())setTimeout(loop,300)}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loop);else loop();setTimeout(apply,1500);setTimeout(apply,3000);
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loop);else loop();
 })();
