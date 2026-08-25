@@ -7,6 +7,9 @@
    if(s==='Continuar para Venda →'||s==='Continuar para Venda') e.style.display='none';
    if(s==='Vendedores / Compras') e.textContent='Compras';
    if(s==='Compradores / Vendas') e.textContent='Vendas';
+   if(s==='🐂 Vendedores / Compras') e.textContent='Compras';
+   if(s==='💰 Compradores / Vendas') e.textContent='Vendas';
+   if(s==='📋 Negociações completas') e.style.display='none';
    if(s==='Compra / Vendedor') e.textContent='Compra';
    if(s==='Venda / Comprador') e.textContent='Venda';
    if(s==='Vendedor') e.textContent='Cliente';
@@ -19,6 +22,7 @@
    }
   });
   document.querySelectorAll('.neg-v66-tab,[data-negv66="resumo"]').forEach(function(e){e.style.display='none'});
+  document.querySelectorAll('.neg-list-tabs').forEach(function(e){e.style.display='none'});
  }
  function syncClientNames(){
   function sync(selectId,legacyId){
