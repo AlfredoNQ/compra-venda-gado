@@ -7,7 +7,7 @@ function apply(){
  var cad=tabs.querySelector('[data-tab="cadastrosV120"]'),ani=tabs.querySelector('[data-tab="animaisV121"]'),estoque=tabs.querySelector('[data-tab="estoque"]'),custos=tabs.querySelector('[data-tab="custos"]'),mapa=tabs.querySelector('[data-tab="mapa"]'),rel=tabs.querySelector('[data-tab="relatorios"]');
  var compra=btn('compraTelaV128','Compra','seller'),venda=btn('vendaTelaV128','Venda','buyer');
  if(cad)cad.textContent='Cadastro';if(estoque)estoque.textContent='Estoque';if(rel)rel.textContent='Relatório';
- var order=[panel,cad,compra,venda,estoque,ani,custos,mapa,rel].filter(Boolean),cursor=panel;order.slice(1).forEach(function(x){tabs.insertBefore(x,cursor.nextSibling);cursor=x});
+ // A ordem final é aplicada exclusivamente pelo módulo v131, depois que todos os módulos carregam.
  document.querySelectorAll('.neg-list-tabs').forEach(function(x){x.style.display='none'});
  return true;
 }
