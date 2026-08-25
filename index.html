@@ -2699,7 +2699,7 @@ document.addEventListener('DOMContentLoaded',function(){
       lots.forEach(function(x){
         var qty=Number(x.quantity||x.quantidade||0);
         var lot=(records||[]).find(function(z){return z.id===(x.lotId||x.id)})||{};
-        expanded.push({...r,quantVenda:qty,totalLotSale:qty*Number(r.precoVenda||0),animalNumbersSold:allNums.slice(numberCursor,numberCursor+qty),vendedor:lot.vendedor||r.vendedor, data:lot.data||r.data, era:lot.era||r.era, pesoKg:lot.pesoKg||r.pesoKg});
+        expanded.push({...r,quantCompra:qty,precoCompra:Number(lot.precoCompra||r.precoCompra||0),quantVenda:qty,totalLotSale:qty*Number(r.precoVenda||0),animalNumbersSold:allNums.slice(numberCursor,numberCursor+qty).filter(function(n){return /^\d+$/.test(String(n))}),vendedor:lot.vendedor||r.vendedor, data:lot.data||r.data, era:lot.era||r.era, pesoKg:lot.pesoKg||r.pesoKg});
         numberCursor+=qty;
       });
     });
@@ -2763,13 +2763,13 @@ document.addEventListener('DOMContentLoaded',function(){
           cut(num.format(c.at),7),
           cut(money.format(r.totalLotSale!=null?r.totalLotSale:c.totalV),13),
           cut(money.format(c.lucro),15),
-          cut((Array.isArray(r.animalNumbersSold)?r.animalNumbersSold:(Array.isArray(r.numerosAnimaisVendidos)?r.numerosAnimaisVendidos:[])).join(', ')||'-',16),
+          cut((Array.isArray(r.animalNumbersSold)?r.animalNumbersSold:(Array.isArray(r.numerosAnimaisVendidos)?r.numerosAnimaisVendidos:[])).filter(function(n){return /^\d+$/.test(String(n))}).join(', ')||'-',16),
           cut(c.status||'-',10)
         ];
         vals.forEach(function(v,i){text(cols[i][0],y,7,v,false)});
         var pay=String(r.paymentSell||r.formaPagamentoVenda||'').trim()||'Não informado';
         var parts=(typeof installmentSummary==='function'?installmentSummary(r):'')||'Sem parcelas';
-        text(margin,y-9,6,'Pagamento: '+pay+' | '+parts,false);
+        text(margin,y-9,6,'Compra/cab: '+money.format(c.pc)+' | Venda/cab: '+money.format(c.pv)+' | Lucro: '+money.format(c.lucro)+' | Pagamento: '+pay+' | '+parts,false);
         line(margin,y-14,W-margin,y-14);
         y-=rowH;
       });
