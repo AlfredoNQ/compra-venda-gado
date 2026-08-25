@@ -40,6 +40,12 @@
    if(opt)s.value=opt.value;
   }
   hydrate('rclienteCompra','rvendedor'); hydrate('rclienteVenda','rcomprador');
+  [300,800,1500].forEach(function(ms){setTimeout(function(){hydrate('rclienteCompra','rvendedor');hydrate('rclienteVenda','rcomprador')},ms)});
+  var form=document.getElementById('recordForm');
+  if(form&&!form.dataset.v131EditHydrate){
+   form.dataset.v131EditHydrate='1';
+   new MutationObserver(function(){hydrate('rclienteCompra','rvendedor');hydrate('rclienteVenda','rcomprador')}).observe(form,{childList:true,subtree:true});
+  }
   ['rvendedor','rcomprador'].forEach(function(id){var x=document.getElementById(id);if(x&&!x.dataset.v131Hydrate){x.dataset.v131Hydrate='1';x.addEventListener('input',function(){hydrate('rclienteCompra','rvendedor');hydrate('rclienteVenda','rcomprador')})}});
  }
  function run(){
