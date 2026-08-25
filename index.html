@@ -2694,10 +2694,12 @@ document.addEventListener('DOMContentLoaded',function(){
     list.forEach(function(r){
       var lots=(Array.isArray(r.animalLotsSold)&&r.animalLotsSold.length)?r.animalLotsSold:(Array.isArray(r.sourceLots)?r.sourceLots:[]);
       if(!lots.length){ expanded.push(r); return; }
+      var allNums=Array.isArray(r.animalNumbersSold)?r.animalNumbersSold:(Array.isArray(r.numerosAnimaisVendidos)?r.numerosAnimaisVendidos:[]),numberCursor=0;
       lots.forEach(function(x){
         var qty=Number(x.quantity||x.quantidade||0);
         var lot=(records||[]).find(function(z){return z.id===(x.lotId||x.id)})||{};
-        expanded.push({...r,quantVenda:qty,totalLotSale:qty*Number(r.precoVenda||0),vendedor:lot.vendedor||r.vendedor, data:lot.data||r.data, era:lot.era||r.era, pesoKg:lot.pesoKg||r.pesoKg});
+        expanded.push({...r,quantVenda:qty,totalLotSale:qty*Number(r.precoVenda||0),animalNumbersSold:allNums.slice(numberCursor,numberCursor+qty),vendedor:lot.vendedor||r.vendedor, data:lot.data||r.data, era:lot.era||r.era, pesoKg:lot.pesoKg||r.pesoKg});
+        numberCursor+=qty;
       });
     });
     var sorted=expanded.sort(function(a,b){
