@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 39465)
-Total output lines: 3257
+Warning: truncated output (original token count: 39501)
+Total output lines: 3256
 
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Compra e Venda de Gado — v112</title>
 <style>
@@ -658,8 +658,7 @@ tbody tr:hover{background:#f7fbf8!important}
 <section id="mapa" class="tab">
 <div class="toolbar">
 <select id="mapYearFilter"><option value="">Todos os anos</option></select>
-<select id="mapTypeFilter…19465 tokens truncated…User.id,records:mergedRecords,costs:mergedCosts,updated_at:sentAt},{onConflict:'user_id'})
-      .select('user_id,records,costs,updated_at').single();
+<select id="mapTypeFilter…19501 tokens truncated…ngle();
     if(saveErr)throw saveErr;
     if(!saved||saved.user_id!==cloudUser.id)throw new Error('Supabase não confirmou o usuário');
     if(!verify(p.records||records,saved.records||[],delR))throw new Error('Supabase não confirmou todos os registros');
@@ -1514,7 +1513,7 @@ function draw(){filters();if(!map)return;group.clearLayers();marks=[];let t=mapT
       .on('click',function(){this.bringToFront();})
       .addTo(group);marks.push(m);d++}});mapKpis.innerHTML=[['Negociações',list().length],['Origens',o],['Destinos',d],['Pontos',o+d]].map(x=>'<div class="kpi"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('');if(marks.length)map.fitBounds(L.featureGroup(marks).getBounds().pad(.15),{maxZoom:12});mapOfflineNotice.style.display=navigator.onLine?'none':'block'}
 function loc(a,b){navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{document.getElementById(a).value=p.coords.latitude.toFixed(6);document.getElementById(b).value=p.coords.longitude.toFixed(6)},()=>alert('Não foi possível obter sua localização.')):alert('Localização não disponível.')}
-function bind(){originLocationBtn.onclick=()=>loc('roriginLat','roriginLng');destLocationBtn.onclick=()=>loc('rdestLat','rdestLng');['mapYearFilter','mapTypeFilter','mapSellerFilter','mapBuyerFilter','mapCategoryFilter'].forEach(id=>document.getElementById(id).onchange=draw);mapNormalBtn.onclick=()=>{if(map){if(map.hasLayer(sat))map.removeLayer(sat);if(!map.hasLayer(osm))osm.addTo(map)}};mapSatelliteBtn.onclick=()=>{if(map){if(map.hasLayer(osm))map.removeLayer(osm);if(!map.hasLayer(sat))sat.addTo(map)}};document.querySelectorAll('.tabbtn').forEach(b=>{if(b.dataset.tab==='mapa')b.addEventListener('click',()=>setTimeout(()=>{init();map.invalidateSize();draw()},120))});filters()}
+function bind(){var ol=document.getElementById('originLocationBtn'),dl=document.getElementById('destLocationBtn');if(ol)ol.onclick=()=>loc('roriginLat','roriginLng');if(dl)dl.onclick=()=>loc('rdestLat','rdestLng');['mapYearFilter','mapTypeFilter','mapSellerFilter','mapBuyerFilter','mapCategoryFilter'].forEach(id=>{var x=document.getElementById(id);if(x)x.onchange=draw});var mn=document.getElementById('mapNormalBtn'),ms=document.getElementById('mapSatelliteBtn');if(mn)mn.onclick=()=>{if(map){if(map.hasLayer(sat))map.removeLayer(sat);if(!map.hasLayer(osm))osm.addTo(map)}};if(ms)ms.onclick=()=>{if(map){if(map.hasLayer(osm))map.removeLayer(osm);if(!map.hasLayer(sat))sat.addTo(map)}};document.querySelectorAll('.tabbtn').forEach(b=>{if(b.dataset.tab==='mapa')b.addEventListener('click',()=>setTimeout(()=>{init();if(map)map.invalidateSize();draw()},120))});filters()}
 window.refreshCattleMapV33=()=>{try{filters();draw()}catch(e){}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
@@ -1826,7 +1825,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  window.updateNegV66=update;
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
  setTimeout(bind,500);
-  setTimeout(bindNegotiationListTabs,550);
 })();
 </script>
 
