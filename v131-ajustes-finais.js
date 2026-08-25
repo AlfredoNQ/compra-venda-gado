@@ -59,6 +59,7 @@
   var r=(window.records||[]).find(function(x){return x.id===(rid&&rid.value)}),isVenda=!!(r&&Number(r.quantVenda||0)>0&&!Number(r.quantCompra||0));
   var c=document.getElementById('negV66Compra'),v=document.getElementById('negV66Venda'),s=document.getElementById('negV66Resumo');
   if(c)c.style.display=isVenda?'none':'block'; if(v)v.style.display=isVenda?'block':'none'; if(s)s.style.display='block';
+  var buyClient=document.getElementById('rclienteCompra'),sellClient=document.getElementById('rclienteVenda');if(buyClient)buyClient.required=!isVenda;if(sellClient)sellClient.required=isVenda;
   window.__modeV127=isVenda?'venda':'compra';
   var tabs=document.querySelector('.neg-v66-tabs');if(tabs)tabs.style.display='none';
   var st=s&&s.querySelector('.neg-v66-title');if(st)st.textContent=isVenda?'Documentos e fechamento da venda':'Documentos e fechamento da compra';
@@ -102,6 +103,7 @@
  document.addEventListener('change',function(ev){var s=ev.target;if(!s||!s.matches||!s.matches('select[data-client-select]'))return;var id=s.id==='rclienteCompra'?'rvendedor':'rcomprador',h=document.getElementById(id);if(h)h.value=s.value||'';},true);
  document.addEventListener('submit',function(ev){var f=ev.target;if(!f||f.id!=='recordForm')return;['rclienteCompra','rclienteVenda'].forEach(function(sid){var s=document.getElementById(sid),hid=sid==='rclienteCompra'?'rvendedor':'rcomprador',h=document.getElementById(hid);if(s&&h)h.value=s.value||''});},true);
  document.addEventListener('submit',function(ev){if(ev.target&&ev.target.id==='recordForm'&&window.__v131PendingLots){setTimeout(function(){var id=document.getElementById('rid')?.value,r=(window.records||[]).find(function(x){return x.id===id})||window.records&&window.records[window.records.length-1];if(r){r.sourceLots=window.__v131PendingLots;try{persist()}catch(e){}}},500)}},false);
+ setInterval(function(){var m=document.getElementById('modalTitle');if(m&&m.textContent.indexOf('Editar')>=0)normalizeEditModal()},300);
  var initialTabs=document.querySelector('.tabs');if(initialTabs)initialTabs.style.visibility='hidden';
  setTimeout(run,800);
  new MutationObserver(function(){cleanText()}).observe(document.body,{subtree:true,childList:true});
