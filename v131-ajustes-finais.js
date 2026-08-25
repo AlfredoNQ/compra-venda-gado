@@ -104,7 +104,7 @@
   document.querySelectorAll('.neg-v66-tab,[data-negv66-go]').forEach(function(x){x.onclick=null;x.style.display='none'});
   ['rSellerIdV121','rBuyerIdV121'].forEach(function(id){var e=document.getElementById(id);if(e&&e.closest('.field'))e.closest('.field').remove()});
   cleanText();
-  addLotPicker();
+  // O seletor oficial de lotes é criado pelo v130; não duplicar a lista aqui.
   addPurchaseDocuments();
   addSaleCategory();
   addSaleWeight();
