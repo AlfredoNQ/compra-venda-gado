@@ -2703,6 +2703,7 @@ document.addEventListener('DOMContentLoaded',function(){
         numberCursor+=qty;
       });
     });
+    z=totals(expanded);
     var sorted=expanded.sort(function(a,b){
       return String(b.data||'').localeCompare(String(a.data||''));
     });
@@ -2753,10 +2754,10 @@ document.addEventListener('DOMContentLoaded',function(){
         var c=calc(r);
         var vals=[
           cut(fmtDate(r.data),10),
-          cut((r.vendedor||'-')+(r.totalLotSale!=null?' • lote':'') ,18),
+          cut(String((r.vendedor||'-')+(r.totalLotSale!=null?' • lote':'')).replace(/\?/g,''),18),
           cut(r.era||'-',12),
-          cut(r.comprador||'-',19),
-          cut(r.marca||'-',13),
+          cut(String(r.comprador||'-').replace(/\?/g,''),19),
+          cut(String(r.marca||'-').replace(/\?/g,''),13),
           cut(num.format(c.qc),8),
           cut(num.format(c.sold),8),
           cut(num.format(c.kg),8),
@@ -2768,8 +2769,9 @@ document.addEventListener('DOMContentLoaded',function(){
         ];
         vals.forEach(function(v,i){text(cols[i][0],y,7,v,false)});
         var pay=String(r.paymentSell||r.formaPagamentoVenda||'').trim()||'Não informado';
-        var parts=(typeof installmentSummary==='function'?installmentSummary(r):'')||'Sem parcelas';
-        text(margin,y-9,6,'Compra/cab: '+money.format(c.pc)+' | Venda/cab: '+money.format(c.pv)+' | Lucro: '+money.format(c.lucro)+' | Pagamento: '+pay+' | '+parts,false);
+        var inst=Array.isArray(r.installments)?r.installments:(Array.isArray(r.parcelas)?r.parcelas:[]);
+        var parts=inst.map(function(x,i){return (i+1)+'ª '+((x.date||x.vencimento)?fmtDate(x.date||x.vencimento):'sem data')+' '+money.format(n(x.value||x.valor))+' '+(x.paid?'pago':'em aberto')}).join(' | ')||'Sem parcelas';
+        text(margin,y-9,6,'Compra/cab: '+money.format(c.pc)+' | Venda/cab: '+money.format(c.pv)+' | Lucro: '+money.format(c.lucro)+' | '+pay+' | Parcelas: '+parts,false);
         line(margin,y-14,W-margin,y-14);
         y-=rowH;
       });
