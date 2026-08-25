@@ -181,8 +181,7 @@
 
   renderKpis = function () {
 
-    let list = [];
-    try { list = (typeof records !== 'undefined' && Array.isArray(records)) ? records : []; } catch (_) { list = []; }
+    const list = panelRecords();
     const z = totals(list);
 
 
