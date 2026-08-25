@@ -28,6 +28,8 @@
   sync('rclienteCompra','rvendedor'); sync('rclienteVenda','rcomprador');
  }
  function run(){
+  var legacy=document.getElementById('v66-neg-separate');
+  if(legacy)legacy.remove();
   ['rSellerIdV121','rBuyerIdV121'].forEach(function(id){var e=document.getElementById(id);if(e&&e.closest('.field'))e.closest('.field').remove()});
   cleanText();
   syncClientNames();
@@ -35,6 +37,10 @@
   var cad=t.querySelector('[data-tab="cadastrosV120"]')||byText('Cadastro'),ani=t.querySelector('[data-tab="animaisV121"]')||byText('Animais'),co=document.getElementById('compraTelaV128'),ve=document.getElementById('vendaTelaV128'),es=t.querySelector('[data-tab="estoque"]')||byText('Estoque'),cu=t.querySelector('[data-tab="custos"]')||byText('$ Custos'),ma=t.querySelector('[data-tab="mapa"]')||byText('Mapa'),re=t.querySelector('[data-tab="relatorios"]')||byText('Relatório');
   var cur=p;[cad,co,ve,es,ani,cu,ma,re].filter(Boolean).forEach(function(x){t.insertBefore(x,cur.nextSibling);cur=x});
  }
+ document.addEventListener('click',function(ev){
+  var x=ev.target&&ev.target.closest&&ev.target.closest('.neg-v66-tab,[data-negv66-go],[data-negv66="resumo"]');
+  if(x){ev.preventDefault();ev.stopImmediatePropagation();x.style.display='none';}
+ },true);
  run();[500,1200,2000,3500,6000].forEach(function(ms){setTimeout(run,ms)});
  new MutationObserver(function(){cleanText()}).observe(document.body,{subtree:true,childList:true});
 })();
