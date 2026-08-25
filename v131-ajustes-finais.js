@@ -56,10 +56,11 @@
  function normalizeEditModal(){
   var title=document.getElementById('modalTitle'),rid=document.getElementById('rid');
   if(!title||title.textContent.indexOf('Editar')<0)return;
-  var r=(window.records||[]).find(function(x){return x.id===(rid&&rid.value)}),isVenda=!!(r&&Number(r.quantVenda||0)>0&&!Number(r.quantCompra||0));
+  var list=(typeof records!=='undefined'&&Array.isArray(records)?records:(window.records||[]));var r=list.find(function(x){return x.id===(rid&&rid.value)}),isVenda=!!(r&&Number(r.quantVenda||0)>0&&!Number(r.quantCompra||0));
   var c=document.getElementById('negV66Compra'),v=document.getElementById('negV66Venda'),s=document.getElementById('negV66Resumo');
   if(c)c.style.display=isVenda?'none':'block'; if(v)v.style.display=isVenda?'block':'none'; if(s)s.style.display='block';
   var buyClient=document.getElementById('rclienteCompra'),sellClient=document.getElementById('rclienteVenda');if(buyClient)buyClient.required=!isVenda;if(sellClient)sellClient.required=isVenda;
+  var gc=document.getElementById('rgtaCompra'),gn=document.getElementById('rnotaCompra');if(gc)gc.value=(document.getElementById('rgta')||{}).value||'';if(gn)gn.value=(document.getElementById('rnota')||{}).value||'';
   window.__modeV127=isVenda?'venda':'compra';
   var tabs=document.querySelector('.neg-v66-tabs');if(tabs)tabs.style.display='none';
   var st=s&&s.querySelector('.neg-v66-title');if(st)st.textContent=isVenda?'Documentos e fechamento da venda':'Documentos e fechamento da compra';
@@ -74,6 +75,11 @@
   function collect(){var chosen=[];rows.querySelectorAll('[data-lot]:checked').forEach(function(c){var q=rows.querySelector('[data-lotq="'+c.dataset.lot+'"]');chosen.push({id:c.dataset.lot,quantidade:Number(q&&q.value||0)})});var qv=document.getElementById('rqv');if(chosen.length)qv.value=chosen.reduce(function(a,x){return a+x.quantidade},0);window.__v131PendingLots=chosen}
   rows.addEventListener('change',collect);rows.addEventListener('input',collect);
  }
+ function addPurchaseDocuments(){
+  var box=document.getElementById('negV66Compra');if(!box||document.getElementById('v131PurchaseDocs'))return;var grid=box.querySelector('.formgrid');if(!grid)return;
+  var d=document.createElement('div');d.id='v131PurchaseDocs';d.className='field span2';d.innerHTML='<label>Documentos da compra</label><div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn secondary">GTA <select id="rgtaCompra"><option></option><option>ok</option><option>pendente</option></select></label><label class="btn secondary">Nota fiscal <select id="rnotaCompra"><option></option><option>ok</option><option>pendente</option></select></label></div>';grid.appendChild(d);
+  [['rgtaCompra','rgta'],['rnotaCompra','rnota']].forEach(function(pair){var a=document.getElementById(pair[0]),b=document.getElementById(pair[1]);if(a&&b){a.value=b.value||'';a.addEventListener('change',function(){b.value=a.value})}});
+ }
  function run(){
   if(document.querySelector('.tabs')?.dataset.v131Locked==='1')return;
   var legacy=document.getElementById('v66-neg-separate');
@@ -84,6 +90,7 @@
   ['rSellerIdV121','rBuyerIdV121'].forEach(function(id){var e=document.getElementById(id);if(e&&e.closest('.field'))e.closest('.field').remove()});
   cleanText();
   addLotPicker();
+  addPurchaseDocuments();
   var gen=document.getElementById('generatePaymentPlanBtn');if(gen&&!gen.dataset.v131Side){gen.dataset.v131Side='1';gen.addEventListener('click',function(){var side=document.getElementById('paymentPlanSide');if(side){side.value=window.__modeV127==='venda'?'Receber':'Pagar';side.dispatchEvent(new Event('change'))}} ,true)}
   syncClientNames();
   if(window.renderTable&&!window.renderTable.__v131Lists){var rt=window.renderTable;window.renderTable=function(){var out=rt.apply(this,arguments),view=window.__negListView||'seller',idx=view==='buyer'?4:3;document.querySelectorAll('#tbody tr').forEach(function(tr){var cell=tr.querySelector('td:nth-child('+(idx+1)+')');var n=Number(String(cell&&cell.textContent||'0').replace(/[^0-9,.-]/g,'').replace(/\./g,'').replace(',','.'));if(!(n>0))tr.style.display='none'});return out};window.renderTable.__v131Lists=true}
