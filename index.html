@@ -2735,16 +2735,17 @@ document.addEventListener('DOMContentLoaded',function(){
       line(margin,y+8,W-margin,y+8);
 
       var cols=[
-        [margin,58,'Data'],
-        [86,105,'Vendedor'],
-        [195,72,'Categoria'],
-        [270,110,'Comprador'],
-        [384,82,'Marca'],
-        [470,55,'Comp.'],
-        [528,55,'Vend.'],
-        [586,85,'Total venda'],
-        [674,85,'Lucro'],
-        [762,54,'Status']
+        [margin,52,'Data'],
+        [82,96,'Vendedor'],
+        [180,62,'Categoria'],
+        [244,100,'Comprador'],
+        [346,60,'Marca'],
+        [408,48,'Comp.'],
+        [458,48,'Vend.'],
+        [508,78,'Total venda'],
+        [590,68,'Lucro'],
+        [662,94,'Nº animais'],
+        [760,56,'Status']
       ];
 
       cols.forEach(function(c){text(c[0],y,7,c[2],true)});
@@ -2767,6 +2768,7 @@ document.addEventListener('DOMContentLoaded',function(){
           cut(num.format(c.sold),8),
           cut(money.format(r.totalLotSale!=null?r.totalLotSale:c.totalV),15),
           cut(money.format(c.lucro),15),
+          cut((Array.isArray(r.animalNumbersSold)?r.animalNumbersSold:(Array.isArray(r.numerosAnimaisVendidos)?r.numerosAnimaisVendidos:[])).join(', ')||'-',16),
           cut(c.status||'-',10)
         ];
         vals.forEach(function(v,i){text(cols[i][0],y,7,v,false)});
