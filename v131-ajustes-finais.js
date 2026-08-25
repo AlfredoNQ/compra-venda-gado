@@ -12,7 +12,7 @@
    if(s==='Vendedor') e.textContent='Cliente';
    if(s==='Comprador') e.textContent='Cliente';
    if(s==='A receber do comprador'){
-    var card=e.closest('.panel,.calc,.summary-card,.field')||e.parentElement;
+    var card=e.closest('.neg-v66-card,.panel,.calc,.summary-card,.field')||e.parentElement;
     if(card)card.style.display='none';
    }
   });
@@ -26,6 +26,7 @@
    old.value=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'';
   }
   sync('rclienteCompra','rvendedor'); sync('rclienteVenda','rcomprador');
+  ['rclienteCompra','rclienteVenda'].forEach(function(id){var s=document.getElementById(id);if(s&&!s.dataset.v131Sync){s.dataset.v131Sync='1';s.addEventListener('change',function(){sync('rclienteCompra','rvendedor');sync('rclienteVenda','rcomprador')})}});
  }
  function run(){
   if(document.querySelector('.tabs')?.dataset.v131Locked==='1')return;
