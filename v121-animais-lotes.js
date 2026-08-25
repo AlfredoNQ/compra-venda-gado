@@ -1,9 +1,9 @@
 /* v121 — numeração de animais por lote, sem alterar negociações antigas */
 (function(){
   var KEY='gado_animais_v121';
-  function all(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return{}}}
-  function save(x){localStorage.setItem(KEY,JSON.stringify(x))}
-  function people(){try{return JSON.parse(localStorage.getItem('gado_cadastros_v120')||'[]')}catch(e){return[]}}
+  function all(){try{return JSON.parse((window.userGet?userGet(KEY):localStorage.getItem(KEY))||'{}')}catch(e){return{}}}
+  function save(x){try{if(window.userSet)userSet(KEY,JSON.stringify(x));else localStorage.setItem(KEY,JSON.stringify(x))}catch(e){}}
+  function people(){try{return JSON.parse((window.userGet?userGet('gado_cadastros_v120'):localStorage.getItem('gado_cadastros_v120'))||'[]')}catch(e){return[]}}
   function populatePeople(){
     var list=people(), s=document.getElementById('rSellerIdV121'), b=document.getElementById('rBuyerIdV121');if(!s||!b)return;
     function opts(tipo){return '<option value="">Selecionar</option>'+list.filter(function(x){return x.tipo===tipo}).map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.nome)+'</option>'}).join('')}
@@ -13,7 +13,7 @@
     if(typeof records==='undefined')return;
     var lots={};try{lots=JSON.parse(localStorage.getItem('gado_lotes_v121')||'{}')}catch(e){}
     records.forEach(function(r){if(!r||!r.id||lots[r.id])return;var q=Number(r.quantCompra||0),v=Number(r.quantVenda||0);lots[r.id]={id:r.id,recordId:r.id,vendedor:r.vendedor||'',data:r.data||'',categoria:r.era||'',original:q,vendida:Math.min(q,v),disponivel:Math.max(0,q-v),createdAt:new Date().toISOString()};});
-    localStorage.setItem('gado_lotes_v121',JSON.stringify(lots));
+    try{if(window.userSet)userSet('gado_lotes_v121',JSON.stringify(lots));else localStorage.setItem('gado_lotes_v121',JSON.stringify(lots))}catch(e){}
   }
   function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])})}
   function render(){
@@ -39,4 +39,5 @@
     var form=document.getElementById('recordForm');if(form)form.addEventListener('submit',function(){setTimeout(function(){var id=(document.getElementById('rid')||{}).value;if(!id||typeof records==='undefined')return;var r=records.find(function(x){return x.id===id});if(!r)return;var el=document.getElementById('animalNumbersSoldV121'),ls=document.getElementById('animalLotV121'),ss=document.getElementById('rSellerIdV121'),bb=document.getElementById('rBuyerIdV121');var nums=(el&&el.value?el.value.split(',').map(function(x){return x.trim()}).filter(Boolean):[]),lot=ls&&ls.value?ls.value:'';if(lot&&nums.length){var known=Array.isArray(all()[lot])?all()[lot].map(String):[],sold={};records.forEach(function(x){(x.animalNumbersSold||[]).forEach(function(n){if(x.id!==id)sold[String(n)]=1})});var invalid=nums.filter(function(n){return known.indexOf(String(n))<0||sold[String(n)]});if(invalid.length){alert('Números indisponíveis ou não pertencentes ao lote: '+invalid.join(', '));return}}r.animalLotId=lot;r.sellerIdV121=ss?ss.value:'';r.buyerIdV121=bb?bb.value:'';r.animalNumbersSold=nums;if(typeof persist==='function')persist()},50)});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  setTimeout(function(){try{migrateLots();render();populatePeople()}catch(e){}},900);
 })();
