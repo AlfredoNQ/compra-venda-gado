@@ -20,8 +20,9 @@
     var body=document.getElementById('animaisTabelaV121');if(!body||typeof records==='undefined')return;
     var a=all(), sold={};
     if(typeof records!=='undefined')records.forEach(function(x){(x.animalNumbersSold||[]).forEach(function(n){sold[String(n)]=1})});
-    body.innerHTML=records.filter(function(r){return Number(r.quantCompra||0)>Number(r.quantVenda||0)}).map(function(r){
-      var nums=Array.isArray(a[r.id])?a[r.id]:[], available=nums.filter(function(n){return !sold[String(n)]}), total=Math.max(0,Number(r.quantCompra||0)), soldCount=records.filter(function(x){return x.animalLotId===r.id}).reduce(function(n,x){return n+(x.animalNumbersSold||[]).length},0), remaining=Math.max(0,total-soldCount);
+    function allocated(id){return records.reduce(function(total,x){var lots=x.animalLotsSold||x.sourceLots||[];return total+(Array.isArray(lots)?lots.reduce(function(n,z){return n+((z.lotId||z.id)===id?Number(z.quantity||z.quantidade||0):0)},0):0)},0)}
+    body.innerHTML=records.filter(function(r){return Number(r.quantCompra||0)-Number(r.quantVenda||0)-allocated(r.id)>0}).map(function(r){
+      var nums=Array.isArray(a[r.id])?a[r.id]:[], available=nums.filter(function(n){return !sold[String(n)]}), total=Math.max(0,Number(r.quantCompra||0)), soldCount=records.filter(function(x){return x.animalLotId===r.id}).reduce(function(n,x){return n+(x.animalNumbersSold||[]).length},0)+allocated(r.id), remaining=Math.max(0,total-soldCount);
       return '<tr><td>'+esc(r.data)+'</td><td>'+esc(r.vendedor)+'</td><td>'+esc(r.era)+'</td><td>'+remaining+'</td><td>'+esc(available.join(', ')||'Ainda não numerados')+'</td><td><button class="mini" data-num-lote="'+esc(r.id)+'">Numerar</button></td></tr>';
     }).join('')||'<tr><td colspan="6" class="hint">Nenhuma compra encontrada.</td></tr>';
   }
