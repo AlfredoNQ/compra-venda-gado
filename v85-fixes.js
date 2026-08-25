@@ -21,7 +21,7 @@
   function saveTombstones(a){try{userSet(TOMBSTONE_KEY,JSON.stringify(Array.from(new Set(a||[]))));}catch(e){}}
   function mergeDeleted(remote){var all=Array.from(new Set(tombstones().concat(Array.isArray(remote)?remote:[])));saveTombstones(all);return all;}
   function addTombstone(id){if(!id)return;var a=tombstones();if(a.indexOf(id)<0)a.push(id);saveTombstones(a);}
-  function applyDeleted(remote){var all=mergeDeleted(remote);var d=new Set(all);records=records.filter(function(r){return !d.has(r&&r.id);});try{userSet(KEY,JSON.stringify(records));}catch(e){}return all;}
+  function applyDeleted(remote){var all=mergeDeleted(remote);var d=new Set(all);try{if(typeof records!=='undefined'&&Array.isArray(records)){records=records.filter(function(r){return !d.has(r&&r.id);});try{userSet(KEY,JSON.stringify(records));}catch(e){}}}catch(e){}return all;}
   function stable(v){try{return JSON.stringify(v||[]);}catch(e){return '[]';}}
   function clearConfirmedFlags(){try{userRemove(OFFLINE_DIRTY_KEY);userRemove(DELETED_RECORDS_KEY);userRemove(DELETED_COSTS_KEY);userRemove(LEGACY_PENDING);localStorage.removeItem(LEGACY_RETRY);}catch(e){}}
   function markSynced(){setCloudStatus('Sincronizado ✓','ok');var s=document.getElementById('saveStatus');if(s)s.textContent='Dados sincronizados • '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});var o=document.getElementById('offlineStatus');if(o){o.textContent='Online • sincronizado';o.className='cloudpill ok';}var b=document.getElementById('syncNowBtn');if(b)b.style.display='none';}
@@ -47,12 +47,11 @@
     try{
       var dels=applyDeleted();
       var payload={user_id:cloudUser.id,records:records,costs:costs,deleted_records:dels,updated_at:new Date().toISOString()};
-      var res=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'}).select('user_id,records,costs,deleted_records,updated_at').single();
+      // Do not request the complete record/PDF payload back from PostgREST.
+      // A large response can exceed Android WebView's JavaScript bridge limit
+      // even though Supabase already accepted the write with HTTP 2xx.
+      var res=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'});
       if(res.error)throw res.error;
-      if(!res.data||res.data.user_id!==cloudUser.id)throw new Error('Nuvem não confirmou o usuário');
-      var confirmedDeleted=Array.isArray(res.data.deleted_records)?res.data.deleted_records:[];
-      var dset=new Set(confirmedDeleted);
-      for(var i=0;i<dels.length;i++){if(!dset.has(dels[i]))throw new Error('Nuvem não confirmou exclusões');}
       clearConfirmedFlags();
       markSynced();
       return true;
