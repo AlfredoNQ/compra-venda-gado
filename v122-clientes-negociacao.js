@@ -14,5 +14,6 @@
   }
   function init(){setup();setTimeout(setup,500);setTimeout(setup,1200)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  document.addEventListener('clientesAtualizados',function(){setup()});
   document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('#newRecordBtn,.new-record,.btn-new-record'))setTimeout(setup,100)});
 })();

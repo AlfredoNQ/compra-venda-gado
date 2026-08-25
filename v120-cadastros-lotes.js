@@ -17,7 +17,7 @@
     var tel=prompt('Telefone (opcional):',item?item.telefone:'')||'';
     var pix=prompt('Pix/conta (opcional):',item?item.pix:'')||'';
     var list=read(), obj={id:item?item.id:'cad-'+Date.now(),nome:nome.trim(),tipo:'Cliente',documento:doc,telefone:tel,pix:pix,updatedAt:new Date().toISOString()};
-    var i=list.findIndex(function(x){return x.id===obj.id});if(i>=0)list[i]=obj;else list.push(obj);write(list);render();
+    var i=list.findIndex(function(x){return x.id===obj.id});if(i>=0)list[i]=obj;else list.push(obj);write(list);render();document.dispatchEvent(new CustomEvent('clientesAtualizados'));
   }
   function init(){
     if(document.getElementById('cadastrosV120'))return;
