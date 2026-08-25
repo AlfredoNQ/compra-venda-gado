@@ -48,6 +48,6 @@
   var x=ev.target&&ev.target.closest&&ev.target.closest('.neg-v66-tab,[data-negv66-go],[data-negv66="resumo"]');
   if(x){ev.preventDefault();ev.stopImmediatePropagation();x.style.display='none';}
  },true);
- setTimeout(run,2200);
+ setTimeout(run,0);
  new MutationObserver(function(){cleanText()}).observe(document.body,{subtree:true,childList:true});
 })();
