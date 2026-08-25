@@ -2,7 +2,7 @@
 (function(){
  function byText(txt){return Array.from(document.querySelectorAll('.tabs .tabbtn')).find(function(b){return (b.textContent||'').trim()===txt})}
  function cleanText(){
-  document.querySelectorAll('button,a,h2,h3,h4,th,.ph h2,.sectiontitle').forEach(function(e){
+  document.querySelectorAll('button,a,h2,h3,h4,th,b,.ph h2,.sectiontitle').forEach(function(e){
    var s=(e.textContent||'').trim();
    if(s==='Continuar para Venda →'||s==='Continuar para Venda') e.style.display='none';
    if(s==='Vendedores / Compras') e.textContent='Compras';
