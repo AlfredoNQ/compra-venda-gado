@@ -179,11 +179,15 @@
     var problems=[];
     ['Pagar','Receber'].forEach(function(side){
       var state=editorState(side);
-      if(state.list.length&&state.total>0&&state.scheduled-state.total>0.01)problems.push((side==='Pagar'?'Compra':'Venda')+': parcelas excedem o total em '+cash(state.scheduled-state.total));
+      if(state.list.length&&state.total>0&&Math.abs(state.scheduled-state.total)>0.01){
+        var label=side==='Pagar'?'a pagar ao vendedor':'a receber do comprador';
+        problems.push(label+': negociação '+cash(state.total)+' • parcelas '+cash(state.scheduled));
+      }
     });
-    if(problems.length&&!confirm(problems.join('\n')+'\n\nDeseja salvar mesmo assim?')){
+    if(problems.length){
       event.preventDefault();event.stopImmediatePropagation();
       var submit=event.target&&event.target.querySelector('button[type="submit"]');if(submit)submit.disabled=false;
+      alert('O total das parcelas precisa ser exatamente igual ao total da negociação.\n\n'+problems.join('\n'));
     }
   }
 
