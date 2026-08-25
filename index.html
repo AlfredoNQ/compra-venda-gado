@@ -981,7 +981,8 @@ function installmentSummary(r){
  let a=Array.isArray(r.installments)?r.installments:[];
  if(!a.length)return '—';
  let paid=a.filter(x=>x.paid).length,total=a.reduce((s,x)=>s+n(x.value),0),done=a.filter(x=>x.paid).reduce((s,x)=>s+n(x.value),0);
- return `${paid}/${a.length} baixadas • ${money.format(total-done)} pendente`;
+ let dates=a.map((x,i)=>`${i+1}ª ${x.date?fmtDate(x.date):'sem data'} ${money.format(n(x.value))} ${x.paid?'pago':'pendente'}`).join(' | ');
+ return `${dates} • ${paid}/${a.length} baixadas • ${money.format(total-done)} pendente`;
 }
 function renderInstallmentsEditor(list=[]){
  let el=$('installmentEditor'); if(!el)return;
