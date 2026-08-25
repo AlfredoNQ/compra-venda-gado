@@ -85,6 +85,8 @@
   var x=ev.target&&ev.target.closest&&ev.target.closest('.neg-v66-tab,[data-negv66-go],[data-negv66="resumo"]');
   if(x){ev.preventDefault();ev.stopImmediatePropagation();x.style.display='none';}
  },true);
+ document.addEventListener('change',function(ev){var s=ev.target;if(!s||!s.matches||!s.matches('select[data-client-select]'))return;var id=s.id==='rclienteCompra'?'rvendedor':'rcomprador',h=document.getElementById(id);if(h)h.value=s.value||'';},true);
+ document.addEventListener('submit',function(ev){var f=ev.target;if(!f||f.id!=='recordForm')return;['rclienteCompra','rclienteVenda'].forEach(function(sid){var s=document.getElementById(sid),hid=sid==='rclienteCompra'?'rvendedor':'rcomprador',h=document.getElementById(hid);if(s&&h)h.value=s.value||''});},true);
  var initialTabs=document.querySelector('.tabs');if(initialTabs)initialTabs.style.visibility='hidden';
  setTimeout(run,800);
  new MutationObserver(function(){cleanText()}).observe(document.body,{subtree:true,childList:true});
