@@ -128,12 +128,17 @@ async function cotacoesResponse() {
 
     async function buscarScotFisicoOficial() {
       const u='https://www.scotconsultoria.com.br/cotacoes/boi-gordo/';
-      try { return await buscar(u); } catch (_) {}
+      try {
+        const html=await buscar(u);
+        if(/PA\\s+Marabá[\\s|]+\\d{2,4},\\d{2}/i.test(limpar(html)))return html;
+      } catch (_) {}
       try {
         const r=await fetch('https://r.jina.ai/http://www.scotconsultoria.com.br/cotacoes/boi-gordo/',{
           headers:{'User-Agent':'Mozilla/5.0'},cf:{cacheTtl:900,cacheEverything:true}
         });
-        return r.ok?await r.text():null;
+        if(!r.ok)return null;
+        const text=await r.text();
+        return /PA\\s+Marabá[\\s|]+\\d{2,4},\\d{2}/i.test(text)?text:null;
       } catch (_) { return null; }
     }
 
