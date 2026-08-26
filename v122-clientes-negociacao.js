@@ -14,6 +14,6 @@
   }
   function init(){setup();setTimeout(setup,500);setTimeout(setup,1200)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
-  document.addEventListener('clientesAtualizados',function(){setup()});
+  document.addEventListener('clientesAtualizados',function(e){var d=e.detail||{},oldName=d.oldName,newName=d.newName;if(oldName&&newName&&oldName!==newName&&typeof records!=='undefined'&&Array.isArray(records)){records.forEach(function(r){if(r.vendedor===oldName)r.vendedor=newName;if(r.comprador===oldName)r.comprador=newName});try{if(typeof persist==='function')persist();if(typeof renderAll==='function')renderAll()}catch(err){}}setup()});
   document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('#newRecordBtn,.new-record,.btn-new-record'))setTimeout(setup,100)});
 })();
