@@ -25,7 +25,7 @@
   document.querySelectorAll('.neg-v66-tab,[data-negv66="resumo"]').forEach(function(e){e.style.display='none'});
   document.querySelectorAll('.neg-list-tabs').forEach(function(e){e.style.display='none'});
  }
- (function(){var st=document.createElement('style');st.textContent='.tabs{position:relative!important;top:auto!important;z-index:10!important;background:#fff!important;overflow:visible!important;margin-top:0!important;margin-bottom:18px!important}.tabs .tabbtn{position:relative;z-index:auto}.tab#negociacoes .tablewrap{overflow-x:auto}.tab#negociacoes table{font-size:12px}.tab#negociacoes th,.tab#negociacoes td{white-space:nowrap;padding:9px 10px}.tab#negociacoes th[data-sales-at],.tab#negociacoes th[data-sales-weight]{text-align:center;min-width:70px}.tab#negociacoes td.num{text-align:center}';document.head.appendChild(st)})();
+ (function(){var st=document.createElement('style');st.textContent='.tabs{position:relative!important;top:auto!important;z-index:10!important;background:#fff!important;overflow:visible!important;margin-top:0!important;margin-bottom:18px!important}.tabs .tabbtn{position:relative;z-index:auto}.tab#negociacoes .tablewrap{overflow-x:auto}.tab#negociacoes table{font-size:12px}.tab#negociacoes th,.tab#negociacoes td{white-space:nowrap;padding:9px 10px}.tab#negociacoes th[data-sales-at],.tab#negociacoes th[data-sales-weight]{text-align:center;min-width:70px}.tab#negociacoes td.num{text-align:center}@media(max-width:600px){html,body{overflow-x:hidden!important;width:100%!important}.tabs{width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;flex-wrap:nowrap!important}.tabs .tabbtn{flex:0 0 auto!important}.wrap{width:100%!important;max-width:100%!important;overflow-x:hidden!important}.head{width:100%!important;max-width:100%!important}.tablewrap{max-width:100%!important;overflow-x:auto!important}}';document.head.appendChild(st)})();
  function syncClientNames(){
   function sync(selectId,legacyId){
    var sel=document.getElementById(selectId); if(!sel)return;
@@ -149,4 +149,3 @@
  setTimeout(run,1600);
  new MutationObserver(function(){cleanText()}).observe(document.body,{subtree:true,childList:true});
 })();
-
