@@ -2016,6 +2016,7 @@ document.addEventListener('DOMContentLoaded',function(){
   const DELR='gado_deleted_records_v2';
   const DELC='gado_deleted_costs_v2';
   const RETRY='gado_sync_retry_v78';
+  const CLIENTS='gado_cadastros_v120';
   let timer=null, busy=false;
 
   // Migra qualquer fila da v76 e neutraliza a rotina antiga.
@@ -2033,6 +2034,7 @@ document.addEventListener('DOMContentLoaded',function(){
   function del(base){userRemove(base)}
   function deleted(base){const a=get(base,[]);return Array.isArray(a)?a:[]}
   function pending(){return get(PENDING,null)}
+  function clients(){return get(CLIENTS,[])}
 
   function ensureUI(){
     const row=document.querySelector('header .head > div:last-child');
@@ -2057,6 +2059,7 @@ document.addEventListener('DOMContentLoaded',function(){
     set(PENDING,{
       records:clone(Array.isArray(records)?records:[]),
       costs:clone(Array.isArray(costs)?costs:[]),
+      clients:clone(clients()),
       queued_at:now(),
       operations:(old&&Number(old.operations)||0)+1
     });
@@ -2110,16 +2113,17 @@ document.addEventListener('DOMContentLoaded',function(){
 
     const delR=deleted(DELR),delC=deleted(DELC);
     const {data:current,error:readErr}=await sb.from(CLOUD_TABLE)
-      .select('records,costs,updated_at').eq('user_id',cloudUser.id).maybeSingle();
+      .select('records,costs,clients,updated_at').eq('user_id',cloudUser.id).maybeSingle();
     if(readErr)throw readErr;
 
     const mergedRecords=merge(current&&Array.isArray(current.records)?current.records:[],p.records||records,delR,true);
     const mergedCosts=merge(current&&Array.isArray(current.costs)?current.costs:[],p.costs||costs,delC,true);
+    const mergedClients=merge(current&&Array.isArray(current.clients)?current.clients:[],p.clients||clients(),[],true);
     const sentAt=now();
 
     const {data:saved,error:saveErr}=await sb.from(CLOUD_TABLE)
-      .upsert({user_id:cloudUser.id,records:mergedRecords,costs:mergedCosts,updated_at:sentAt},{onConflict:'user_id'})
-      .select('user_id,records,costs,updated_at').single();
+      .upsert({user_id:cloudUser.id,records:mergedRecords,costs:mergedCosts,clients:mergedClients,updated_at:sentAt},{onConflict:'user_id'})
+      .select('user_id,records,costs,clients,updated_at').single();
     if(saveErr)throw saveErr;
     if(!saved||saved.user_id!==cloudUser.id)throw new Error('Supabase não confirmou o usuário');
     if(!verify(p.records||records,saved.records||[],delR))throw new Error('Supabase não confirmou todos os registros');
@@ -2127,6 +2131,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
     records=merge(saved.records||[],records,delR,false);
     costs=merge(saved.costs||[],costs,delC,false);
+    userSet(CLIENTS,JSON.stringify(merge(saved.clients||[],clients(),[],false)));
     userSet(KEY,JSON.stringify(records));
     userSet(COSTKEY,JSON.stringify(costs));
     del(PENDING); userRemove(DIRTY); userRemove(DELR); userRemove(DELC); localStorage.removeItem(RETRY);
@@ -2139,7 +2144,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
   async function pull(){
     if(!navigator.onLine||!(await authReady()))return false;
-    const {data,error}=await sb.from(CLOUD_TABLE).select('records,costs,updated_at').eq('user_id',cloudUser.id).maybeSingle();
+    const {data,error}=await sb.from(CLOUD_TABLE).select('records,costs,clients,updated_at').eq('user_id',cloudUser.id).maybeSingle();
     if(error)throw error;
     if(!data)return true;
 
@@ -2147,10 +2152,13 @@ document.addEventListener('DOMContentLoaded',function(){
     const delR=deleted(DELR),delC=deleted(DELC);
     const mergedR=merge(data.records||[],records,delR,false);
     const mergedC=merge(data.costs||[],costs,delC,false);
+    const mergedClients=merge(data.clients||[],clients(),[],false);
 
     const localHadNewer=JSON.stringify(mergedR)!==JSON.stringify(data.records||[]) ||
-                        JSON.stringify(mergedC)!==JSON.stringify(data.costs||[]);
+                        JSON.stringify(mergedC)!==JSON.stringify(data.costs||[]) ||
+                        JSON.stringify(mergedClients)!==JSON.stringify(data.clients||[]);
     records=mergedR; costs=mergedC;
+    userSet(CLIENTS,JSON.stringify(mergedClients));
     userSet(KEY,JSON.stringify(records)); userSet(COSTKEY,JSON.stringify(costs)); renderAll();
 
     if(localHadNewer){
