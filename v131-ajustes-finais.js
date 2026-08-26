@@ -155,3 +155,10 @@
  setTimeout(run,1600);
  new MutationObserver(function(){cleanText()}).observe(document.body,{subtree:true,childList:true});
 })();
+
+/* v180 — acabamento final para telas estreitas */
+(function(){
+  var st=document.createElement('style');
+  st.textContent='@media(max-width:600px){.cattle-popup .leaflet-popup-content-wrapper{width:calc(100vw - 40px)!important;max-width:calc(100vw - 40px)!important}.cattle-popup .leaflet-popup-content{width:calc(100vw - 64px)!important;max-width:320px!important;overflow-x:hidden!important}.cattle-popup .map-popup,.cattle-popup .map-client-popup{min-width:0!important;max-width:100%!important}.cattle-popup table.smalltbl{width:100%!important;min-width:0!important;table-layout:fixed!important}.cattle-popup table.smalltbl th,.cattle-popup table.smalltbl td{padding:6px 3px!important;font-size:9px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.cattle-popup table.smalltbl th:nth-child(1),.cattle-popup table.smalltbl td:nth-child(1){width:23%!important}.cattle-popup table.smalltbl th:nth-child(2),.cattle-popup table.smalltbl td:nth-child(2){width:15%!important}.cattle-popup table.smalltbl th:nth-child(3),.cattle-popup table.smalltbl td:nth-child(3){width:23%!important}.cattle-popup table.smalltbl th:nth-child(4),.cattle-popup table.smalltbl td:nth-child(4){width:12%!important}.cattle-popup table.smalltbl th:nth-child(5),.cattle-popup table.smalltbl td:nth-child(5){width:27%!important}.tab#cadastrosV120 .tablewrap{max-height:none!important;overflow-y:visible!important}.tab#cadastrosV120 .smalltbl{min-width:620px!important}}';
+  document.head.appendChild(st);
+})();
