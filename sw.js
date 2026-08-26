@@ -1,4 +1,4 @@
-const CACHE='gado-app-v112-backup1';
+const CACHE='gado-app-v133-lotes1';
 const APP_SHELL=['/index.html?v=112backup1','/app-v68.html?v=112backup1','/manifest.webmanifest?v=112pdf6','/v85-fixes.js?v=112','/v103-pdf-open.js?v=112pdf6','/v116-pdf-mobile.js?v=112pdf6','/v112-payments.js?v=112pay1','/v112-backup.js?v=112backup1','/icon.svg'];
 
 self.addEventListener('install',event=>{
@@ -18,7 +18,7 @@ self.addEventListener('activate',event=>{
     await self.clients.claim();
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     for(const client of clients){
-      try{client.postMessage({type:'CVG_CACHE_RESET',version:'112backup1'});}catch(e){}
+          try{client.postMessage({type:'CVG_CACHE_RESET',version:'133-lotes1'});}catch(e){}
     }
   })());
 });
@@ -64,3 +64,4 @@ self.addEventListener('fetch',event=>{
     return (await c.match(req))||Response.error();
   }));
 });
+
