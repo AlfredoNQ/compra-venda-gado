@@ -667,7 +667,7 @@ export default {
       request.method === 'GET' &&
       (url.pathname === '/' || url.pathname === '/index.html')
     ) {
-      const assetUrl = new URL('/index.html?v=169', url.origin);
+      const assetUrl = new URL('/index.html?v=170', url.origin);
       const assetReq = new Request(assetUrl.toString(), {
         method:'GET',
         headers:request.headers
