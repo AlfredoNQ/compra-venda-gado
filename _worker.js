@@ -126,6 +126,11 @@ async function cotacoesResponse() {
       }
     }
 
+    async function buscarScotFisicoOficial() {
+      const u='https://www.scotconsultoria.com.br/cotacoes/boi-gordo/';
+      try { return await buscar(u); } catch (_) { return null; }
+    }
+
     function parseScotBoi(html) {
       if (!html) return {data:null,cotacoes:[]};
 
@@ -305,7 +310,8 @@ async function cotacoesResponse() {
       if (oficial) {
         const parsed=parseScotBoi(oficial);
         if(parsed){
-          const fisico=parseMercadoFisico(oficial);
+          const htmlFisico=await buscarScotFisicoOficial();
+          const fisico=parseMercadoFisico(htmlFisico);
           if(fisico.length) cotacoes.splice(0,cotacoes.length,...fisico);
           indicadorScotAtual={data:parsed.data,cotacoes:parsed.cotacoes};
           indicadorScotOntem={data:dataAnterior(parsed.data),cotacoes:parsed.ontem||[]};
