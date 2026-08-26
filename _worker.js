@@ -118,7 +118,7 @@ async function cotacoesResponse() {
 
 
     async function buscarScotBoiOficial() {
-      const u='https://www.scotconsultoria.com.br/cotacoes/boi-gordo/';
+      const u='https://www.scotconsultoria.com.br/cotacoes/indicadores/';
       try {
         return await buscar(u);
       } catch (_) {
@@ -130,27 +130,59 @@ async function cotacoesResponse() {
       if (!html) return {data:null,cotacoes:[]};
 
       const texto=limpar(html);
-      const dm=texto.match(/Mercado Físico\s*-\s*(\d{2}\/\d{2}\/\d{4})/i);
+      const dm=texto.match(/Indicador do boi gordo[^\d]*(\d{2}\/\d{2}\/\d{4})/i)
+        || texto.match(/Mercado Físico\s*-\s*(\d{2}\/\d{2}\/\d{4})/i);
 
-      function preco(label) {
+      function precos(label) {
         const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
         const m=texto.match(
           new RegExp(esc+'\\s+(\\d{2,4},\\d{2})\\s+(\\d{2,4},\\d{2})','i')
         );
-        return m ? numero(m[1]) : null;
+        return m ? {atual:numero(m[1]),ontem:numero(m[2])} : null;
       }
 
+      function linha(uf,regiao){
+        const p=precos(uf+' '+regiao);
+        return {uf,regiao,avista:p?p.atual:null};
+      }
+
+      function linhaAnterior(uf,regiao){
+        const p=precos(uf+' '+regiao);
+        return {uf,regiao,avista:p?p.ontem:null};
+      }
+
+      function dataAnterior(data){
+        const m=String(data||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if(!m)return null;
+        const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1])-1);
+        return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+      }
+
+      const cotacoes=[
+          linha('PA','Marabá'),linha('PA','Redenção'),linha('PA','Paragominas'),
+          linha('TO','Sul'),linha('TO','Norte'),linha('MA','Oeste')
+        ].filter(x=>x.avista!==null);
+      const ontem=[
+          linhaAnterior('PA','Marabá'),linhaAnterior('PA','Redenção'),linhaAnterior('PA','Paragominas'),
+          linhaAnterior('TO','Sul'),linhaAnterior('TO','Norte'),linhaAnterior('MA','Oeste')
+        ].filter(x=>x.avista!==null);
       return {
         data:dm ? dm[1] : null,
-        cotacoes:[
-          {uf:'PA',regiao:'Marabá',avista:preco('PA Marabá')},
-          {uf:'PA',regiao:'Redenção',avista:preco('PA Redenção')},
-          {uf:'PA',regiao:'Paragominas',avista:preco('PA Paragominas')},
-          {uf:'TO',regiao:'Sul',avista:preco('TO Sul')},
-          {uf:'TO',regiao:'Norte',avista:preco('TO Norte')},
-          {uf:'MA',regiao:'Oeste',avista:preco('MA Oeste')}
-        ].filter(x=>x.avista!==null)
+        cotacoes,
+        ontem
       };
+    }
+
+    function parseMercadoFisico(html){
+      const texto=limpar(html);
+      function linha(uf,regiao){
+        const esc=(uf+' '+regiao).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+        const m=texto.match(new RegExp(esc+'\\s+(\\d{2,4},\\d{2})\\s+(\\d{2,4},\\d{2})\\s+[^\\d-]*(?:-?\\d{1,2},\\d{2})','i'));
+        if(!m)return null;
+        const nums=m[0].match(/-?\\d{1,4},\\d{2}/g)||[];
+        return nums.length>=3?{uf,regiao,avistas:numero(nums[0]),avista:numero(nums[0]),prazo30:numero(nums[1]),variacao:numero(nums[2])}:null;
+      }
+      return [linha('PA','Marabá'),linha('PA','Redenção'),linha('PA','Paragominas'),linha('TO','Sul'),linha('TO','Norte'),linha('MA','Oeste')].filter(Boolean);
     }
 
     async function buscarOntemScot() {
@@ -270,12 +302,19 @@ async function cotacoesResponse() {
 
     try {
       const oficial=await buscarScotBoiOficial();
-      if (oficial) indicadorScotAtual=parseScotBoi(oficial);
+      if (oficial) {
+        const parsed=parseScotBoi(oficial);
+        if(parsed){
+          const fisico=parseMercadoFisico(oficial);
+          if(fisico.length) cotacoes.splice(0,cotacoes.length,...fisico);
+          indicadorScotAtual={data:parsed.data,cotacoes:parsed.cotacoes};
+          indicadorScotOntem={data:dataAnterior(parsed.data),cotacoes:parsed.ontem||[]};
+        }
+      }
     } catch (_) {}
 
-    try {
-      indicadorScotOntem=await buscarOntemScot();
-    } catch (_) {}
+    // A página oficial de Indicadores já entrega Hoje e Ontem na mesma linha.
+    // Não substituir esse resultado por uma consulta antiga ao Wayback.
 
     return Response.json({
       ok:true,
