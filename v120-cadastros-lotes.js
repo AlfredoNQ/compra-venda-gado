@@ -3,7 +3,7 @@
   'use strict';
   var KEY='gado_cadastros_v120';
   function read(){try{return JSON.parse((window.userGet?userGet(KEY):localStorage.getItem(KEY))||'[]')}catch(e){return[]}}
-  function write(v){try{if(window.userSet)userSet(KEY,JSON.stringify(v));else localStorage.setItem(KEY,JSON.stringify(v))}catch(e){}}
+  function write(v){try{if(window.userSet)userSet(KEY,JSON.stringify(v));else localStorage.setItem(KEY,JSON.stringify(v));if(window.scheduleCloudSave)window.scheduleCloudSave();}catch(e){}}
   function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])})}
   function render(){
     var sec=document.getElementById('cadastrosV120');if(!sec)return;
@@ -34,4 +34,3 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
-
