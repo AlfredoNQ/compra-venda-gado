@@ -667,7 +667,7 @@ export default {
       request.method === 'GET' &&
       (url.pathname === '/' || url.pathname === '/index.html')
     ) {
-      const assetUrl = new URL('/index.html?v=155', url.origin);
+      const assetUrl = new URL('/index.html?v=156', url.origin);
       const assetReq = new Request(assetUrl.toString(), {
         method:'GET',
         headers:request.headers
@@ -675,7 +675,7 @@ export default {
       const asset = await env.ASSETS.fetch(assetReq);
       const headers = new Headers(asset.headers);
       headers.set('Cache-Control','no-store, no-cache, must-revalidate, max-age=0');
-      headers.set('X-Gado-App-Version','155');
+      headers.set('X-Gado-App-Version','156');
       return new Response(asset.body,{
         status:asset.status,
         statusText:asset.statusText,
