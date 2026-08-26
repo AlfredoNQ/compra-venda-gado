@@ -31,6 +31,9 @@
     document.getElementById('cadNovoV120').onclick=function(){openForm(null)};
     document.getElementById('cadBuscaV120').oninput=render;
     sec.addEventListener('click',function(e){var btn=e.target.closest?e.target.closest('[data-cad-edit],[data-cad-del],[data-cad-map]'):e.target;var id=btn.dataset.cadEdit||btn.dataset.cadDel||btn.dataset.cadMap;if(!id)return;var list=read(),item=list.find(function(x){return x.id===id});if(btn.dataset.cadMap){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();if(window.openClientMapPicker)window.openClientMapPicker(item);return}if(e.target.dataset.cadEdit)openForm(item);else if(confirm('Excluir este cadastro?')){write(list.filter(function(x){return x.id!==id}));render()}});
+    window.refreshCadastrosV120=render;
+    document.addEventListener('clientesAtualizados',render);
+    render();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
