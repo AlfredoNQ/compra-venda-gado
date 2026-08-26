@@ -10,14 +10,14 @@
     var list=read(), q=(document.getElementById('cadBuscaV120').value||'').toLowerCase();
     var rows=list.filter(function(x){return !q||[x.nome,x.documento,x.telefone].join(' ').toLowerCase().includes(q)});
     rows.sort(function(a,b){return String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR',{sensitivity:'base'});});
-    document.getElementById('cadTabelaV120').innerHTML=rows.length?rows.map(function(x){return '<tr><td>'+esc(x.nome)+'</td><td>'+esc(x.documento||'—')+'</td><td>'+esc(x.telefone||'—')+'</td><td>'+esc(x.pix||'—')+'</td><td><button class="mini" data-cad-edit="'+x.id+'">Editar</button> <button class="mini" data-cad-del="'+x.id+'">Excluir</button></td></tr>'}).join(''):'<tr><td colspan="5" class="hint">Nenhum cliente cadastrado.</td></tr>';
+    document.getElementById('cadTabelaV120').innerHTML=rows.length?rows.map(function(x){return '<tr><td>'+esc(x.nome)+'</td><td>'+esc(x.documento||'—')+'</td><td>'+esc(x.telefone||'—')+'</td><td>'+esc(x.pix||'—')+'</td><td><button class="mini" data-cad-map="'+x.id+'">📍 Mapa</button> <button class="mini" data-cad-edit="'+x.id+'">Editar</button> <button class="mini" data-cad-del="'+x.id+'">Excluir</button></td></tr>'}).join(''):'<tr><td colspan="5" class="hint">Nenhum cliente cadastrado.</td></tr>';
   }
   function openForm(item){
     var nome=prompt('Nome do comprador ou vendedor:',item?item.nome:'');if(!nome||!nome.trim())return;
     var doc=prompt('CPF/CNPJ (opcional):',item?item.documento:'')||'';
     var tel=prompt('Telefone (opcional):',item?item.telefone:'')||'';
     var pix=prompt('Pix/conta (opcional):',item?item.pix:'')||'';
-    var list=read(), obj={id:item?item.id:'cad-'+Date.now(),nome:nome.trim(),tipo:'Cliente',documento:doc,telefone:tel,pix:pix,aliases:item&&Array.isArray(item.aliases)?item.aliases.slice():[],updatedAt:new Date().toISOString()};
+    var list=read(), obj={id:item?item.id:'cad-'+Date.now(),nome:nome.trim(),tipo:'Cliente',documento:doc,telefone:tel,pix:pix,lat:item&&item.lat!=null?item.lat:null,lng:item&&item.lng!=null?item.lng:null,aliases:item&&Array.isArray(item.aliases)?item.aliases.slice():[],updatedAt:new Date().toISOString()};
     var i=list.findIndex(function(x){return x.id===obj.id}),oldName=i>=0?list[i].nome:'';if(oldName&&oldName!==obj.nome&&obj.aliases.indexOf(oldName)<0)obj.aliases.push(oldName);if(i>=0)list[i]=obj;else list.push(obj);write(list);render();document.dispatchEvent(new CustomEvent('clientesAtualizados',{detail:{oldName:oldName,newName:obj.nome,id:obj.id}}));
   }
   function init(){
@@ -29,7 +29,7 @@
     b.onclick=function(){document.querySelectorAll('.tabbtn').forEach(function(x){x.classList.remove('active')});document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});b.classList.add('active');sec.classList.add('active');render()};
     document.getElementById('cadNovoV120').onclick=function(){openForm(null)};
     document.getElementById('cadBuscaV120').oninput=render;
-    sec.addEventListener('click',function(e){var id=e.target.dataset.cadEdit||e.target.dataset.cadDel;if(!id)return;var list=read(),item=list.find(function(x){return x.id===id});if(e.target.dataset.cadEdit)openForm(item);else if(confirm('Excluir este cadastro?')){write(list.filter(function(x){return x.id!==id}));render()}});
+    sec.addEventListener('click',function(e){var id=e.target.dataset.cadEdit||e.target.dataset.cadDel||e.target.dataset.cadMap;if(!id)return;var list=read(),item=list.find(function(x){return x.id===id});if(e.target.dataset.cadMap){if(window.openClientMapPicker)window.openClientMapPicker(item);return}if(e.target.dataset.cadEdit)openForm(item);else if(confirm('Excluir este cadastro?')){write(list.filter(function(x){return x.id!==id}));render()}});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
