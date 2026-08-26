@@ -3024,9 +3024,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     var title=el('mapPickTitle');
     if(title){
       title.textContent=
-        type==='origem'
-        ? 'Marcar fazenda de origem / compra'
-        : 'Marcar fazenda de destino / comprador';
+        type==='cliente'
+        ? 'Marcar localização do cliente'
+        : (type==='origem' ? 'Marcar fazenda de origem / compra' : 'Marcar fazenda de destino / comprador');
     }
 
     openPickerModal();
@@ -3062,6 +3062,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       return;
     }
 
+    if(target==='cliente'){try{var list=JSON.parse((window.userGet?userGet('gado_cadastros_v120'):localStorage.getItem('gado_cadastros_v120'))||'[]');var item=list.find(function(x){return x.id===window.__clientMapId});if(item){item.lat=lat.toFixed(6);item.lng=lng.toFixed(6);if(window.userSet)userSet('gado_cadastros_v120',JSON.stringify(list));else localStorage.setItem('gado_cadastros_v120',JSON.stringify(list));document.dispatchEvent(new CustomEvent('clientesAtualizados'));}}catch(e){} closePickerModal();return;}
     var latField=el(target==='origem'?'roriginLat':'rdestLat');
     var lngField=el(target==='origem'?'roriginLng':'rdestLng');
 
@@ -3085,6 +3086,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       if(editor)editor.classList.add('show');
     },50);
   }
+
+  window.openClientMapPicker=function(item){window.__clientMapId=item&&item.id;start('cliente');};
 
   function useMyLocation(){
     if(!navigator.geolocation){
