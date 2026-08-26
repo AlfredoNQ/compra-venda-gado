@@ -2000,6 +2000,26 @@
      CARREGAR COTAÇÕES
   ========================= */
 
+  function completarCotacaoAnterior(data){
+    if(!data || !Array.isArray(data.cotacoes)) return data;
+    var atual=(data.indicadorScotAtual&&data.indicadorScotAtual.data)||data.dataReferencia||'';
+    var anterior=data.indicadorScotOntem;
+    try{
+      var raw=localStorage.getItem('gado_cotacoes_historico_v2');
+      var hist=raw?JSON.parse(raw):[];
+      if(!Array.isArray(hist))hist=[];
+      if(!anterior||!Array.isArray(anterior.cotacoes)||!anterior.cotacoes.length){
+        var prev=hist.find(function(x){return x&&x.data&&x.data!==atual&&Array.isArray(x.cotacoes)&&x.cotacoes.length});
+        if(prev)data.indicadorScotOntem={data:prev.data,cotacoes:prev.cotacoes};
+      }
+      if(atual&&data.cotacoes.length){
+        hist=[{data:atual,cotacoes:data.cotacoes}].concat(hist.filter(function(x){return x&&x.data!==atual})).slice(0,30);
+        localStorage.setItem('gado_cotacoes_historico_v2',JSON.stringify(hist));
+      }
+    }catch(_){ }
+    return data;
+  }
+
   async function loadCotacoes() {
 
     const el =
@@ -2038,8 +2058,10 @@
       }
 
 
-      const data =
+      let data =
         await res.json();
+
+      data=completarCotacaoAnterior(data);
 
       try {
         localStorage.setItem('gado_cotacoes_cache_v1', JSON.stringify({
@@ -2139,7 +2161,7 @@
       } catch (_) {}
 
       if (cached && cached.data && cached.data.ok && Array.isArray(cached.data.cotacoes)) {
-        const data = cached.data;
+        const data = completarCotacaoAnterior(cached.data);
         renderScotMarketTable(data);
         const pa = data.cotacoes.filter(x => x.uf === 'PA');
         const to = data.cotacoes.filter(x => x.uf === 'TO');
