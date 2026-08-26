@@ -10,7 +10,7 @@
     var list=read(), q=(document.getElementById('cadBuscaV120').value||'').toLowerCase();
     var rows=list.filter(function(x){return !q||[x.nome,x.documento,x.telefone].join(' ').toLowerCase().includes(q)});
     rows.sort(function(a,b){return String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR',{sensitivity:'base'});});
-    document.getElementById('cadTabelaV120').innerHTML=rows.length?rows.map(function(x){return '<tr><td>'+esc(x.nome)+'</td><td>'+esc(x.documento||'—')+'</td><td>'+esc(x.telefone||'—')+'</td><td>'+esc(x.pix||'—')+'</td><td><button class="mini" data-cad-map="'+x.id+'">📍 Mapa</button> <button class="mini" data-cad-edit="'+x.id+'">Editar</button> <button class="mini" data-cad-del="'+x.id+'">Excluir</button></td></tr>'}).join(''):'<tr><td colspan="5" class="hint">Nenhum cliente cadastrado.</td></tr>';
+    document.getElementById('cadTabelaV120').innerHTML=rows.length?rows.map(function(x){return '<tr><td>'+esc(x.nome)+(x.lat!=null&&x.lng!=null?' <span title="Localização cadastrada" style="color:#18794e">📍</span>':'')+'</td><td>'+esc(x.documento||'—')+'</td><td>'+esc(x.telefone||'—')+'</td><td>'+esc(x.pix||'—')+'</td><td><button type="button" class="mini" data-cad-map="'+x.id+'">📍 Mapa</button> <button class="mini" data-cad-edit="'+x.id+'">Editar</button> <button class="mini" data-cad-del="'+x.id+'">Excluir</button></td></tr>'}).join(''):'<tr><td colspan="5" class="hint">Nenhum cliente cadastrado.</td></tr>';
   }
   function openForm(item){
     var nome=prompt('Nome do comprador ou vendedor:',item?item.nome:'');if(!nome||!nome.trim())return;
@@ -29,7 +29,7 @@
     b.onclick=function(){document.querySelectorAll('.tabbtn').forEach(function(x){x.classList.remove('active')});document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});b.classList.add('active');sec.classList.add('active');render()};
     document.getElementById('cadNovoV120').onclick=function(){openForm(null)};
     document.getElementById('cadBuscaV120').oninput=render;
-    sec.addEventListener('click',function(e){var id=e.target.dataset.cadEdit||e.target.dataset.cadDel||e.target.dataset.cadMap;if(!id)return;var list=read(),item=list.find(function(x){return x.id===id});if(e.target.dataset.cadMap){if(e.preventDefault)e.preventDefault();if(window.openClientMapPicker)window.openClientMapPicker(item);return}if(e.target.dataset.cadEdit)openForm(item);else if(confirm('Excluir este cadastro?')){write(list.filter(function(x){return x.id!==id}));render()}});
+    sec.addEventListener('click',function(e){var id=e.target.dataset.cadEdit||e.target.dataset.cadDel||e.target.dataset.cadMap;if(!id)return;var list=read(),item=list.find(function(x){return x.id===id});if(e.target.dataset.cadMap){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();if(window.openClientMapPicker)window.openClientMapPicker(item);return}if(e.target.dataset.cadEdit)openForm(item);else if(confirm('Excluir este cadastro?')){write(list.filter(function(x){return x.id!==id}));render()}});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
