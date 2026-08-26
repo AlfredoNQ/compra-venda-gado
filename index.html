@@ -2946,7 +2946,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
     // Keep the negotiation editor open underneath.
     var editor=el('recordModal');
-    if(editor && !editor.classList.contains('show')){
+    if(target!=='cliente' && editor && !editor.classList.contains('show')){
       editor.classList.add('show');
     }
   }
@@ -2957,7 +2957,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
     // Explicitly keep record edit modal open after closing map.
     var editor=el('recordModal');
-    if(editor)editor.classList.add('show');
+    if(target!=='cliente' && editor)editor.classList.add('show');
   }
 
   function showCoords(){
