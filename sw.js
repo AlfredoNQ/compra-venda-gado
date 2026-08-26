@@ -1,5 +1,5 @@
-const CACHE='gado-app-v133-lotes1';
-const APP_SHELL=['/index.html?v=112backup1','/app-v68.html?v=112backup1','/manifest.webmanifest?v=112pdf6','/v85-fixes.js?v=112','/v103-pdf-open.js?v=112pdf6','/v116-pdf-mobile.js?v=112pdf6','/v112-payments.js?v=112pay1','/v112-backup.js?v=112backup1','/icon.svg'];
+const CACHE='gado-app-v134-lucro-realizado';
+const APP_SHELL=['/index.html?v=134lucro','/app-v68.html?v=134lucro','/manifest.webmanifest?v=112pdf6','/v85-fixes.js?v=112','/v103-pdf-open.js?v=112pdf6','/v116-pdf-mobile.js?v=112pdf6','/v112-payments.js?v=112pay1','/v112-backup.js?v=134lucro','/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
@@ -18,7 +18,7 @@ self.addEventListener('activate',event=>{
     await self.clients.claim();
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     for(const client of clients){
-          try{client.postMessage({type:'CVG_CACHE_RESET',version:'133-lotes1'});}catch(e){}
+          try{client.postMessage({type:'CVG_CACHE_RESET',version:'134-lucro-realizado'});}catch(e){}
     }
   })());
 });
@@ -34,12 +34,12 @@ self.addEventListener('fetch',event=>{
         const fresh=await fetch(req,{cache:'no-store'});
         if(fresh.ok){
           const c=await caches.open(CACHE);
-          c.put('/index.html?v=112backup1',fresh.clone());
+          c.put('/index.html?v=134lucro',fresh.clone());
         }
         return fresh;
       }catch(e){
         const c=await caches.open(CACHE);
-        return (await c.match('/index.html?v=112backup1'))||(await c.match('/app-v68.html?v=112backup1'))||Response.error();
+        return (await c.match('/index.html?v=134lucro'))||(await c.match('/app-v68.html?v=134lucro'))||Response.error();
       }
     })());
     return;
