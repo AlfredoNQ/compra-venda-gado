@@ -8,6 +8,7 @@
   function render(){
     var sec=document.getElementById('cadastrosV120');if(!sec)return;
     var list=read(), q=(document.getElementById('cadBuscaV120').value||'').toLowerCase();
+    var title=sec.querySelector('.ph h2');if(title)title.textContent='Clientes ('+list.length+')';
     var rows=list.filter(function(x){return !q||[x.nome,x.documento,x.telefone].join(' ').toLowerCase().includes(q)});
     rows.sort(function(a,b){return String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR',{sensitivity:'base'});});
     document.getElementById('cadTabelaV120').innerHTML=rows.length?rows.map(function(x){return '<tr><td>'+esc(x.nome)+(x.lat!=null&&x.lng!=null?' <span title="Localização cadastrada" style="color:#18794e">📍</span>':'')+'</td><td>'+esc(x.documento||'—')+'</td><td>'+esc(x.telefone||'—')+'</td><td>'+esc(x.pix||'—')+'</td><td><button type="button" class="mini" data-cad-map="'+x.id+'">📍 Mapa</button> <button class="mini" data-cad-edit="'+x.id+'">Editar</button> <button class="mini" data-cad-del="'+x.id+'">Excluir</button></td></tr>'}).join(''):'<tr><td colspan="5" class="hint">Nenhum cliente cadastrado.</td></tr>';
