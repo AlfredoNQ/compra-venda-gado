@@ -3185,8 +3185,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   document.querySelectorAll('.tabbtn').forEach(function(btn){
     if(btn.dataset && btn.dataset.tab==='mapa'){
       btn.addEventListener('click',function(){
-        setTimeout(fixMap,100);
-        setTimeout(fixMap,350);
+        setTimeout(function(){fixMap();if(window.refreshCattleMapV33)window.refreshCattleMapV33()},100);
+        setTimeout(function(){fixMap();if(window.refreshCattleMapV33)window.refreshCattleMapV33()},350);
       });
     }
   });
