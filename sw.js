@@ -1,5 +1,5 @@
-const CACHE='gado-app-v134-lucro-realizado';
-const APP_SHELL=['/index.html?v=134lucro','/app-v68.html?v=134lucro','/manifest.webmanifest?v=112pdf6','/v85-fixes.js?v=112','/v103-pdf-open.js?v=112pdf6','/v116-pdf-mobile.js?v=112pdf6','/v112-payments.js?v=112pay1','/v112-backup.js?v=134lucro','/icon.svg'];
+const CACHE='gado-app-v157-mapa-clientes';
+const APP_SHELL=['/index.html?v=157mapa','/app-v68.html?v=157mapa','/manifest.webmanifest?v=157mapa','/v85-fixes.js?v=157','/v103-pdf-open.js?v=157','/v116-pdf-mobile.js?v=157','/v112-payments.js?v=157','/v112-backup.js?v=157','/v120-cadastros-lotes.js?v=157','/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
@@ -34,12 +34,12 @@ self.addEventListener('fetch',event=>{
         const fresh=await fetch(req,{cache:'no-store'});
         if(fresh.ok){
           const c=await caches.open(CACHE);
-          c.put('/index.html?v=134lucro',fresh.clone());
+          c.put('/index.html?v=157mapa',fresh.clone());
         }
         return fresh;
       }catch(e){
         const c=await caches.open(CACHE);
-        return (await c.match('/index.html?v=134lucro'))||(await c.match('/app-v68.html?v=134lucro'))||Response.error();
+        return (await c.match('/index.html?v=157mapa'))||(await c.match('/app-v68.html?v=157mapa'))||Response.error();
       }
     })());
     return;
