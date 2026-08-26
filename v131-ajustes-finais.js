@@ -99,7 +99,7 @@
  function allocatedFromLot(id){return sourceRecords().reduce(function(total,sale){var lots=sale.animalLotsSold||sale.sourceLots||[];return total+(Array.isArray(lots)?lots.reduce(function(a,x){return a+((x.lotId||x.id)===id?Number(x.quantity||x.quantidade||0):0)},0):0)},0)}
  function refreshAllocatedStock(){var body=document.getElementById('stockBody');if(!body)return;var list=sourceRecords().filter(function(r){var saldo=Number(r.quantCompra||0)-Number(r.quantVenda||0)-allocatedFromLot(r.id);return saldo>0&&Number(r.quantCompra||0)>0}).sort(function(a,b){return (b.data||'').localeCompare(a.data||'')});body.innerHTML=list.map(function(r){var qc=Number(r.quantCompra||0),qv=Number(r.quantVenda||0),allocated=allocatedFromLot(r.id),saldo=Math.max(0,qc-qv-allocated),kg=Number(r.pesoKg||r.peso||0),pc=Number(r.precoCompra||0);return '<tr><td>'+fmtDate(r.data)+'</td><td>'+esc(r.vendedor||'')+'</td><td>'+esc(r.era||'â')+'</td><td class="num">'+num.format(qc)+'</td><td class="num">'+num.format(qv+allocated)+'</td><td class="num"><b>'+num.format(saldo)+'</b></td><td class="num">'+num.format(daysInStock(r))+'</td><td class="num">'+num.format(kg)+'</td><td class="num">'+money.format(pc)+'</td><td class="num">'+money.format(kg?pc/kg:0)+'</td><td class="num">'+money.format(saldo*pc)+'</td><td><span class="badge warn">'+(saldo===0?'Vendido':'Em estoque')+'</span></td><td>'+esc(r.parceiro||'â')+'</td></tr>';}).join('');}
  function run(){
-  if(document.querySelector('.tabs')?.dataset.v131Locked==='1')return;
+  if(false)return;
   var legacy=document.getElementById('v66-neg-separate');
   if(legacy)legacy.remove();
   var legacyStyle=document.getElementById('v66-neg-separate-style');
@@ -142,5 +142,6 @@
  // invisÃ­veis enquanto o restante da sincronizaÃ§Ã£o termina.
  run();
  setTimeout(run,400);
+ setTimeout(run,1600);
  new MutationObserver(function(){cleanText()}).observe(document.body,{subtree:true,childList:true});
 })();
