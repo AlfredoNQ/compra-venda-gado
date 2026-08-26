@@ -3036,6 +3036,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       if(!pickMap)return;
 
       pickMap.invalidateSize(true);
+      setTimeout(function(){if(pickMap){pickMap.invalidateSize(true);pickMap.eachLayer(function(layer){if(layer&&layer.redraw)layer.redraw()});}},600);
 
       var latField=el(type==='origem'?'roriginLat':'rdestLat');
       var lngField=el(type==='origem'?'roriginLng':'rdestLng');
