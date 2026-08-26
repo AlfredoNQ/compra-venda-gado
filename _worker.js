@@ -328,3 +328,324 @@ async function cotacoesResponse() {
 }
 
 
+async function cotacoesHistoricoMesResponse(request) {
+  try {
+    const url = new URL(request.url);
+
+    const year = Number(url.searchParams.get('year') || new Date().getFullYear());
+    const month = Number(url.searchParams.get('month') || (new Date().getMonth()+1));
+    const uf = String(url.searchParams.get('uf') || 'PA').toUpperCase();
+
+    if (!['PA','TO','MA'].includes(uf)) {
+      return Response.json({ok:false,error:'Estado inválido'}, {status:400});
+    }
+
+    const boiUrl = 'https://www.scotconsultoria.com.br/cotacoes/boi-gordo/';
+    const repUrl = 'https://www.scotconsultoria.com.br/cotacoes/reposicao/';
+
+    function clean(html){
+      return String(html||'')
+        .replace(/&nbsp;/gi,' ')
+        .replace(/&ccedil;/gi,'ç').replace(/&atilde;/gi,'ã')
+        .replace(/&aacute;/gi,'á').replace(/&eacute;/gi,'é')
+        .replace(/&iacute;/gi,'í').replace(/&oacute;/gi,'ó')
+        .replace(/&uacute;/gi,'ú').replace(/&ecirc;/gi,'ê')
+        .replace(/&ocirc;/gi,'ô')
+        .replace(/<script[\s\S]*?<\/script>/gi,' ')
+        .replace(/<style[\s\S]*?<\/style>/gi,' ')
+        .replace(/<[^>]+>/g,' ')
+        .replace(/\s+/g,' ')
+        .trim();
+    }
+
+    function num(v){
+      const n = Number(String(v||'').replace(/\./g,'').replace(',','.'));
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function isoFromTimestamp(ts){
+      return ts.slice(0,4)+'-'+ts.slice(4,6)+'-'+ts.slice(6,8);
+    }
+
+    function parseBoi(html, fallbackDate){
+      const text = clean(html);
+      let values = [];
+
+      if (uf === 'PA') {
+        ['PA Marabá','PA Redenção','PA Paragominas'].forEach(label=>{
+          const esc = label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+          const m = text.match(new RegExp(esc+'\\s+(\\d{2,4},\\d{2})','i'));
+          if (m && num(m[1]) != null) values.push(num(m[1]));
+        });
+      } else if (uf === 'TO') {
+        ['TO Sul','TO Norte'].forEach(label=>{
+          const m = text.match(new RegExp(label+'\\s+(\\d{2,4},\\d{2})','i'));
+          if (m && num(m[1]) != null) values.push(num(m[1]));
+        });
+      } else {
+        const m = text.match(/MA Oeste\s+(\d{2,4},\d{2})/i);
+        if (m && num(m[1]) != null) values.push(num(m[1]));
+      }
+
+      if (!values.length) return null;
+
+      return {
+        date: fallbackDate,
+        boi: values.reduce((a,b)=>a+b,0)/values.length
+      };
+    }
+
+    function parseRepo(html, fallbackDate){
+      const text = clean(html);
+
+      // Try the common Scot table ordering around UF.
+      // We intentionally return null if structure does not match rather than invent data.
+      const re = new RegExp(
+        '\\b'+uf+'\\s+'+
+        '(\\d{3,5}[.,]\\d{2})\\s+(\\d{1,2}[.,]\\d{2})\\s+(\\d{1,2}[.,]\\d{2})\\s+'+
+        '(\\d{3,5}[.,]\\d{2})\\s+(\\d{1,2}[.,]\\d{2})\\s+(\\d{1,2}[.,]\\d{2})\\s+'+
+        '(\\d{3,5}[.,]\\d{2})\\s+(\\d{1,2}[.,]\\d{2})',
+        'i'
+      );
+
+      const m = text.match(re);
+      if (!m) return null;
+
+      return {
+        date: fallbackDate,
+        garrote: num(m[4]),
+        garroteKg: num(m[5]),
+        bezerro: num(m[7]),
+        bezerroKg: num(m[8])
+      };
+    }
+
+    async function getSnapshots(target){
+      const mm = String(month).padStart(2,'0');
+      const last = String(new Date(year,month,0).getDate()).padStart(2,'0');
+
+      const cdx =
+        'https://web.archive.org/cdx/search/cdx'+
+        '?url='+encodeURIComponent(target)+
+        '&from='+year+mm+'01'+
+        '&to='+year+mm+last+
+        '&output=json'+
+        '&filter=statuscode:200'+
+        '&filter=mimetype:text/html'+
+        '&fl=timestamp,original'+
+        '&collapse=timestamp:8';
+
+      try {
+        const r = await fetch(cdx, {
+          headers:{'User-Agent':'Mozilla/5.0'},
+          cf:{cacheTtl:21600,cacheEverything:true}
+        });
+
+        if (!r.ok) return [];
+
+        const rows = await r.json();
+        if (!Array.isArray(rows) || rows.length < 2) return [];
+
+        return rows.slice(1)
+          .map(x=>({
+            timestamp:String(x[0]||''),
+            original:String(x[1]||target)
+          }))
+          .filter(x=>/^\d{14}$/.test(x.timestamp));
+      } catch (_) {
+        return [];
+      }
+    }
+
+    async function readArchive(target, parser){
+      let snaps = await getSnapshots(target);
+
+      const byDay = new Map();
+      snaps.forEach(s=>{
+        const d=s.timestamp.slice(0,8);
+        if (!byDay.has(d)) byDay.set(d,s);
+      });
+
+      snaps = Array.from(byDay.values());
+
+      // Keep worker subrequests controlled.
+      if (snaps.length > 20) {
+        const sample=[];
+        for(let i=0;i<20;i++){
+          sample.push(snaps[Math.round(i*(snaps.length-1)/19)]);
+        }
+        snaps=sample;
+      }
+
+      const rows=[];
+      const batchSize=4;
+
+      for(let i=0;i<snaps.length;i+=batchSize){
+        const batch=snaps.slice(i,i+batchSize);
+
+        const got = await Promise.all(batch.map(async s=>{
+          try{
+            const u='https://web.archive.org/web/'+s.timestamp+'id_/'+s.original;
+            const r=await fetch(u,{
+              headers:{'User-Agent':'Mozilla/5.0'},
+              cf:{cacheTtl:86400,cacheEverything:true}
+            });
+
+            if(!r.ok) return null;
+
+            const html=await r.text();
+            return parser(html, isoFromTimestamp(s.timestamp));
+          }catch(_){
+            return null;
+          }
+        }));
+
+        got.forEach(x=>{if(x)rows.push(x)});
+      }
+
+      return rows;
+    }
+
+    const [boiRows, repRows] = await Promise.all([
+      readArchive(boiUrl, parseBoi),
+      readArchive(repUrl, parseRepo)
+    ]);
+
+    const byDate = new Map();
+
+    function ensure(date){
+      if(!byDate.has(date)){
+        byDate.set(date,{
+          date,
+          boi:null,
+          bezerro:null,
+          bezerroKg:null,
+          garrote:null,
+          garroteKg:null
+        });
+      }
+      return byDate.get(date);
+    }
+
+    boiRows.forEach(r=>{
+      const x=ensure(r.date);
+      x.boi=r.boi;
+    });
+
+    repRows.forEach(r=>{
+      const x=ensure(r.date);
+      x.bezerro=r.bezerro;
+      x.bezerroKg=r.bezerroKg;
+      x.garrote=r.garrote;
+      x.garroteKg=r.garroteKg;
+    });
+
+    const points = Array.from(byDate.values())
+      .sort((a,b)=>a.date.localeCompare(b.date));
+
+    return Response.json({
+      ok:true,
+      year,
+      month,
+      uf,
+      source:'Scot Consultoria',
+      points
+    },{
+      headers:{'Cache-Control':'public, max-age=21600'}
+    });
+
+  } catch(error) {
+    return Response.json({
+      ok:false,
+      error:error && error.message ? error.message : 'Erro no histórico Scot'
+    }, {status:500});
+  }
+}
+
+
+async function pdfOpenResponse(request) {
+  try {
+    const form = await request.formData();
+    const dataUrl = String(form.get('pdf') || '');
+    let name = String(form.get('name') || 'documento.pdf')
+      .replace(/[\\/:*?"<>|\r\n]+/g,'_')
+      .trim();
+    if (!name.toLowerCase().endsWith('.pdf')) name += '.pdf';
+    if (!dataUrl.startsWith('data:application/pdf;base64,')) {
+      return new Response('PDF inválido', {status:400});
+    }
+    const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+    if (!b64 || b64.length > 22000000) {
+      return new Response('PDF vazio ou grande demais', {status:413});
+    }
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    return new Response(bytes, {
+      status:200,
+      headers:{
+        'Content-Type':'application/pdf',
+        'Content-Disposition':`inline; filename="${name.replace(/"/g,'')}"`,
+        'Cache-Control':'no-store, no-cache, must-revalidate, max-age=0',
+        'X-Content-Type-Options':'nosniff'
+      }
+    });
+  } catch (e) {
+    return new Response('Não foi possível abrir o PDF', {status:400});
+  }
+}
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    if (url.pathname === '/api/pdf-open' || url.pathname === '/api/pdf-open/') {
+      if (request.method !== 'POST') {
+        return new Response('Method Not Allowed', {status:405, headers:{'Allow':'POST'}});
+      }
+      return pdfOpenResponse(request);
+    }
+
+    if (
+      request.method === 'GET' &&
+      (url.pathname === '/' || url.pathname === '/index.html')
+    ) {
+      const assetUrl = new URL('/index.html?v=131', url.origin);
+      const assetReq = new Request(assetUrl.toString(), {
+        method:'GET',
+        headers:request.headers
+      });
+      const asset = await env.ASSETS.fetch(assetReq);
+      const headers = new Headers(asset.headers);
+      headers.set('Cache-Control','no-store, no-cache, must-revalidate, max-age=0');
+      headers.set('X-Gado-App-Version','131');
+      return new Response(asset.body,{
+        status:asset.status,
+        statusText:asset.statusText,
+        headers
+      });
+    }
+    if (url.pathname === '/api/cotacoes-historico-mes' || url.pathname === '/api/cotacoes-historico-mes/') {
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return new Response('Method Not Allowed', { status: 405, headers: { 'Allow':'GET, HEAD' } });
+      }
+      const response = await cotacoesHistoricoMesResponse(request);
+      if (request.method === 'HEAD') {
+        return new Response(null, {status:response.status, headers:response.headers});
+      }
+      return response;
+    }
+
+    if (url.pathname === '/api/cotacoes' || url.pathname === '/api/cotacoes/') {
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return new Response('Method Not Allowed', { status: 405, headers: { 'Allow': 'GET, HEAD' } });
+      }
+      const response = await cotacoesResponse();
+      if (request.method === 'HEAD') {
+        return new Response(null, { status: response.status, headers: response.headers });
+      }
+      return response;
+    }
+    return env.ASSETS.fetch(request);
+  }
+};
