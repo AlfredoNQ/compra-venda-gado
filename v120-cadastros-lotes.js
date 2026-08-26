@@ -29,7 +29,7 @@
     b.onclick=function(){document.querySelectorAll('.tabbtn').forEach(function(x){x.classList.remove('active')});document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});b.classList.add('active');sec.classList.add('active');render()};
     document.getElementById('cadNovoV120').onclick=function(){openForm(null)};
     document.getElementById('cadBuscaV120').oninput=render;
-    sec.addEventListener('click',function(e){var id=e.target.dataset.cadEdit||e.target.dataset.cadDel||e.target.dataset.cadMap;if(!id)return;var list=read(),item=list.find(function(x){return x.id===id});if(e.target.dataset.cadMap){if(window.openClientMapPicker)window.openClientMapPicker(item);return}if(e.target.dataset.cadEdit)openForm(item);else if(confirm('Excluir este cadastro?')){write(list.filter(function(x){return x.id!==id}));render()}});
+    sec.addEventListener('click',function(e){var id=e.target.dataset.cadEdit||e.target.dataset.cadDel||e.target.dataset.cadMap;if(!id)return;var list=read(),item=list.find(function(x){return x.id===id});if(e.target.dataset.cadMap){if(e.preventDefault)e.preventDefault();if(window.openClientMapPicker)window.openClientMapPicker(item);return}if(e.target.dataset.cadEdit)openForm(item);else if(confirm('Excluir este cadastro?')){write(list.filter(function(x){return x.id!==id}));render()}});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
