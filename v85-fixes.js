@@ -90,6 +90,7 @@
       userSet(CLIENTS_KEY,JSON.stringify(mergedClients));
       userSet(ANIMALS_KEY,JSON.stringify(mergedAnimals));
       userSet(LOTS_KEY,JSON.stringify(mergedLots));
+      document.dispatchEvent(new CustomEvent('clientesAtualizados',{detail:{source:'cloud'}}));
       userSet(KEY,JSON.stringify(records));userSet(COSTKEY,JSON.stringify(costs));renderAll();
       var cloudDeleted=Array.isArray(res.data.deleted_records)?res.data.deleted_records:[];
       var needsPush=pendingBefore || stable(records)!==stable(cloudRecords.filter(function(r){return deleted.indexOf(r&&r.id)<0;})) || stable(costs)!==stable(cloudCosts) || stable(mergedClients)!==stable(cloudClients) || stable(mergedAnimals)!==stable(cloudAnimals) || stable(mergedLots)!==stable(cloudLots) || stable(deleted)!==stable(cloudDeleted);
