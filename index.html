@@ -1049,6 +1049,9 @@ function bindNegotiationListTabs(){
 }
 function renderTable(){
  let list=filtered(),view=negotiationListView();
+ let lotCodeChanged=false,lotCodeNumber=1;
+ records.forEach(function(r){if(Number(r.quantCompra||0)>0){let code='LT-'+String(lotCodeNumber++).padStart(2,'0');if(r.loteCodigo!==code){r.loteCodigo=code;lotCodeChanged=true}}});
+ if(lotCodeChanged){try{persist()}catch(e){}}
  $('count').textContent=`${list.length} de ${records.length} registros`;
  let head='',rows='';
  if(view==='seller'){
