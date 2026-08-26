@@ -26,7 +26,7 @@
   function addTombstone(id){if(!id)return;var a=tombstones();if(a.indexOf(id)<0)a.push(id);saveTombstones(a);}
   function applyDeleted(remote){var all=mergeDeleted(remote);var d=new Set(all);if(typeof records==='undefined'||!Array.isArray(records))return all;records=records.filter(function(r){return !d.has(r&&r.id);});try{userSet(KEY,JSON.stringify(records));}catch(e){}return all;}
   function stable(v){try{return JSON.stringify(v||[]);}catch(e){return '[]';}}
-  function localClients(){try{return JSON.parse(userGet(CLIENTS_KEY)||'[]')||[];}catch(e){return [];}}
+  function localClients(){try{var list=JSON.parse(userGet(CLIENTS_KEY)||'[]')||[];return Array.isArray(list)?list.map(function(x){if(!x||x.id)return x;return Object.assign({},x,{id:'cad-'+String(x.documento||x.nome||'cliente').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')});}):[];}catch(e){return [];}}
   function localObject(key){try{return JSON.parse(userGet(key)||'{}')||{};}catch(e){return {};}}
   function mergeObject(remote,local){var out={};Object.keys(remote||{}).forEach(function(k){out[k]=remote[k];});Object.keys(local||{}).forEach(function(k){out[k]=local[k];});return out;}
   function clearConfirmedFlags(){try{userRemove(OFFLINE_DIRTY_KEY);userRemove(DELETED_RECORDS_KEY);userRemove(DELETED_COSTS_KEY);userRemove(LEGACY_PENDING);localStorage.removeItem(LEGACY_RETRY);}catch(e){}}
@@ -80,6 +80,7 @@
       var cloudRecords=Array.isArray(res.data.records)?res.data.records:[];
       var cloudCosts=Array.isArray(res.data.costs)?res.data.costs:[];
       var cloudClients=Array.isArray(res.data.clients)?res.data.clients:[];
+      cloudClients=cloudClients.map(function(x){if(!x||x.id)return x;return Object.assign({},x,{id:'cad-'+String(x.documento||x.nome||'cliente').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')});});
       var cloudAnimals=res.data.animals&&typeof res.data.animals==='object'?res.data.animals:{};
       var cloudLots=res.data.lots&&typeof res.data.lots==='object'?res.data.lots:{};
       records=mergeById(cloudRecords,records,deleted).filter(function(r){return deleted.indexOf(r&&r.id)<0;});
