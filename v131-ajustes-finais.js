@@ -55,6 +55,7 @@
   var title=document.getElementById('modalTitle'),rid=document.getElementById('rid');
   if(!title||title.textContent.indexOf('Editar')<0)return;
   var list=(typeof records!=='undefined'&&Array.isArray(records)?records:(window.records||[]));var migrated=list.some(normalizeLegacySaleLots);if(migrated){try{if(typeof persist==='function')persist()}catch(e){}}var r=list.find(function(x){return String(x.id)===String(rid&&rid.value)});var isVenda=!!(r&&(window.__negListView==='buyer'||(Number(r.quantVenda||0)>0&&!Number(r.quantCompra||0))));
+  ['rclienteCompra','rclienteVenda'].forEach(function(id){var sel=document.getElementById(id);if(!sel)return;var field=sel.closest('.field');if(field)field.style.display='';sel.style.display='';var first=sel.options[0],rest=Array.from(sel.options).slice(1).sort(function(a,b){return String(a.textContent||'').localeCompare(String(b.textContent||''),'pt-BR',{sensitivity:'base'});});sel.innerHTML='';if(first)sel.appendChild(first);rest.forEach(function(opt){sel.appendChild(opt)});});
   var c=document.getElementById('negV66Compra'),v=document.getElementById('negV66Venda'),s=document.getElementById('negV66Resumo');
   if(c)c.style.display=isVenda?'none':'block'; if(v)v.style.display=isVenda?'block':'none'; if(s)s.style.display='block';
   var buyClient=document.getElementById('rclienteCompra'),sellClient=document.getElementById('rclienteVenda');if(buyClient)buyClient.required=!isVenda;if(sellClient)sellClient.required=isVenda;
