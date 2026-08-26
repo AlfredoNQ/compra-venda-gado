@@ -72,7 +72,7 @@
     const fisico=Array.isArray(d.cotacoes)?d.cotacoes:[];
     if(!fisico.some(x=>x.prazo30!=null)){ grid.innerHTML='<div class="quote-meta">Mercado Físico da Scot indisponível nesta atualização.</div>'; return; }
     if(fisico.some(x=>x.prazo30!=null)){
-      grid.innerHTML='<div class="quote-meta"><b>Mercado Físico Scot</b> • preços brutos</div><div class="scot-indicator-table-wrap"><table class="scot-indicator-table"><thead><tr><th>UF</th><th>Região</th><th>À vista</th><th>30 dias</th><th>Variação</th></tr></thead><tbody>'+fisico.map(function(x){var v=Number(x.variacao);return '<tr><td>'+String(x.uf||'—')+'</td><td>'+String(x.regiao||'—')+'</td><td><b>'+brl(x.avista)+'/@</b></td><td>'+brl(x.prazo30)+'/@</td><td class="'+(v<0?'scot-var-down':v>0?'scot-var-up':'scot-var-flat')+'">'+(Number.isFinite(v)?(v>0?'+':'')+brl(v).replace('R$ ','R$ '):'—')+'</td></tr>';}).join('')+'</tbody></table></div>';
+      grid.innerHTML='<div class="quote-meta"><b>Mercado Físico Scot</b> • preços brutos</div><div class="scot-indicator-table-wrap"><table class="scot-indicator-table"><thead><tr><th>UF</th><th>Região</th><th>À vista</th><th>30 dias</th><th>Variação</th></tr></thead><tbody>'+fisico.map(function(x){var v=Number(x.variacao);if(!Number.isFinite(v)&&Number.isFinite(Number(x.prazo30))&&Number.isFinite(Number(x.avista)))v=Number(x.prazo30)-Number(x.avista);return '<tr><td>'+String(x.uf||'—')+'</td><td>'+String(x.regiao||'—')+'</td><td><b>'+brl(x.avista)+'/@</b></td><td>'+brl(x.prazo30)+'/@</td><td class="'+(v<0?'scot-var-down':v>0?'scot-var-up':'scot-var-flat')+'">'+(Number.isFinite(v)?(v>0?'+':'')+brl(v).replace('R$ ','R$ '):'—')+'</td></tr>';}).join('')+'</tbody></table></div>';
       return;
     }
     const prevMap=new Map(ontem.map(x=>[key(x),x]));
