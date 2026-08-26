@@ -326,7 +326,9 @@ async function cotacoesResponse() {
     // Buscar novamente aqui garante à vista, 30 dias e variação.
     try {
       const fisicoDireto=parseMercadoFisico(await buscarScotFisicoOficial());
-      if(fisicoDireto.length) cotacoes.splice(0,cotacoes.length,...fisicoDireto);
+      const fisicoFallback=parseMercadoFisico(htmlBoi);
+      const fisicoFinal=fisicoDireto.length?fisicoDireto:fisicoFallback;
+      if(fisicoFinal.length) cotacoes.splice(0,cotacoes.length,...fisicoFinal);
     } catch (_) {}
 
     return Response.json({
