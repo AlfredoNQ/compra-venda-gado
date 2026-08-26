@@ -935,7 +935,9 @@ function calc(r){
   const custosRealizados=qc>0?custo*(sold/qc):0;
   const lucro=sold>0?sold*pv-custoCompraRealizado-custosRealizados:0;
   let status=qc>0&&qv>qc?'Conferir':qc>0&&saldo===0?'Vendido':qv>0?'Parcial':'Em estoque';
-  return{qc,qv,pc,pv,kg,at:kg/30,totalC,totalV,pcKg:kg?pc/kg:0,pvKg:kg?pv/kg:0,saldo,capital:saldo*pc,custo,lucro,status,sold}
+  // Custos vinculados são rateados entre animais vendidos e animais em estoque.
+  const custoEstoque=qc>0?custo*(saldo/qc):0;
+  return{qc,qv,pc,pv,kg,at:kg/30,totalC,totalV,pcKg:kg?pc/kg:0,pvKg:kg?pv/kg:0,saldo,capital:saldo*pc+custoEstoque,custo,lucro,status,sold}
 }
 function load(){try{records=JSON.parse(userGet(KEY)||'null')||MIGRATED.map(x=>({...x,pesoKg:pesoKg(x),pgComprador:x.pgComprador||''}));costs=JSON.parse(userGet(COSTKEY)||'[]')}catch(e){records=MIGRATED.map(x=>({...x,pesoKg:pesoKg(x)}));costs=[]}renderAll()}
 function safetySnapshot(reason){
