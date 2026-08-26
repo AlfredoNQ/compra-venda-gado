@@ -2978,7 +2978,7 @@ function popup(r,t){
 function init(){if(map||!window.L)return;map=L.map('cattleMap').setView([-7.19,-48.2],6);osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19});group=L.layerGroup().addTo(map)}
 function draw(){if(!map)return;group.clearLayers();marks=[];var cadastros=[];try{cadastros=JSON.parse((window.userGet?userGet('gado_cadastros_v120'):localStorage.getItem('gado_cadastros_v120'))||'[]')}catch(e){}cadastros.forEach(function(x){var la=Number(x.lat),lo=Number(x.lng);if(!Number.isFinite(la)||!Number.isFinite(lo))return;var nome=String(x.nome||'Cliente'),rel=(typeof records!=='undefined'?records:[]).filter(function(r){return String(r.vendedor||'').trim()===nome.trim()||String(r.comprador||'').trim()===nome.trim()});var rows=rel.map(function(r){var c=calc(r);var tipo=String(r.vendedor||'').trim()===nome.trim()?'Compra':'Venda';return '<tr><td>'+fmtDate(r.data)+'</td><td>'+tipo+'</td><td>'+esc(r.era||'—')+'</td><td>'+num.format(tipo==='Compra'?c.qc:c.qv)+'</td><td>'+money.format(tipo==='Compra'?c.totalC:c.totalV)+'</td></tr>';}).join('');var html='<b>Cliente cadastrado</b><br>'+esc(nome)+'<br><br><b>Histórico de compras e vendas</b><table class="smalltbl" style="margin-top:6px"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Qtd</th><th>Valor</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5">Nenhuma negociação encontrada.</td></tr>')+'</tbody></table>';var cm=L.circleMarker([la,lo],{radius:10,color:'#7a4a16',fillColor:'#e3a23b',fillOpacity:.95,weight:3}).bindTooltip('📍 '+nome,{direction:'top',sticky:true,opacity:1}).bindPopup(html,{autoPan:true,keepInView:true,maxWidth:520,className:'cattle-popup'}).addTo(group);marks.push(cm);});mapKpis.innerHTML=[['Clientes no mapa',marks.length],['Negociações',typeof records!=='undefined'?records.length:0],['Pontos',marks.length]].map(function(x){return '<div class="kpi"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>'}).join('');if(marks.length)map.fitBounds(L.featureGroup(marks).getBounds().pad(.15),{maxZoom:12});if(mapOfflineNotice)mapOfflineNotice.style.display=navigator.onLine?'none':'block'}
 function loc(a,b){navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{document.getElementById(a).value=p.coords.latitude.toFixed(6);document.getElementById(b).value=p.coords.longitude.toFixed(6)},()=>alert('Não foi possível obter sua localização.')):alert('Localização não disponível.')}
-function bind(){if(originLocationBtn)originLocationBtn.onclick=()=>loc('roriginLat','roriginLng');if(destLocationBtn)destLocationBtn.onclick=()=>loc('rdestLat','rdestLng');['mapYearFilter','mapTypeFilter','mapSellerFilter','mapBuyerFilter','mapCategoryFilter'].forEach(id=>document.getElementById(id).onchange=draw);mapNormalBtn.onclick=()=>{if(map){if(map.hasLayer(sat))map.removeLayer(sat);if(!map.hasLayer(osm))osm.addTo(map)}};mapSatelliteBtn.onclick=()=>{if(map){if(map.hasLayer(osm))map.removeLayer(osm);if(!map.hasLayer(sat))sat.addTo(map)}};document.querySelectorAll('.tabbtn').forEach(b=>{if(b.dataset.tab==='mapa')b.addEventListener('click',()=>setTimeout(()=>{init();map.invalidateSize();draw()},120))});filters()}
+function bind(){var ol=document.getElementById('originLocationBtn'),dl=document.getElementById('destLocationBtn'),mn=document.getElementById('mapNormalBtn'),ms=document.getElementById('mapSatelliteBtn');if(ol)ol.onclick=()=>loc('roriginLat','roriginLng');if(dl)dl.onclick=()=>loc('rdestLat','rdestLng');['mapYearFilter','mapTypeFilter','mapSellerFilter','mapBuyerFilter','mapCategoryFilter'].forEach(id=>{var e=document.getElementById(id);if(e)e.onchange=draw});if(mn)mn.onclick=()=>{if(map){if(map.hasLayer(sat))map.removeLayer(sat);if(!map.hasLayer(osm))osm.addTo(map)}};if(ms)ms.onclick=()=>{if(map){if(map.hasLayer(osm))map.removeLayer(osm);if(!map.hasLayer(sat))sat.addTo(map)}};document.querySelectorAll('.tabbtn').forEach(b=>{if(b.dataset.tab==='mapa')b.addEventListener('click',()=>setTimeout(()=>{init();if(map)map.invalidateSize();draw()},120))});filters()}
 window.refreshCattleMapV33=()=>{try{if(!map)init();setTimeout(function(){if(map&&map.invalidateSize)map.invalidateSize(true);draw()},60)}catch(e){}};
  document.addEventListener('clientesAtualizados',function(){setTimeout(function(){try{if(map){if(map.invalidateSize)map.invalidateSize(true);draw()}}catch(e){}},150)});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
@@ -3318,7 +3318,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
 })();
 </script>
-<script src="/v85-fixes.js?v=181"></script>
+<script src="/v85-fixes.js?v=182"></script>
 <script src="/v103-pdf-open.js?v=112pdf6"></script>
 <script src="/v116-pdf-mobile.js?v=112pdf6"></script>
 <script src="/v112-payments.js?v=112pay1"></script>
@@ -3326,10 +3326,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </body>
 </html>
 
-<script src="/v120-cadastros-lotes.js?v=181"></script>
-<script src="/v121-animais-lotes.js?v=181"></script>
+<script src="/v120-cadastros-lotes.js?v=182"></script>
+<script src="/v121-animais-lotes.js?v=182"></script>
 <script src="/v122-clientes-negociacao.js?v=122"></script>
 <script src="/v127-formularios-separados.js?v=127"></script>
 <script src="/v130-lotes-venda.js?v=130"></script>
 
-<script src="/v131-ajustes-finais.js?v=181"></script>
+<script src="/v131-ajustes-finais.js?v=182"></script>
