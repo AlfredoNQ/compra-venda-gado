@@ -21,7 +21,7 @@
     var i=list.findIndex(function(x){return x.id===obj.id}),oldName=i>=0?list[i].nome:'';if(oldName&&oldName!==obj.nome&&obj.aliases.indexOf(oldName)<0)obj.aliases.push(oldName);if(i>=0)list[i]=obj;else list.push(obj);write(list);render();document.dispatchEvent(new CustomEvent('clientesAtualizados',{detail:{oldName:oldName,newName:obj.nome,id:obj.id}}));
   }
   function init(){
-    try{var rk='gado_clientes_mapa_reset_v1';var done=window.userGet?userGet(rk):localStorage.getItem(rk);if(!done){var clean=read();clean.forEach(function(x){delete x.lat;delete x.lng});write(clean);if(window.userSet)userSet(rk,'1');else localStorage.setItem(rk,'1');}}catch(e){}
+    try{var rk='gado_clientes_mapa_reset_v2';var done=window.userGet?userGet(rk):localStorage.getItem(rk);if(!done){var clean=read();clean.forEach(function(x){delete x.lat;delete x.lng});write(clean);if(window.userSet)userSet(rk,'1');else localStorage.setItem(rk,'1');}}catch(e){}
     if(document.getElementById('cadastrosV120'))return;
     var tabs=document.querySelector('.tabs');var shell=document.querySelector('.wrap');if(!tabs||!shell)return;
     var b=document.createElement('button');b.className='tabbtn';b.dataset.tab='cadastrosV120';b.textContent='Clientes';tabs.appendChild(b);
