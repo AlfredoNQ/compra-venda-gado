@@ -299,9 +299,8 @@ async function cotacoesResponse() {
       }
     } catch (_) {}
 
-    try {
-      indicadorScotOntem=await buscarOntemScot();
-    } catch (_) {}
+    // A página oficial de Indicadores já entrega Hoje e Ontem na mesma linha.
+    // Não substituir esse resultado por uma consulta antiga ao Wayback.
 
     return Response.json({
       ok:true,
