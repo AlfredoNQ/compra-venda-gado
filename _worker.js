@@ -193,10 +193,25 @@ async function cotacoesResponse() {
       const texto=limpar(html);
       function linha(uf,regiao){
         const esc=(uf+' '+regiao).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-        const m=texto.match(new RegExp(esc+'(?:\\s*\\|\\s*|\\s+)(-?\\d{2,4},\\d{2})(?:\\s*\\|\\s*|\\s+)(-?\\d{2,4},\\d{2})(?:\\s*\\|\\s*|\\s+)(-?\\d{1,2},\\d{2})','i'));
+        const sep='(?:\\s*\\|\\s*|\\s+)';
+        // Na tabela oficial pode existir um rótulo entre 30 dias e a variação.
+        const m=texto.match(new RegExp(
+          esc+sep+'(-?\\d{2,4},\\d{2})'+sep+'(-?\\d{2,4},\\d{2})[^\\d-]*(-?\\d{1,2},\\d{2})',
+          'i'
+        ));
         if(!m)return null;
-        const nums=m[0].match(/-?\\d{1,4},\\d{2}/g)||[];
-        return nums.length>=3?{uf,regiao,avistas:numero(nums[0]),avista:numero(nums[0]),prazo30:numero(nums[1]),variacao:numero(nums[2])}:null;
+        return {uf,regiao,avistas:numero(m[1]),avista:numero(m[1]),prazo30:numero(m[2]),variacao:numero(m[3])};
+      }
+      return [linha('PA','Marabá'),linha('PA','Redenção'),linha('PA','Paragominas'),linha('TO','Sul'),linha('TO','Norte'),linha('MA','Oeste')].filter(Boolean);
+    }
+
+    function parseMercadoNoticias(html){
+      const texto=limpar(html);
+      function linha(uf,regiao){
+        const esc=(uf+' '+regiao).replace(/[.*+?^\${}()|[\]\\]/g,'\\    async function buscarOntemScot() {');
+        const sep='(?:\\s*\\|\\s*|\\s+)';
+        const m=texto.match(new RegExp(esc+sep+'(-?\\d{2,4},\\d{2})'+sep+'(-?\\d{2,4},\\d{2})','i'));
+        return m?{uf,regiao,avistas:numero(m[1]),avista:numero(m[1]),prazo30:numero(m[2]),variacao:null}:null;
       }
       return [linha('PA','Marabá'),linha('PA','Redenção'),linha('PA','Paragominas'),linha('TO','Sul'),linha('TO','Norte'),linha('MA','Oeste')].filter(Boolean);
     }
@@ -338,7 +353,10 @@ async function cotacoesResponse() {
     try {
       const fisicoDireto=parseMercadoFisico(await buscarScotFisicoOficial());
       const fisicoFallback=parseMercadoFisico(htmlBoi);
-      const fisicoFinal=fisicoDireto.length?fisicoDireto:fisicoFallback;
+      const fisicoNoticias=parseMercadoNoticias(htmlBoi);
+      const fisicoFinal=fisicoDireto.length
+        ?fisicoDireto
+        :(fisicoFallback.length?fisicoFallback:fisicoNoticias);
       if(fisicoFinal.length) cotacoes.splice(0,cotacoes.length,...fisicoFinal);
     } catch (_) {}
 
