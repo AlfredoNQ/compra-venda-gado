@@ -1,12 +1,12 @@
 /* v130 — vários lotes na venda e quantidade por lote */
 (function(){
- function ensureLotCodes(){try{var list=(typeof records!=='undefined'?records:[]),changed=false,n=1;list.forEach(function(r){if(Number(r.quantCompra||0)>0&&!r.loteCodigo){r.loteCodigo='LOTE-'+String(n++).padStart(4,'0');changed=true}});if(changed&&typeof persist==='function')persist()}catch(e){}}
+ function ensureLotCodes(){try{var list=(typeof records!=='undefined'?records:[]),changed=false,n=1;list.forEach(function(r){if(Number(r.quantCompra||0)>0){var code='LT-'+String(n++).padStart(2,'0');if(r.loteCodigo!==code){r.loteCodigo=code;changed=true}}});if(changed&&typeof persist==='function')persist()}catch(e){}}
  function saleLots(s){if(!s)return[];var lots=Array.isArray(s.animalLotsSold)&&s.animalLotsSold.length?s.animalLotsSold:(Array.isArray(s.sourceLots)&&s.sourceLots.length?s.sourceLots:null);if(lots)return lots;var id=s.animalLotId||s.sourceLotId||s.loteOrigemId||s.lotId;if(!id)return[];var qty=Array.isArray(s.animalNumbersSold)&&s.animalNumbersSold.length?s.animalNumbersSold.length:Number(s.quantVenda||0);return qty>0?[{lotId:id,quantity:qty}]:[]}
  function allocated(id,excludeId){try{return (typeof records!=='undefined'?records:[]).reduce(function(total,s){if(excludeId&&s.id===excludeId)return total;var lots=saleLots(s);return total+lots.reduce(function(a,x){return a+((x.lotId||x.id)===id?Number(x.quantity||x.quantidade||0):0)},0)},0)}catch(e){return 0}}
  function available(r,excludeId){return Math.max(0,Number(r.quantCompra||0)-Number(r.quantVenda||0)-allocated(r.id,excludeId))}
  function stock(){try{var list=(typeof records!=='undefined'?records:[]);return list.filter(function(r){return Number(r.quantCompra||0)>0})}catch(e){return[]}}
  function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
- function options(){ensureLotCodes();return '<option value="">Selecione o lote</option>'+stock().map(function(r){return '<option value="'+esc(r.id)+'">'+esc(r.loteCodigo||'LOTE')+' — '+esc(r.data)+' — '+esc(r.vendedor)+' — '+esc(r.era)+' (estoque '+available(r)+')</option>'}).join('')}
+ function options(){ensureLotCodes();return '<option value="">Selecione o lote</option>'+stock().map(function(r){return '<option value="'+esc(r.id)+'">'+esc(r.loteCodigo||'LT')+' — '+esc(r.data)+' — '+esc(r.vendedor)+' — '+esc(r.era)+' (estoque '+available(r)+')</option>'}).join('')}
  function addRow(box){var row=document.createElement('div');row.className='field';row.style.display='flex';row.style.gap='8px';row.style.marginBottom='7px';row.innerHTML='<select class="lote130" style="flex:1">'+options()+'</select><input class="qtdLote130" type="number" min="1" step="1" placeholder="Qtd" style="width:100px"><button type="button" class="mini remLote130">×</button>';box.appendChild(row)}
  function setup(){
   ensureLotCodes();
