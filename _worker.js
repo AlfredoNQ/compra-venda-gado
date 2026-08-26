@@ -132,7 +132,7 @@ async function cotacoesResponse() {
       const texto=limpar(html);
       const dm=texto.match(/Mercado Físico\s*-\s*(\d{2}\/\d{2}\/\d{4})/i);
 
-      function preco(label) {
+      function precos(label) {
         const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
         const m=texto.match(
           new RegExp(esc+'\\s+(\\d{2,4},\\d{2})\\s+(\\d{2,4},\\d{2})','i')
