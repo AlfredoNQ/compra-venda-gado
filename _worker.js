@@ -118,7 +118,7 @@ async function cotacoesResponse() {
 
 
     async function buscarScotBoiOficial() {
-      const u='https://www.scotconsultoria.com.br/cotacoes/boi-gordo/';
+      const u='https://www.scotconsultoria.com.br/cotacoes/indicadores/';
       try {
         return await buscar(u);
       } catch (_) {
@@ -130,7 +130,8 @@ async function cotacoesResponse() {
       if (!html) return {data:null,cotacoes:[]};
 
       const texto=limpar(html);
-      const dm=texto.match(/Mercado Físico\s*-\s*(\d{2}\/\d{2}\/\d{4})/i);
+      const dm=texto.match(/Indicador do boi gordo[^\d]*(\d{2}\/\d{2}\/\d{4})/i)
+        || texto.match(/Mercado Físico\s*-\s*(\d{2}\/\d{2}\/\d{4})/i);
 
       function precos(label) {
         const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -327,4 +328,3 @@ async function cotacoesResponse() {
 }
 
 
-async function cotacoesHistoricoMesResponse(request) {
