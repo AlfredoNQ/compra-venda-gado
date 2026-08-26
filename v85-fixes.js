@@ -13,6 +13,9 @@
   var TOMBSTONE_KEY='gado_deleted_records_permanent_v95';
   var LEGACY_PENDING='gado_pending_sync_v78';
   var LEGACY_RETRY='gado_sync_retry_v78';
+  var CLIENTS_KEY='gado_cadastros_v120';
+  var ANIMALS_KEY='gado_animais_v121';
+  var LOTS_KEY='gado_lotes_v121';
   var sync96Busy=false;
   var sync96Timer=null;
   var lastPullAt=0;
@@ -23,6 +26,9 @@
   function addTombstone(id){if(!id)return;var a=tombstones();if(a.indexOf(id)<0)a.push(id);saveTombstones(a);}
   function applyDeleted(remote){var all=mergeDeleted(remote);var d=new Set(all);if(typeof records==='undefined'||!Array.isArray(records))return all;records=records.filter(function(r){return !d.has(r&&r.id);});try{userSet(KEY,JSON.stringify(records));}catch(e){}return all;}
   function stable(v){try{return JSON.stringify(v||[]);}catch(e){return '[]';}}
+  function localClients(){try{return JSON.parse(userGet(CLIENTS_KEY)||'[]')||[];}catch(e){return [];}}
+  function localObject(key){try{return JSON.parse(userGet(key)||'{}')||{};}catch(e){return {};}}
+  function mergeObject(remote,local){var out={};Object.keys(remote||{}).forEach(function(k){out[k]=remote[k];});Object.keys(local||{}).forEach(function(k){out[k]=local[k];});return out;}
   function clearConfirmedFlags(){try{userRemove(OFFLINE_DIRTY_KEY);userRemove(DELETED_RECORDS_KEY);userRemove(DELETED_COSTS_KEY);userRemove(LEGACY_PENDING);localStorage.removeItem(LEGACY_RETRY);}catch(e){}}
   function markSynced(){setCloudStatus('Sincronizado ✓','ok');var s=document.getElementById('saveStatus');if(s)s.textContent='Dados sincronizados • '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});var o=document.getElementById('offlineStatus');if(o){o.textContent='Online • sincronizado';o.className='cloudpill ok';}var b=document.getElementById('syncNowBtn');if(b)b.style.display='none';}
   function hasPending(){try{return isOfflineDirty()||!!userGet(LEGACY_PENDING)||getDeletedIds(DELETED_RECORDS_KEY).length>0||getDeletedIds(DELETED_COSTS_KEY).length>0;}catch(e){return false;}}
@@ -46,8 +52,8 @@
     sync96Busy=true;
     try{
       var dels=applyDeleted();
-      var payload={user_id:cloudUser.id,records:records,costs:costs,deleted_records:dels,updated_at:new Date().toISOString()};
-      var res=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'}).select('user_id,records,costs,deleted_records,updated_at').single();
+      var payload={user_id:cloudUser.id,records:records,costs:costs,clients:localClients(),animals:localObject(ANIMALS_KEY),lots:localObject(LOTS_KEY),deleted_records:dels,updated_at:new Date().toISOString()};
+      var res=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'}).select('user_id,records,costs,clients,animals,lots,deleted_records,updated_at').single();
       if(res.error)throw res.error;
       if(!res.data||res.data.user_id!==cloudUser.id)throw new Error('Nuvem não confirmou o usuário');
       var confirmedDeleted=Array.isArray(res.data.deleted_records)?res.data.deleted_records:[];
@@ -66,18 +72,27 @@
     if(!force && Date.now()-lastPullAt<5000)return true;
     sync96Busy=true;lastPullAt=Date.now();
     try{
-      var localBefore=stable(records), costsBefore=stable(costs), pendingBefore=hasPending();
-      var res=await sb.from(CLOUD_TABLE).select('records,costs,deleted_records,updated_at').eq('user_id',cloudUser.id).maybeSingle();
+      var localBefore=stable(records), costsBefore=stable(costs), clientsBefore=stable(localClients()), pendingBefore=hasPending();
+      var res=await sb.from(CLOUD_TABLE).select('records,costs,clients,animals,lots,deleted_records,updated_at').eq('user_id',cloudUser.id).maybeSingle();
       if(res.error)throw res.error;
       if(!res.data){sync96Busy=false;return await save96();}
       var deleted=applyDeleted(Array.isArray(res.data.deleted_records)?res.data.deleted_records:[]);
       var cloudRecords=Array.isArray(res.data.records)?res.data.records:[];
       var cloudCosts=Array.isArray(res.data.costs)?res.data.costs:[];
+      var cloudClients=Array.isArray(res.data.clients)?res.data.clients:[];
+      var cloudAnimals=res.data.animals&&typeof res.data.animals==='object'?res.data.animals:{};
+      var cloudLots=res.data.lots&&typeof res.data.lots==='object'?res.data.lots:{};
       records=mergeById(cloudRecords,records,deleted).filter(function(r){return deleted.indexOf(r&&r.id)<0;});
       costs=mergeById(cloudCosts,costs,getDeletedIds(DELETED_COSTS_KEY));
+      var mergedClients=mergeById(cloudClients,localClients(),[]);
+      var mergedAnimals=mergeObject(cloudAnimals,localObject(ANIMALS_KEY));
+      var mergedLots=mergeObject(cloudLots,localObject(LOTS_KEY));
+      userSet(CLIENTS_KEY,JSON.stringify(mergedClients));
+      userSet(ANIMALS_KEY,JSON.stringify(mergedAnimals));
+      userSet(LOTS_KEY,JSON.stringify(mergedLots));
       userSet(KEY,JSON.stringify(records));userSet(COSTKEY,JSON.stringify(costs));renderAll();
       var cloudDeleted=Array.isArray(res.data.deleted_records)?res.data.deleted_records:[];
-      var needsPush=pendingBefore || stable(records)!==stable(cloudRecords.filter(function(r){return deleted.indexOf(r&&r.id)<0;})) || stable(costs)!==stable(cloudCosts) || stable(deleted)!==stable(cloudDeleted);
+      var needsPush=pendingBefore || stable(records)!==stable(cloudRecords.filter(function(r){return deleted.indexOf(r&&r.id)<0;})) || stable(costs)!==stable(cloudCosts) || stable(mergedClients)!==stable(cloudClients) || stable(mergedAnimals)!==stable(cloudAnimals) || stable(mergedLots)!==stable(cloudLots) || stable(deleted)!==stable(cloudDeleted);
       sync96Busy=false;
       if(needsPush)return await save96();
       clearConfirmedFlags();markSynced();return true;
