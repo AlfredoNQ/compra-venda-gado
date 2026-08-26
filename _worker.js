@@ -177,7 +177,7 @@ async function cotacoesResponse() {
       const texto=limpar(html);
       function linha(uf,regiao){
         const esc=(uf+' '+regiao).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-        const m=texto.match(new RegExp(esc+'\\s+(\\d{2,4},\\d{2})\\s+(\\d{2,4},\\d{2})\\s+[^\\d-]*(?:-?\\d{1,2},\\d{2})','i'));
+        const m=texto.match(new RegExp(esc+'\\s+(-?\\d{2,4},\\d{2})\\s+(-?\\d{2,4},\\d{2})\\s+(-?\\d{1,2},\\d{2})','i'));
         if(!m)return null;
         const nums=m[0].match(/-?\\d{1,4},\\d{2}/g)||[];
         return nums.length>=3?{uf,regiao,avistas:numero(nums[0]),avista:numero(nums[0]),prazo30:numero(nums[1]),variacao:numero(nums[2])}:null;
