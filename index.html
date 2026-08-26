@@ -586,6 +586,14 @@ tbody tr:hover{background:#f7fbf8!important}
 .cattle-popup table.smalltbl tbody tr{display:grid!important;grid-template-columns:1.15fr .9fr 1.15fr .55fr 1.15fr!important;min-width:0!important;}
 .cattle-popup table.smalltbl th,.cattle-popup table.smalltbl td{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;}
 @media(max-width:560px){.cattle-popup .leaflet-popup-content{max-width:calc(100vw - 34px)!important}.cattle-popup table.smalltbl tbody{grid-template-columns:1fr 1fr!important}.cattle-popup table.smalltbl th,.cattle-popup table.smalltbl td{font-size:9px!important;padding:7px 4px!important}}
+/* v159 — desfaz colunas quebradas e preserva leitura */
+.cattle-popup .leaflet-popup-content{max-width:min(760px,calc(100vw - 28px))!important;}
+.cattle-popup table.smalltbl,.cattle-popup table.smalltbl thead,.cattle-popup table.smalltbl tbody{display:table!important;width:100%!important;}
+.cattle-popup table.smalltbl tbody{display:table-row-group!important;}
+.cattle-popup table.smalltbl thead tr,.cattle-popup table.smalltbl tbody tr{display:table-row!important;}
+.cattle-popup table.smalltbl th,.cattle-popup table.smalltbl td{display:table-cell!important;overflow:visible!important;text-overflow:clip!important;white-space:nowrap!important;}
+.cattle-popup table.smalltbl tbody tr:nth-child(even){background:#f8fbf9!important;}
+@media(max-width:560px){.cattle-popup .leaflet-popup-content{max-width:calc(100vw - 18px)!important}.cattle-popup table.smalltbl th,.cattle-popup table.smalltbl td{font-size:9px!important;padding:7px 5px!important}}
 </style></head><body data-app-version="85">
 <style>
 .cloudpill{font-size:12px;padding:7px 10px;border-radius:999px;background:#ffffff1c;border:1px solid #ffffff35;white-space:nowrap}
