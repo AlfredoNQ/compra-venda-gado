@@ -322,6 +322,13 @@ async function cotacoesResponse() {
     // A página oficial de Indicadores já entrega Hoje e Ontem na mesma linha.
     // Não substituir esse resultado por uma consulta antiga ao Wayback.
 
+    // Mercado Físico é uma tabela separada da página de Indicadores.
+    // Buscar novamente aqui garante à vista, 30 dias e variação.
+    try {
+      const fisicoDireto=parseMercadoFisico(await buscarScotFisicoOficial());
+      if(fisicoDireto.length) cotacoes.splice(0,cotacoes.length,...fisicoDireto);
+    } catch (_) {}
+
     return Response.json({
       ok:true,
       fonte:'Scot Consultoria',
