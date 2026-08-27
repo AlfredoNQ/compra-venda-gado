@@ -1,4 +1,4 @@
-/* Compra e Venda de Gado — v112 PDF Android interno + Safari iPhone */
+/* Compra e Venda de Gado — v183 PDF Android interno + Safari iPhone */
 (function(){
   function isIOS(){
     var ua=navigator.userAgent||'';
@@ -115,10 +115,10 @@
   };
   function forceVersion(){
     try{
-      document.title='Compra e Venda de Gado — v112';
+      document.title='Compra e Venda de Gado — v183';
       var h=document.querySelector('header h1')||document.querySelector('h1');
-      if(h)h.querySelectorAll('span').forEach(function(s){if(/^v\d+$/i.test((s.textContent||'').trim()))s.textContent='v112';});
+      if(h)h.querySelectorAll('span').forEach(function(s){if(/^v\d+$/i.test((s.textContent||'').trim()))s.textContent='v183';});
     }catch(e){}
   }
-  forceVersion();setTimeout(forceVersion,300);setTimeout(forceVersion,1000);window.APP_WEB_VERSION='112';
+  forceVersion();setTimeout(forceVersion,300);setTimeout(forceVersion,1000);window.APP_WEB_VERSION='183';
 })();
