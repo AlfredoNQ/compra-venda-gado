@@ -15,6 +15,14 @@ jobs:
       - name: Baixar código
         uses: actions/checkout@v4
 
+      - name: Restaurar ícone original
+        shell: bash
+        run: |
+          set -e
+          mkdir -p android-app/app/src/main/res/drawable
+          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/app-boi-512.png" -o android-app/app/src/main/res/drawable/app_boi.png
+          test -s android-app/app/src/main/res/drawable/app_boi.png
+
       - name: Configurar Java
         uses: actions/setup-java@v5
         with:
