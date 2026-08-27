@@ -30,8 +30,8 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 
 public class MainActivity extends Activity {
-    private static final String HOME = "https://compra-venda-gado.vercel.app";
-    private static final String HOME_HOST = "compra-venda-gado.vercel.app";
+    private static final String HOME = "https://compra-venda-gado-app.pages.dev/";
+    private static final String HOME_HOST = "compra-venda-gado-app.pages.dev";
     private static final int FILE_CHOOSER = 1001;
     private static final int PERMISSIONS = 1002;
     private WebView web;
@@ -50,7 +50,7 @@ public class MainActivity extends Activity {
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/78");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/182");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         web.addJavascriptInterface(new AndroidDownloads(), "AndroidDownloads");
