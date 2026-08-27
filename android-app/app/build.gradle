@@ -4,11 +4,27 @@ android {
     namespace 'com.alfredo.compravendagado'
     compileSdk 35
 
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('ANDROID_KEYSTORE_FILE') ?: '../app-release.jks')
+            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            keyAlias System.getenv('ANDROID_KEY_ALIAS')
+            keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+        }
+    }
+
     defaultConfig {
         applicationId 'com.alfredo.compravendagado.offline'
         minSdk 24
         targetSdk 35
         versionCode 182
         versionName '182.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
     }
 }
