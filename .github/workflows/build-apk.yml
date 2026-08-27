@@ -63,8 +63,8 @@ jobs:
           test -s "$APK"
           "$APKSIGNER" verify --verbose --print-certs "$APK"
           test "$("$APKANALYZER" manifest application-id "$APK")" = "com.alfredo.compravendagado.offline"
-          test "$("$APKANALYZER" manifest version-code "$APK")" = "182"
-          echo "APK oficial: com.alfredo.compravendagado.offline v182"
+          test "$("$APKANALYZER" manifest version-code "$APK")" = "183"
+          echo "APK oficial: com.alfredo.compravendagado.offline v183"
 
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
