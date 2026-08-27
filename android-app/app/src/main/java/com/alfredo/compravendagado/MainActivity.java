@@ -33,7 +33,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class MainActivity extends Activity {
-    private static final String HOME = "https://compra-venda-gado-app.pages.dev/";
+    private static final String HOME = "https://compra-venda-gado-app.pages.dev/?v=183";
     private static final String HOME_HOST = "compra-venda-gado-app.pages.dev";
     private static final int FILE_CHOOSER = 1001;
     private static final int PERMISSIONS = 1002;
@@ -50,10 +50,10 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
-        s.setCacheMode(WebSettings.LOAD_DEFAULT);
+        s.setCacheMode(WebSettings.LOAD_NO_CACHE);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/182");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/183");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         web.addJavascriptInterface(new AndroidDownloads(), "AndroidDownloads");
