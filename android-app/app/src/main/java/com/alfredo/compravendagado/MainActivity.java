@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
@@ -12,6 +13,7 @@ import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Base64;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
@@ -28,6 +30,7 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class MainActivity extends Activity {
     private static final String HOME = "https://compra-venda-gado-app.pages.dev/";
@@ -57,7 +60,7 @@ public class MainActivity extends Activity {
 
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:")) return false;
+                if (url.startsWith("blob:") || isTrustedUrl(Uri.parse(url))) return false;
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch(Exception ignored) {}
                 return true;
             }
@@ -112,17 +115,29 @@ public class MainActivity extends Activity {
         web.evaluateJavascript(js,null);
     }
 
-    public class AndroidDownloads {
+        public class AndroidDownloads {
         @JavascriptInterface public void saveBase64(String dataUrl, String fileName, String mime) {
             try {
                 int comma=dataUrl.indexOf(',');
                 String payload=comma>=0?dataUrl.substring(comma+1):dataUrl;
                 byte[] bytes=Base64.decode(payload,Base64.DEFAULT);
                 String safe=(fileName==null||fileName.trim().isEmpty())?"backup-compra-venda-gado.json":fileName.replaceAll("[\\\\/:*?\"<>|]","_");
-                File dir=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                if(!dir.exists())dir.mkdirs();
-                File out=new File(dir,safe);
-                FileOutputStream fos=new FileOutputStream(out); fos.write(bytes); fos.flush(); fos.close();
+                if (android.os.Build.VERSION.SDK_INT >= 29) {
+                    ContentValues values=new ContentValues();
+                    values.put(MediaStore.Downloads.DISPLAY_NAME,safe);
+                    values.put(MediaStore.Downloads.MIME_TYPE,mime==null?"application/octet-stream":mime);
+                    values.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS);
+                    values.put(MediaStore.Downloads.IS_PENDING,1);
+                    Uri uri=getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values);
+                    if(uri==null)throw new java.io.IOException("Não foi possível criar o arquivo");
+                    try(OutputStream out=getContentResolver().openOutputStream(uri)){if(out==null)throw new java.io.IOException("Não foi possível abrir o arquivo");out.write(bytes);out.flush();}
+                    ContentValues done=new ContentValues();done.put(MediaStore.Downloads.IS_PENDING,0);getContentResolver().update(uri,done,null,null);
+                } else {
+                    File dir=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                    if(!dir.exists())dir.mkdirs();
+                    File out=new File(dir,safe);
+                    try(FileOutputStream fos=new FileOutputStream(out)){fos.write(bytes);fos.flush();}
+                }
                 runOnUiThread(() -> Toast.makeText(MainActivity.this,"Backup salvo em Downloads: "+safe,Toast.LENGTH_LONG).show());
             } catch(Exception e) { error(); }
         }
@@ -136,6 +151,13 @@ public class MainActivity extends Activity {
             NetworkCapabilities c=cm.getNetworkCapabilities(n);
             return c!=null && c.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
         } catch(Exception e){return false;}
+    }
+
+    private boolean isTrustedUrl(Uri uri) {
+        if(uri==null)return false;
+        String scheme=uri.getScheme()==null?"":uri.getScheme();
+        String host=uri.getHost()==null?"":uri.getHost();
+        return ("https".equalsIgnoreCase(scheme) && HOME_HOST.equalsIgnoreCase(host));
     }
 
     private WebResourceResponse offlineResponse(Uri uri) {
