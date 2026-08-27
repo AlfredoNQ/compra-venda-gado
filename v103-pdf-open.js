@@ -1,4 +1,4 @@
-/* Compra e Venda de Gado — v112 PDF mobile direto + restauração segura */
+/* Compra e Venda de Gado — v183 PDF mobile direto + restauração segura */
 (function(){
   function dataUrlToBlob(dataUrl){
     var parts=String(dataUrl||'').split(',');
@@ -98,6 +98,6 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSafeRestore);else installSafeRestore();
 
-  function forceWebVersion112(){try{document.title='Compra e Venda de Gado — v112';var h=document.querySelector('header h1')||document.querySelector('h1');if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\d+$/i.test((spans[i].textContent||'').trim()))spans[i].textContent='v112';}}}catch(e){}}
-  forceWebVersion112();setTimeout(forceWebVersion112,800);setTimeout(forceWebVersion112,2000);setInterval(forceWebVersion112,10000);window.APP_WEB_VERSION='112';
+  function forceWebVersion112(){try{document.title='Compra e Venda de Gado — v183';var h=document.querySelector('header h1')||document.querySelector('h1');if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\d+$/i.test((spans[i].textContent||'').trim()))spans[i].textContent='v183';}}}catch(e){}}
+  forceWebVersion112();setTimeout(forceWebVersion112,800);setTimeout(forceWebVersion112,2000);setInterval(forceWebVersion112,10000);window.APP_WEB_VERSION='183';
 })();
