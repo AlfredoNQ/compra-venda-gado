@@ -2904,15 +2904,14 @@ document.addEventListener('DOMContentLoaded',function(){
     var bytes=new Uint8Array(pdf.length);
     for(var k=0;k<pdf.length;k++) bytes[k]=pdf.charCodeAt(k)&255;
 
-    var blob=new Blob([bytes],{type:'application/pdf'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;
-    a.download='relatorio_compra_venda_gado_'+new Date().toISOString().slice(0,10)+'.pdf';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function(){URL.revokeObjectURL(url)},5000);
+    var encoded='';
+    for(var bi=0;bi<bytes.length;bi++) encoded+=String.fromCharCode(bytes[bi]);
+    var doc={name:'relatorio_compra_venda_gado_'+new Date().toISOString().slice(0,10)+'.pdf',data:'data:application/pdf;base64,'+btoa(encoded)};
+    window.__pdfDocsV85=window.__pdfDocsV85||{};
+    var pdfId='report-'+Date.now();
+    window.__pdfDocsV85[pdfId]=doc;
+    if(typeof window.openStoredPdfV85==='function') window.openStoredPdfV85(pdfId);
+    else { var blob=new Blob([bytes],{type:'application/pdf'}); window.open(URL.createObjectURL(blob),'_blank'); }
   }
 
   function bind(){
