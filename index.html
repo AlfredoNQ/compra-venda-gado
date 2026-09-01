@@ -1446,6 +1446,7 @@ $('recordForm').addEventListener('submit',async e=>{
   // refreshes the pending sync snapshot with the latest full record,
   // including map coordinates.
   persist();
+  ['rgtaFile','rnotaFile','rpayFile'].forEach(function(fid){var input=$(fid);if(input){input.value='';input.dataset.deletePdf='0';}});
 
   renderAll();
   try{if(window.refreshCattleMapV33)window.refreshCattleMapV33()}catch(e){}
