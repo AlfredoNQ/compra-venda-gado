@@ -1770,7 +1770,11 @@ function mergeById(cloudList,localList,deletedIds){
 
     // If one version has an updatedAt, the newest wins.
     if(b>a){
-      map.set(x.id,{...x,__mergeSource:source});
+      var merged={...x};
+      ['gtaPdf','notaPdf','paymentPdf'].forEach(function(field){
+        if(!merged[field] && old[field])merged[field]=old[field];
+      });
+      map.set(x.id,{...merged,__mergeSource:source});
       return;
     }
     if(a>b)return;
