@@ -53,12 +53,10 @@
     try{
       var dels=applyDeleted();
       var payload={user_id:cloudUser.id,records:records,costs:costs,clients:localClients(),animals:localObject(ANIMALS_KEY),lots:localObject(LOTS_KEY),deleted_records:dels,updated_at:new Date().toISOString()};
-      var res=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'}).select('user_id,records,costs,clients,animals,lots,deleted_records,updated_at').single();
+      var res=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'});
       if(res.error)throw res.error;
-      if(!res.data||res.data.user_id!==cloudUser.id)throw new Error('Nuvem não confirmou o usuário');
-      var confirmedDeleted=Array.isArray(res.data.deleted_records)?res.data.deleted_records:[];
-      var dset=new Set(confirmedDeleted);
-      for(var i=0;i<dels.length;i++){if(!dset.has(dels[i]))throw new Error('Nuvem não confirmou exclusões');}
+      // Confirma o upsert sem devolver records/PDFs: reduz muito o tráfego no APK.
+
       clearConfirmedFlags();
       markSynced();
       return true;
