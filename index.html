@@ -1869,7 +1869,8 @@ async function cloudSaveNow(){
   }
   cloudBusy=true;
   try{
-    const payload={user_id:cloudUser.id,records,costs,updated_at:new Date().toISOString()};
+    let savedClients=[];try{savedClients=JSON.parse(userGet('gado_cadastros_v120')||'[]');if(!Array.isArray(savedClients))savedClients=[];}catch(e){}
+    const payload={user_id:cloudUser.id,records,costs,clients:savedClients,updated_at:new Date().toISOString()};
     const {error}=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'});
     if(error)throw error;
     clearOfflineSyncFlags();
