@@ -2885,7 +2885,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
   function confirmPoint(){
     if(lat==null||lng==null){
-      if(target==='cliente'){try{var list=JSON.parse((window.userGet?userGet('gado_cadastros_v120'):localStorage.getItem('gado_cadastros_v120'))||'[]');var item=list.find(function(x){return x.id===window.__clientMapId});if(item){delete item.lat;delete item.lng;if(window.userSet)userSet('gado_cadastros_v120',JSON.stringify(list));else localStorage.setItem('gado_cadastros_v120',JSON.stringify(list));document.dispatchEvent(new CustomEvent('clientesAtualizados'));}}catch(e){}closePickerModal();return;}
+    if(target==='cliente'){try{var list=JSON.parse((window.userGet?userGet('gado_cadastros_v120'):localStorage.getItem('gado_cadastros_v120'))||'[]');var item=list.find(function(x){return x.id===window.__clientMapId});if(item){delete item.lat;delete item.lng;if(window.userSet)userSet('gado_cadastros_v120',JSON.stringify(list));else localStorage.setItem('gado_cadastros_v120',JSON.stringify(list));document.dispatchEvent(new CustomEvent('clientesAtualizados'));if(window.scheduleCloudSave)window.scheduleCloudSave();else if(window.persist)window.persist();}}catch(e){}closePickerModal();return;}
       var lf=el(target==='origem'?'roriginLat':'rdestLat'),gf=el(target==='origem'?'roriginLng':'rdestLng');if(lf)lf.value='';if(gf)gf.value='';closePickerModal();return;
     }
 
@@ -3097,4 +3097,3 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 </body>
 </html>
-
