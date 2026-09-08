@@ -26,6 +26,8 @@
   var LOTS_KEY='gado_lotes_v121';
   var sync96Busy=false;
   var sync96Timer=null;
+  var sync96RetryTimer=null;
+  var sync96RetryDelay=1500;
   var lastPullAt=0;
 
   function tombstones(){try{return JSON.parse(userGet(TOMBSTONE_KEY)||'[]')||[];}catch(e){return [];}}
@@ -125,9 +127,11 @@
       // Confirma o upsert sem devolver records/PDFs: reduz muito o tráfego no APK.
 
       clearConfirmedFlags();
+      sync96RetryDelay=1500;
+      if(sync96RetryTimer){clearTimeout(sync96RetryTimer);sync96RetryTimer=null;}
       markSynced();
       return true;
-    }catch(e){try{markOfflineDirty();}catch(_){}setCloudStatus('Pendente de sincronização','warn');console.error('SYNC96 SAVE',e);return false;}
+    }catch(e){try{markOfflineDirty();}catch(_){}setCloudStatus('Pendente de sincronização','warn');var st=document.getElementById('saveStatus');if(st)st.textContent='Salvo no aparelho • nova tentativa automática';console.error('SYNC96 SAVE',e);if(!sync96RetryTimer&&navigator.onLine){var wait=sync96RetryDelay;sync96RetryDelay=Math.min(sync96RetryDelay*2,30000);sync96RetryTimer=setTimeout(function(){sync96RetryTimer=null;if(hasPending())save96();},wait);}return false;}
     finally{sync96Busy=false;}
   }
 
