@@ -69,7 +69,8 @@
   [[buyClient,r&&r.vendedor],[sellClient,r&&r.comprador]].forEach(function(pair){
     var sel=pair[0],name=String(pair[1]||'').trim();if(!sel||!name)return;
     var opt=Array.from(sel.options).find(function(o){return String(o.value||'').trim()===name||String(o.textContent||'').trim()===name;});
-    if(opt){sel.value=opt.value;sel.dispatchEvent(new Event('change',{bubbles:true}));}
+    if(!opt){opt=document.createElement('option');opt.value=name;opt.textContent=name;sel.appendChild(opt);}
+    sel.value=opt.value;sel.dispatchEvent(new Event('change',{bubbles:true}));
   });
   if(buyClient)buyClient.required=!isVenda;if(sellClient)sellClient.required=isVenda;
   var gc=document.getElementById('rgtaCompra'),gn=document.getElementById('rnotaCompra');if(gc)gc.value=(document.getElementById('rgta')||{}).value||'';if(gn)gn.value=(document.getElementById('rnota')||{}).value||'';var cv=document.getElementById('rcategoriaVenda'),cc=document.getElementById('rcategoria');if(cv&&cc&&document.activeElement!==cv)cv.value=cc.value||'';var wv=document.getElementById('rpesoVenda');if(wv){wv.disabled=false;wv.readOnly=false;if(document.activeElement!==wv)wv.value=r&&r.pesoVendaKg!=null?r.pesoVendaKg:'';}
