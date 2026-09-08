@@ -64,7 +64,14 @@
   ['rclienteCompra','rclienteVenda'].forEach(function(id){var sel=document.getElementById(id);if(!sel)return;var field=sel.closest('.field');if(field)field.style.display='';sel.style.display='';var first=sel.options[0],rest=Array.from(sel.options).slice(1).sort(function(a,b){return String(a.textContent||'').localeCompare(String(b.textContent||''),'pt-BR',{sensitivity:'base'});});sel.innerHTML='';if(first)sel.appendChild(first);rest.forEach(function(opt){sel.appendChild(opt)});});
   var c=document.getElementById('negV66Compra'),v=document.getElementById('negV66Venda'),s=document.getElementById('negV66Resumo');
   if(c)c.style.display=isVenda?'none':'block'; if(v)v.style.display=isVenda?'block':'none'; if(s)s.style.display='block';
-  var buyClient=document.getElementById('rclienteCompra'),sellClient=document.getElementById('rclienteVenda');if(buyClient)buyClient.required=!isVenda;if(sellClient)sellClient.required=isVenda;
+  var buyClient=document.getElementById('rclienteCompra'),sellClient=document.getElementById('rclienteVenda');
+  // Depois de reconstruir/ordenar os selects, selecionar o cliente salvo no registro.
+  [[buyClient,r&&r.vendedor],[sellClient,r&&r.comprador]].forEach(function(pair){
+    var sel=pair[0],name=String(pair[1]||'').trim();if(!sel||!name)return;
+    var opt=Array.from(sel.options).find(function(o){return String(o.value||'').trim()===name||String(o.textContent||'').trim()===name;});
+    if(opt){sel.value=opt.value;sel.dispatchEvent(new Event('change',{bubbles:true}));}
+  });
+  if(buyClient)buyClient.required=!isVenda;if(sellClient)sellClient.required=isVenda;
   var gc=document.getElementById('rgtaCompra'),gn=document.getElementById('rnotaCompra');if(gc)gc.value=(document.getElementById('rgta')||{}).value||'';if(gn)gn.value=(document.getElementById('rnota')||{}).value||'';var cv=document.getElementById('rcategoriaVenda'),cc=document.getElementById('rcategoria');if(cv&&cc&&document.activeElement!==cv)cv.value=cc.value||'';var wv=document.getElementById('rpesoVenda');if(wv){wv.disabled=false;wv.readOnly=false;if(document.activeElement!==wv)wv.value=r&&r.pesoVendaKg!=null?r.pesoVendaKg:'';}
   window.__modeV127=isVenda?'venda':'compra';
   var tabs=document.querySelector('.neg-v66-tabs');if(tabs)tabs.style.display='none';
