@@ -132,6 +132,7 @@
   }
 
   async function load96(force){
+    if(window.__pdfViewerOpen)return true;
     if(!sb||!cloudUser||!navigator.onLine)return false;
     if(sync96Busy)return false;
     if(!force && Date.now()-lastPullAt<5000)return true;
