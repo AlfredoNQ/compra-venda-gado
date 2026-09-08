@@ -2736,7 +2736,7 @@
     try{
       var doc=(window.__pdfDocsV85||{})[id];
       if(!doc||!doc.data)throw new Error('Documento não encontrado');
-      if(isIOS()){openIOS(doc);return;}
+      if(isMobile() || isIOS()){showMobile(doc);return;}
       if(isMobile()){showMobile(doc);return;}
       if(window.AndroidPdf&&typeof window.AndroidPdf.openPdf==='function'){window.AndroidPdf.openPdf(doc.data,safeName(doc.name));return;}
       openDesktop(doc);
