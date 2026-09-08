@@ -1430,9 +1430,18 @@ $('recordForm').addEventListener('submit',async e=>{
  let saveBtn=e.submitter; if(saveBtn)saveBtn.disabled=true;
  try{
   let id=$('rid').value||'n-'+Date.now(),old=records.find(x=>x.id===id)||{};
-  let gtaPdf=await fileToStoredObject($('rgtaFile'),old.gtaPdf);
-  let notaPdf=await fileToStoredObject($('rnotaFile'),old.notaPdf);
-  let paymentPdf=await fileToStoredObject($('rpayFile'),old.paymentPdf);
+  // Em edição, preservar cada PDF existente. Só apagar com exclusão explícita.
+  const pdfValue=async(id,previous)=>{
+    const input=$(id),remove=input&&input.dataset&&input.dataset.deletePdf==='1';
+    if(remove)return null;
+    const chosen=input&&input.files&&input.files[0];
+    if(!chosen)return previous||null;
+    const saved=await fileToStoredObject(input,previous);
+    return saved||previous||null;
+  };
+  let gtaPdf=await pdfValue('rgtaFile',old.gtaPdf);
+  let notaPdf=await pdfValue('rnotaFile',old.notaPdf);
+  let paymentPdf=await pdfValue('rpayFile',old.paymentPdf);
   let r={...old,id,data:$('rdata').value,vendedor:$('rvendedor').value.trim(),era:$('rcategoria').value,quantCompra:n($('rqcomp').value),pesoKg:n($('rpeso').value),peso:String(n($('rpeso').value)),pesoTipo:'kg',precoCompra:n($('rpc').value),pg:$('rpg').value,
     paymentBuy:$('rpayBuy').value,accountBuy:$('raccountBuy').value.trim(),originFarm:$('roriginFarm').value.trim(),originCity:$('roriginCity').value.trim(),originState:$('roriginState').value.trim().toUpperCase(),originLat:$('roriginLat').value?Number($('roriginLat').value):null,originLng:$('roriginLng').value?Number($('roriginLng').value):null,
     comprador:$('rcomprador').value.trim(),marca:$('rmarca').value.trim(),quantVenda:n($('rqv').value),precoVenda:n($('rpv').value),pgComprador:$('rpgc').value,
