@@ -45,34 +45,6 @@
     if(navigator.onLine)setTimeout(function(){window.syncPendingNow(true);},100);
   };
 
-  window.runGadoSyncDiagnostic=async function(){
-    var started=Date.now(),result={pdf:false,client:false,error:''};
-    try{
-      if(!sb||!cloudUser)throw new Error('Sessão da nuvem não está disponível');
-      var rid='diagnostic-'+cloudUser.id+'-'+Date.now();
-      var doc={name:'diagnostico-sincronizacao.pdf',type:'application/pdf',data:'data:application/pdf;base64,JVBERi0xLjQKJQ=='};
-      var put=await sb.from('gado_pdfs').upsert({user_id:cloudUser.id,record_id:rid,kind:'gta',document:doc,updated_at:new Date().toISOString()},{onConflict:'user_id,record_id,kind'});
-      if(put.error)throw put.error;
-      var get=await sb.from('gado_pdfs').select('record_id,kind,document').eq('user_id',cloudUser.id).eq('record_id',rid).maybeSingle();
-      if(get.error)throw get.error;
-      result.pdf=!!(get.data&&get.data.document&&get.data.document.data===doc.data);
-      var del=await sb.from('gado_pdfs').delete().eq('user_id',cloudUser.id).eq('record_id',rid).eq('kind','gta');
-      if(del.error)throw del.error;
-      var list=[];try{list=JSON.parse(userGet(CLIENTS_KEY)||'[]')||[];}catch(e){}
-      result.client=Array.isArray(list);
-      result.ms=Date.now()-started;
-      var msg='Diagnóstico concluído\\n\\nPDF: '+(result.pdf?'OK':'FALHOU')+'\\nClientes: '+(result.client?'OK ('+list.length+')':'FALHOU')+'\\nTempo: '+result.ms+' ms';
-      alert(msg);
-      return result;
-    }catch(e){result.error=e&&e.message?e.message:String(e);alert('Diagnóstico falhou: '+result.error);return result;}
-  };
-  function installSyncDiagnosticButton(){
-    var h=document.querySelector('header .head > div:last-child');if(!h||document.getElementById('syncDiagnosticBtn'))return;
-    var b=document.createElement('button');b.id='syncDiagnosticBtn';b.type='button';b.className='cloudbtn';b.textContent='Testar sincronização';b.onclick=function(){window.runGadoSyncDiagnostic();};h.appendChild(b);
-  }
-  setTimeout(installSyncDiagnosticButton,1200);
-  setTimeout(installSyncDiagnosticButton,3000);
-
   async function syncSeparatedPdfs(list){
     if(!sb||!cloudUser)return;
     var cache={};try{cache=JSON.parse(userGet('gado_pdf_sync_index_v1')||'{}')||{};}catch(e){cache={};}
@@ -82,7 +54,7 @@
       [['gta',r.gtaPdf],['nota',r.notaPdf],['payment',r.paymentPdf]].forEach(function(pair){
         var doc=pair[1],key=String(r.id)+'|'+pair[0];
         if(!doc||!doc.data)return;
-        var sig=String(doc.name||'')+'|'+String(doc.data.length)+'|'+String(r.updatedAt||'');
+        var sig=String(doc.name||'')+'|'+String(doc.type||'')+'|'+String(doc.data);
         next[key]=sig;
         if(cache[key]===sig)return;
         jobs.push(sb.from('gado_pdfs').upsert({user_id:cloudUser.id,record_id:String(r.id),kind:pair[0],document:doc,updated_at:r.updatedAt||new Date().toISOString()},{onConflict:'user_id,record_id,kind'}));
