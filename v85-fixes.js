@@ -4,7 +4,7 @@
   function lockUntilLogin(){var app=document.getElementById('appShell'),gate=document.getElementById('loginGate');if(app)app.style.display='none';if(gate)gate.style.display='block';}
   async function requireFreshLogin(){window.__freshLoginRequired=true;lockUntilLogin();try{if(window.sb&&window.sb.auth){await window.sb.auth.signOut({scope:'local'});window.sb.auth.onAuthStateChange(function(event,session){if(event==='SIGNED_IN'&&session){window.__freshLoginRequired=false;}else if(!session){window.__freshLoginRequired=true;lockUntilLogin();}});}}catch(e){}lockUntilLogin();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',requireFreshLogin,{once:true});else requireFreshLogin();
-  window.addEventListener('pageshow',requireFreshLogin);
+  window.addEventListener('pageshow',function(){requireFreshLogin();setTimeout(function(){try{if(!window.__freshLoginRequired&&window.syncPendingNow)window.syncPendingNow(true);}catch(e){}},250);});
 })();
 
 (function(){
