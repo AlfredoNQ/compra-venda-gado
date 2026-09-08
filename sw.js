@@ -1,5 +1,5 @@
-const CACHE='gado-app-v157-mapa-clientes';
-const APP_SHELL=['/index.html?v=157mapa','/app-v68.html?v=157mapa','/manifest.webmanifest?v=157mapa','/v85-fixes.js?v=157','/v103-pdf-open.js?v=157','/v116-pdf-mobile.js?v=157','/v112-payments.js?v=157','/v112-backup.js?v=157','/v120-cadastros-lotes.js?v=157','/icon.svg'];
+const CACHE='gado-app-v184-auth-clientes';
+const APP_SHELL=['/index.html?v=184auth','/app-v68.html?v=184auth','/manifest.webmanifest?v=184auth','/v85-fixes.js?v=184','/v103-pdf-open.js?v=184','/v116-pdf-mobile.js?v=184','/v112-payments.js?v=184','/v112-backup.js?v=184','/v120-cadastros-lotes.js?v=184','/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
@@ -18,7 +18,7 @@ self.addEventListener('activate',event=>{
     await self.clients.claim();
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     for(const client of clients){
-          try{client.postMessage({type:'CVG_CACHE_RESET',version:'134-lucro-realizado'});}catch(e){}
+          try{client.postMessage({type:'CVG_CACHE_RESET',version:'184-auth-pdf'});}catch(e){}
     }
   })());
 });
@@ -34,12 +34,12 @@ self.addEventListener('fetch',event=>{
         const fresh=await fetch(req,{cache:'no-store'});
         if(fresh.ok){
           const c=await caches.open(CACHE);
-          c.put('/index.html?v=157mapa',fresh.clone());
+          c.put('/index.html?v=184auth',fresh.clone());
         }
         return fresh;
       }catch(e){
         const c=await caches.open(CACHE);
-        return (await c.match('/index.html?v=157mapa'))||(await c.match('/app-v68.html?v=157mapa'))||Response.error();
+        return (await c.match('/index.html?v=184auth'))||(await c.match('/app-v68.html?v=184auth'))||Response.error();
       }
     })());
     return;
