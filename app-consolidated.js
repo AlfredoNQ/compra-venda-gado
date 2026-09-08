@@ -1,10 +1,6 @@
-/* inline */
+/* Compra e Venda de Gado — núcleo único consolidado */
 
-
-/* inline */
-
-
-/* inline */
+/* inline 1 */
 
 // COMPRA E VENDA DE GADO - V18 LOGIN GATE FIX
 
@@ -1128,7 +1124,7 @@ async function cloudSaveNow(){
 
 
 
-/* inline */
+/* inline 2 */
 
 document.addEventListener('DOMContentLoaded',function(){
   setTimeout(function(){
@@ -1144,7 +1140,7 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 
-/* painel-update-v63.js */
+/* /painel-update-v63.js?v=140 */
 /*
   Compra e Venda de Gado — Painel
   - Preço médio por kg
@@ -3400,7 +3396,7 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 
 
-/* inline */
+/* inline 3 */
 
 (function(){
   const PENDING='gado_pending_sync_v78';
@@ -3630,7 +3626,7 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 
 
-/* inline */
+/* inline 4 */
 
 (function(){
   function abrirLogin(){
@@ -3668,7 +3664,7 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 
 
-/* inline */
+/* inline 5 */
 
 (function(){
   const OFFLINE_AUTH_KEY = 'gado_offline_auth_v1';
@@ -3779,7 +3775,7 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 
 
-/* inline */
+/* inline 6 */
 
 (function(){
   const OFFLINE_AUTH_KEY='gado_offline_auth_v1';
@@ -3944,7 +3940,7 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 
 
-/* inline */
+/* inline 7 */
 
 (function(){
   function getRecords(){
@@ -4089,7 +4085,7 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 
 
-/* inline */
+/* inline 8 */
 
 (function(){
   function clean(v){
@@ -4326,7 +4322,7 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 
 
-/* inline */
+/* inline 9 */
 
 (function(){
 let map,group,osm,sat,marks=[];
@@ -4380,7 +4376,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* inline */
+/* inline 10 */
 
 (function(){
   let pickMap=null, marker=null, osm=null, sat=null;
@@ -4594,7 +4590,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* inline */
+/* inline 11 */
 
 (function(){
   function refresh(){
@@ -4614,7 +4610,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* inline */
+/* inline 12 */
 
 (function(){
   function fixMap(){
@@ -4649,7 +4645,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* inline */
+/* inline 13 */
 
 (function(){
  function e(id){return document.getElementById(id)}
@@ -4694,7 +4690,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* inline */
+/* inline 14 */
 
 (function(){
   function lockNow(){
@@ -4716,7 +4712,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* v85-fixes.js */
+/* /v85-fixes.js?v=189 */
 /* Compra e Venda de Gado — v183 fixes */
 (function(){
   window.APP_WEB_VERSION='183';
@@ -4879,7 +4875,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* v103-pdf-open.js */
+/* /v103-pdf-open.js?v=112pdf6 */
 /* Compra e Venda de Gado — v183 PDF mobile direto + restauração segura */
 (function(){
   function dataUrlToBlob(dataUrl){
@@ -4985,7 +4981,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* v116-pdf-mobile.js */
+/* /v116-pdf-mobile.js?v=112pdf6 */
 /* Compra e Venda de Gado — v183 PDF Android interno + Safari iPhone */
 (function(){
   function isIOS(){
@@ -5112,7 +5108,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* v112-payments.js */
+/* /v112-payments.js?v=112pay1 */
 /* Compra e Venda de Gado — v112 parcelas e pagamentos consistentes */
 (function(){
   'use strict';
@@ -5383,7 +5379,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* v112-backup.js */
+/* /v112-backup.js?v=112backup1 */
 (function(){
   'use strict';
 
@@ -5892,7 +5888,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* v120-cadastros-lotes.js */
+/* /v120-cadastros-lotes.js?v=182 */
 /* v120 â cadastros independentes de compradores e vendedores */
 (function(){
   'use strict';
@@ -5934,7 +5930,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* v121-animais-lotes.js */
+/* /v121-animais-lotes.js?v=182 */
 /* v121 — numeração de animais por lote, sem alterar negociações antigas */
 (function(){
   var KEY='gado_animais_v121';
@@ -5983,7 +5979,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* v122-clientes-negociacao.js */
+/* /v122-clientes-negociacao.js?v=124 */
 /* v122 â clientes Ãºnicos e compra/venda sem resumo */
 (function(){
   function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])})}
@@ -6045,7 +6041,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 
-/* v127-formularios-separados.js */
+/* /v127-formularios-separados.js?v=127 */
 /* v127 — filtrar vendas realizadas e abrir formulário separado */
 (function(){
   var oldRender=window.renderTable;
@@ -6056,7 +6052,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 
-/* v130-lotes-venda.js */
+/* /v130-lotes-venda.js?v=130 */
 /* v130 — vários lotes na venda e quantidade por lote */
 (function(){
  function ensureLotCodes(){try{var list=(typeof records!=='undefined'?records:[]),changed=false,n=1;list.forEach(function(r){if(Number(r.quantCompra||0)>0){var code='LT-'+String(n++).padStart(2,'0');if(r.loteCodigo!==code){r.loteCodigo=code;changed=true}}});if(changed&&typeof persist==='function')persist()}catch(e){}}
@@ -6082,7 +6078,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 
-/* v131-ajustes-finais.js */
+/* /v131-ajustes-finais.js?v=191 */
 /* v132 — compra/venda limpas, sem resumo nem campos duplicados */
 (function(){
  function byText(txt){return Array.from(document.querySelectorAll('.tabs .tabbtn')).find(function(b){return (b.textContent||'').trim()===txt})}
