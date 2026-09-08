@@ -7,6 +7,18 @@
   window.addEventListener('pageshow',function(){try{applyDeleted();}catch(e){}});
 })();
 
+/* Backup V 2.0 — acesso direto no menu */
+(function(){
+  function bind(){
+    var create=document.getElementById('backupV20Create');
+    var restore=document.getElementById('backupV20Restore');
+    if(create)create.onclick=function(){if(typeof window.createFullBackupV112==='function')window.createFullBackupV112();else alert('O backup ainda está carregando. Tente novamente.');};
+    if(restore)restore.onclick=function(){var input=document.getElementById('restore');if(input)input.click();else alert('Restaurador indisponível.');};
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+  setTimeout(bind,800);
+})();
+
 (function(){
   window.APP_WEB_VERSION='2.0';
   function dataUrlToBlob(dataUrl){var p=String(dataUrl||'').split(',');if(p.length<2)throw new Error('PDF sem conteúdo válido');var meta=p[0]||'';var mime=(meta.match(/data:([^;]+)/)||[])[1]||'application/pdf';var bin=meta.indexOf(';base64')>=0?atob(p.slice(1).join(',')):decodeURIComponent(p.slice(1).join(','));var bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i)&255;return new Blob([bytes],{type:mime});}
