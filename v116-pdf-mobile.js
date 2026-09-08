@@ -97,11 +97,9 @@
     }
   }
   function openDesktop(doc){
-    try{
-      var b=new Blob([bytesFromDataUrl(doc.data)],{type:'application/pdf'}),u=URL.createObjectURL(b),w=window.open(u,'_blank','noopener,noreferrer');
-      if(!w)window.location.href=u;
-      setTimeout(function(){try{URL.revokeObjectURL(u);}catch(e){}},300000);
-    }catch(e){alert('Não foi possível abrir o PDF: '+e.message);}
+    // Mantém o PDF dentro do app para oferecer o botão Fechar (X),
+    // igual ao APK, sem depender do botão Voltar do navegador.
+    showMobile(doc);
   }
   window.openStoredPdfV85=function(id){
     try{
