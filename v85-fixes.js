@@ -56,7 +56,8 @@
         if(!doc||!doc.data)return;
         var sig=String(doc.name||'')+'|'+String(doc.type||'')+'|'+String(doc.data);
         next[key]=sig;
-        if(cache[key]===sig)return;
+        // Sempre confirma o PDF no banco; o índice local podia ficar stale e
+        // fazer o app pular um PDF que havia sido apagado ou não confirmado.
         jobs.push(sb.from('gado_pdfs').upsert({user_id:cloudUser.id,record_id:String(r.id),kind:pair[0],document:doc,updated_at:r.updatedAt||new Date().toISOString()},{onConflict:'user_id,record_id,kind'}));
       });
     });
