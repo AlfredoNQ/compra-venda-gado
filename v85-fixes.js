@@ -8,7 +8,7 @@
 })();
 
 (function(){
-  window.APP_WEB_VERSION='183';
+  window.APP_WEB_VERSION='2.0';
   function dataUrlToBlob(dataUrl){var p=String(dataUrl||'').split(',');if(p.length<2)throw new Error('PDF sem conteúdo válido');var meta=p[0]||'';var mime=(meta.match(/data:([^;]+)/)||[])[1]||'application/pdf';var bin=meta.indexOf(';base64')>=0?atob(p.slice(1).join(',')):decodeURIComponent(p.slice(1).join(','));var bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i)&255;return new Blob([bytes],{type:mime});}
   window.__pdfDocsV85=window.__pdfDocsV85||{};
   window.openStoredPdfV85=function(id){try{var doc=window.__pdfDocsV85[id];if(!doc||!doc.data)throw new Error('Documento não encontrado');var name=doc.name||'documento.pdf';if(window.AndroidPdf&&typeof window.AndroidPdf.openPdf==='function'){window.AndroidPdf.openPdf(doc.data,name);return;}var blob=dataUrlToBlob(doc.data);var url=URL.createObjectURL(blob);var w=window.open(url,'_blank');if(!w){var a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}setTimeout(function(){try{URL.revokeObjectURL(url)}catch(e){}},60000);}catch(e){alert('Não foi possível abrir o PDF: '+(e.message||e));}};
@@ -191,7 +191,7 @@
   window.addEventListener('online',function(ev){reconnectUntil=Date.now()+10000;try{bootLoginApproved=true;}catch(e){}try{ev.stopImmediatePropagation();}catch(e){}keepUi();setTimeout(function(){recoverSession(0);},250);},true);
   window.addEventListener('pageshow',function(){applyDeleted();try{if(typeof cloudUser!=='undefined'&&cloudUser){bootLoginApproved=true;keepUi();}}catch(e){}},true);
 
-  function forceVersion(){try{document.body.setAttribute('data-app-version','183');document.title='Compra e Venda de Gado — v183';var h=document.querySelector('header h1');if(h){var spans=h.querySelectorAll('span');var found=false;spans.forEach(function(s){if(/^v\d+$/i.test((s.textContent||'').trim())){s.textContent='v183';found=true;}});if(!found){var b=document.createElement('span');b.textContent='v183';b.style.cssText='font-size:12px;font-weight:800;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);vertical-align:middle;white-space:nowrap;margin-left:6px';h.appendChild(b);}}}catch(e){}}
+  function forceVersion(){try{document.body.setAttribute('data-app-version','2.0');document.title='Compra e Venda de Gado — V 2.0';var h=document.querySelector('header h1');if(h){var spans=h.querySelectorAll('span');var found=false;spans.forEach(function(s){if(/^v\s*\d+(\.\d+)?$/i.test((s.textContent||'').trim())){s.textContent='V 2.0';found=true;}});if(!found){var b=document.createElement('span');b.textContent='V 2.0';b.style.cssText='font-size:12px;font-weight:800;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.16);vertical-align:middle;white-space:nowrap;margin-left:6px';h.appendChild(b);}}}catch(e){}}
   function refresh(){forceVersion();applyDeleted();try{if(typeof renderTable==='function')renderTable();}catch(e){}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh);else refresh();setTimeout(refresh,500);setTimeout(refresh,1500);
 })();
@@ -2749,12 +2749,12 @@
   };
   function forceVersion(){
     try{
-      document.title='Compra e Venda de Gado — v183';
+      document.title='Compra e Venda de Gado — V 2.0';
       var h=document.querySelector('header h1')||document.querySelector('h1');
-      if(h)h.querySelectorAll('span').forEach(function(s){if(/^v\d+$/i.test((s.textContent||'').trim()))s.textContent='v183';});
+      if(h)h.querySelectorAll('span').forEach(function(s){if(/^v\s*\d+(\.\d+)?$/i.test((s.textContent||'').trim()))s.textContent='V 2.0';});
     }catch(e){}
   }
-  forceVersion();setTimeout(forceVersion,300);setTimeout(forceVersion,1000);window.APP_WEB_VERSION='183';
+  forceVersion();setTimeout(forceVersion,300);setTimeout(forceVersion,1000);window.APP_WEB_VERSION='2.0';
 })();
 
 /* FIM v116-pdf-mobile.js */
@@ -3064,8 +3064,8 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSafeRestore);else installSafeRestore();
 
-  function forceWebVersion112(){try{document.title='Compra e Venda de Gado — v183';var h=document.querySelector('header h1')||document.querySelector('h1');if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\d+$/i.test((spans[i].textContent||'').trim()))spans[i].textContent='v183';}}}catch(e){}}
-  forceWebVersion112();setTimeout(forceWebVersion112,800);setTimeout(forceWebVersion112,2000);setInterval(forceWebVersion112,10000);window.APP_WEB_VERSION='183';
+  function forceWebVersion112(){try{document.title='Compra e Venda de Gado — V 2.0';var h=document.querySelector('header h1')||document.querySelector('h1');if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\s*\d+(\.\d+)?$/i.test((spans[i].textContent||'').trim()))spans[i].textContent='V 2.0';}}}catch(e){}}
+  forceWebVersion112();setTimeout(forceWebVersion112,800);setTimeout(forceWebVersion112,2000);setInterval(forceWebVersion112,10000);window.APP_WEB_VERSION='2.0';
 })();
 
 /* FIM v103-pdf-open.js */
