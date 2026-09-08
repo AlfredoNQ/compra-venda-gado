@@ -654,7 +654,7 @@ tbody tr:hover{background:#f7fbf8!important}
   </div>
 </div>
 
-<div class="wrap" id="appShell" style="display:none"><div class="tabs"><button class="tabbtn active" data-tab="painel">Painel</button><button class="tabbtn" data-tab="negociacoes">Negociações</button><button class="tabbtn" data-tab="estoque">Estoque atual</button><button class="tabbtn" data-tab="custos">Custos</button><button class="tabbtn" data-tab="relatorios">Relatórios</button><button class="tabbtn" data-tab="mapa">Mapa</button></div>
+<div class="wrap" id="appShell" style="display:none"><div class="tabs"><button class="tabbtn active" data-tab="painel">Painel</button><button class="tabbtn" data-tab="negociacoes">Negociações</button><button class="tabbtn" data-tab="estoque">Estoque atual</button><button class="tabbtn" data-tab="custos">Custos</button><button class="tabbtn" data-tab="relatorios">Relatórios</button><button class="tabbtn" data-tab="mapa">Mapa</button><button class="tabbtn" data-tab="backupV20">Backup</button></div>
 <section id="painel" class="tab active">
 <div class="toolbar"><label class="hint"><b>Ver indicadores do painel:</b></label><select id="panelYear"><option value="">Todos os anos</option></select></div>
 <div class="kpis" id="kpis"></div><div class="grid2"><div class="panel"><div class="ph"><h2>Quantidade vendida por ano</h2></div><div class="body"><div class="chart"><canvas id="chartQtd"></canvas></div></div></div><div class="panel"><div class="ph"><h2>Valor vendido por ano</h2></div><div class="body"><div class="chart"><canvas id="chartValor"></canvas></div></div></div><div class="panel"><div class="ph"><h2>Vendas por mês — ano selecionado</h2><select id="chartYear"></select></div><div class="body"><div class="chart"><canvas id="chartMes"></canvas></div></div></div></div></section>
@@ -702,6 +702,10 @@ tbody tr:hover{background:#f7fbf8!important}
 <div class="kpis" id="pendingKpis" style="padding:14px"></div>
 <div class="tablewrap"><table class="smalltbl"><thead><tr><th>Data</th><th>Tipo</th><th>Nome</th><th class="num">Cabeças</th><th class="num">Valor pendente</th><th>Status</th></tr></thead><tbody id="pendingBody"></tbody></table></div></div>
 </div></section>
+</section>
+<section id="backupV20" class="tab">
+<div class="panel"><div class="ph"><h2>Backup e restauração</h2><span class="hint">Proteja seus dados antes de trocar de aparelho</span></div><div class="body"><p class="hint">O backup completo inclui negociações, custos, parcelas e documentos anexados.</p><div class="toolbar" style="box-shadow:none;padding:0;border:0;background:transparent"><button class="btn primary" id="backupV20Create">Fazer backup completo</button><button class="btn secondary" id="backupV20Restore">Restaurar backup</button></div><div class="hint" style="margin-top:10px">Ao restaurar, o sistema mostrará uma prévia para mesclar ou substituir os dados.</div></div></div>
+</section>
 </div>
 <section id="mapa" class="tab">
 <div class="toolbar">
