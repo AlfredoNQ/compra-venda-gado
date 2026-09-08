@@ -34,6 +34,7 @@
       });
     }catch(e){}
   }
+  document.addEventListener('click',function(e){if(e.target&&e.target.closest&&e.target.closest("button[onclick*='editRecord']")){[50,250,700,1200].forEach(function(ms){setTimeout(function(){setup();hydrateEditClient()},ms);})}},true);
   function init(){
     reconcile();setup();hydrateEditClient();
     [150,500,1000,1800].forEach(function(ms){setTimeout(function(){reconcile();setup();hydrateEditClient()},ms)});
