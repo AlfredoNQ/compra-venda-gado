@@ -2687,7 +2687,7 @@
     });
   }
   function closeViewer(){var m=document.getElementById('cvPdf116');if(m)m.remove();window.__pdfViewerOpen=false;}
-  window.closePdf116=closeViewer;
+  window.closePdf116=closeViewer;\n  window.showPdfMobileV85=showMobile;
   async function showMobile(doc){
     window.__pdfViewerOpen=true;closeViewer();window.__pdfViewerOpen=true;
     var m=document.createElement('div');
@@ -3846,3 +3846,20 @@
 })();
 
 /* FIM v112-backup.js */
+
+
+/* CORRECAO FINAL PDF — garante fechamento no celular/iPhone */
+(function(){
+  var previous=window.openStoredPdfV85;
+  window.openStoredPdfV85=function(id){
+    try{
+      var doc=(window.__pdfDocsV85||{})[id];
+      var mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')||window.innerWidth<=800;
+      if(mobile && doc && doc.data && typeof window.showPdfMobileV85==='function'){
+        window.showPdfMobileV85(doc);
+        return;
+      }
+    }catch(e){}
+    return typeof previous==='function'?previous.apply(this,arguments):undefined;
+  };
+})();
