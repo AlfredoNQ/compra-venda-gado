@@ -2953,3 +2953,897 @@
 
 
 /* FIM v130-lotes-venda.js */
+
+
+/* MIGRACAO DOS MODULOS LEGADOS — incorporados ao principal */
+
+/* INICIO v103-pdf-open.js */
+/* Compra e Venda de Gado — v183 PDF mobile direto + restauração segura */
+(function(){
+  function dataUrlToBlob(dataUrl){
+    var parts=String(dataUrl||'').split(',');
+    if(parts.length<2) throw new Error('PDF sem conteúdo válido');
+    var meta=parts[0]||'';
+    var mime=(meta.match(/data:([^;]+)/)||[])[1]||'application/pdf';
+    var payload=parts.slice(1).join(',');
+    var bin=meta.indexOf(';base64')>=0 ? atob(payload) : decodeURIComponent(payload);
+    var bytes=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i)&255;
+    return new Blob([bytes],{type:mime});
+  }
+  function safeName(name){
+    var n=String(name||'documento.pdf').replace(/[\\/:*?"<>|]+/g,'_').trim();
+    if(!/\.pdf$/i.test(n)) n+='.pdf';
+    return n||'documento.pdf';
+  }
+  function isMobileWeb(){
+    return !window.AndroidPdf && (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'') || window.innerWidth<=700);
+  }
+  function downloadPdf(doc){
+    var blob=dataUrlToBlob(doc.data),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=safeName(doc.name);a.rel='noopener';a.style.display='none';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},120000);
+  }
+  function openPdfDirect(doc){
+    var target='gadoPdf_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    var popup=null;
+    try{popup=window.open('about:blank',target);}catch(e){}
+    try{
+      if(popup){
+        popup.document.open();
+        popup.document.write('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Abrindo PDF...</title><body style="font-family:system-ui;padding:24px">Abrindo PDF...</body>');
+        popup.document.close();
+      }
+    }catch(e){}
+    var form=document.createElement('form');
+    form.method='POST';
+    form.action='/api/pdf-open';
+    form.target=popup?target:'_self';
+    form.enctype='multipart/form-data';
+    form.style.display='none';
+    var d=document.createElement('input');d.type='hidden';d.name='pdf';d.value=doc.data;
+    var n=document.createElement('input');n.type='hidden';n.name='name';n.value=safeName(doc.name);
+    form.appendChild(d);form.appendChild(n);document.body.appendChild(form);
+    form.submit();
+    setTimeout(function(){try{form.remove();}catch(e){}},1000);
+  }
+  function openPdfDesktop(doc){
+    var blob=dataUrlToBlob(doc.data),url=URL.createObjectURL(blob),w=null;
+    try{w=window.open(url,'_blank','noopener,noreferrer');}catch(e){}
+    if(!w){try{window.location.href=url;}catch(e){downloadPdf(doc);}}
+    setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},300000);
+  }
+  window.openStoredPdfV85=function(id){
+    try{
+      var doc=(window.__pdfDocsV85||{})[id];
+      if(!doc||!doc.data) throw new Error('Documento não encontrado');
+      var name=safeName(doc.name);
+      if(window.AndroidPdf && typeof window.AndroidPdf.openPdf==='function'){
+        window.AndroidPdf.openPdf(doc.data,name);return;
+      }
+      if(isMobileWeb()) openPdfDirect(doc); else openPdfDesktop(doc);
+    }catch(e){
+      try{var d=(window.__pdfDocsV85||{})[id];if(d&&d.data){downloadPdf(d);return;}}catch(_){}
+      alert('Não foi possível abrir o PDF: '+(e&&e.message?e.message:e));
+    }
+  };
+
+  var cfg={gta:{input:'rgtaFile',status:'rgtaFileStatus',field:'gtaPdf',label:'GTA'},nota:{input:'rnotaFile',status:'rnotaFileStatus',field:'notaPdf',label:'Nota'},pay:{input:'rpayFile',status:'rpayFileStatus',field:'paymentPdf',label:'Comprovante'}};
+  function currentRecord(){try{var id=(document.getElementById('rid')||{}).value||'';return (typeof records!=='undefined'&&Array.isArray(records))?records.find(function(x){return x.id===id;}):null;}catch(e){return null;}}
+  function registerDoc(doc){if(!doc||!doc.data)return null;window.__pdfDocsV85=window.__pdfDocsV85||{};var id='pdf-'+Math.random().toString(36).slice(2)+Date.now().toString(36);window.__pdfDocsV85[id]=doc;return id;}
+  function htmlEsc(s){return String(s||'').replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+  function renderOne(key,doc){
+    var c=cfg[key],st=document.getElementById(c.status),inp=document.getElementById(c.input);if(!st||!inp)return;inp.dataset.deletePdf='0';
+    if(!doc||!doc.data){st.innerHTML='';return;}
+    var id=registerDoc(doc),nm=doc.name||c.label+'.pdf';
+    st.innerHTML='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px"><span class="hint" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+htmlEsc(nm)+'">'+htmlEsc(nm)+'</span><button type="button" class="mini" onclick="openStoredPdfV85(\''+id+'\')">Abrir PDF</button><button type="button" class="mini" style="background:#fff0ee;color:#b42318" onclick="markPdfDeleteV106(\''+key+'\')">Excluir PDF</button></div>';
+  }
+  window.markPdfDeleteV106=function(key){var c=cfg[key];if(!c)return;var inp=document.getElementById(c.input),st=document.getElementById(c.status);if(!inp||!st)return;inp.dataset.deletePdf='1';inp.value='';st.innerHTML='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px"><span class="hint" style="color:#b42318;font-weight:700">PDF será excluído ao salvar</span><button type="button" class="mini" onclick="cancelPdfDeleteV106(\''+key+'\')">Cancelar exclusão</button></div>';};
+  window.cancelPdfDeleteV106=function(key){var r=currentRecord();if(r)renderOne(key,r[cfg[key].field]);};
+  function renderCurrentDocs(){var r=currentRecord();Object.keys(cfg).forEach(function(k){renderOne(k,r?r[cfg[k].field]:null);});}
+  var oldFileToStoredObject=window.fileToStoredObject;
+  if(typeof oldFileToStoredObject==='function')window.fileToStoredObject=async function(input,oldDoc){if(input&&input.dataset&&input.dataset.deletePdf==='1')return null;return oldFileToStoredObject(input,oldDoc);};
+  var oldEdit=window.editRecord;if(typeof oldEdit==='function')window.editRecord=function(id){var r=oldEdit(id);setTimeout(renderCurrentDocs,0);return r;};
+  var oldNew=window.newRecord;if(typeof oldNew==='function')window.newRecord=function(){var r=oldNew();setTimeout(function(){Object.keys(cfg).forEach(function(k){renderOne(k,null);});},0);return r;};
+  Object.keys(cfg).forEach(function(k){var inp=document.getElementById(cfg[k].input);if(!inp)return;inp.addEventListener('change',function(){inp.dataset.deletePdf='0';var f=inp.files&&inp.files[0],st=document.getElementById(cfg[k].status);if(f&&st)st.innerHTML='<div class="hint" style="margin-top:6px">Novo arquivo: <b>'+htmlEsc(f.name)+'</b> — será salvo ao confirmar a negociação.</div>';});});
+
+  function itemKey(x){if(x&&x.id!=null)return 'id:'+String(x.id);try{return 'sig:'+JSON.stringify(x);}catch(e){return 'sig:'+String(x);}}
+  function ts(x){var t=Date.parse(x&&x.updatedAt||'');return isNaN(t)?0:t;}
+  function mergeSafe(current,incoming){var map=new Map(),order=[];(Array.isArray(current)?current:[]).forEach(function(x){var k=itemKey(x);if(!map.has(k))order.push(k);map.set(k,x);});(Array.isArray(incoming)?incoming:[]).forEach(function(x){var k=itemKey(x);if(!map.has(k)){order.push(k);map.set(k,x);return;}var old=map.get(k);if(ts(x)>ts(old))map.set(k,x);});return order.map(function(k){return map.get(k);});}
+  function safetyBackup(){try{if(typeof download!=='function')return false;var now=new Date().toISOString().replace(/[:.]/g,'-');download('backup_antes_restaurar_'+now+'.json',JSON.stringify({records:records,costs:costs},null,2),'application/json');return true;}catch(e){return false;}}
+  function installSafeRestore(){
+    var inp=document.getElementById('restore');if(!inp||inp.dataset.safeRestoreV109==='1')return;inp.dataset.safeRestoreV109='1';
+    inp.addEventListener('change',function(e){e.stopImmediatePropagation();var f=inp.files&&inp.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var x=JSON.parse(rd.result),incRecords,incCosts;if(Array.isArray(x)){incRecords=x;incCosts=[];}else{incRecords=x&&x.records;incCosts=x&&x.costs;}if(!Array.isArray(incRecords))throw new Error('Arquivo não contém uma lista válida de negociações.');if(incCosts!=null&&!Array.isArray(incCosts))throw new Error('Lista de custos inválida.');incCosts=Array.isArray(incCosts)?incCosts:[];safetyBackup();var mode=prompt('RESTAURAÇÃO SEGURA\n\nDigite MESCLAR para recuperar o backup sem apagar dados mais novos.\nDigite SUBSTITUIR para trocar toda a base atual pelo arquivo.\n\nRecomendado: MESCLAR','MESCLAR');if(!mode){inp.value='';return;}mode=String(mode).trim().toUpperCase();if(mode==='MESCLAR'){records=mergeSafe(records,incRecords);costs=mergeSafe(costs,incCosts);}else if(mode==='SUBSTITUIR'){if(!confirm('ATENÇÃO: SUBSTITUIR remove da base atual tudo que não estiver neste backup. Confirma?')){inp.value='';return;}records=incRecords;costs=incCosts;}else{alert('Opção inválida. Nada foi alterado.');inp.value='';return;}persist();renderAll();alert(mode==='MESCLAR'?'Backup mesclado com segurança. Os dados mais novos foram preservados.':'Backup substituído. Um backup preventivo foi gerado antes da restauração.');}catch(err){alert('Backup inválido: '+(err&&err.message?err.message:err));}inp.value='';};rd.onerror=function(){alert('Não foi possível ler o arquivo de backup.');inp.value='';};rd.readAsText(f);},true);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSafeRestore);else installSafeRestore();
+
+  function forceWebVersion112(){try{document.title='Compra e Venda de Gado — v183';var h=document.querySelector('header h1')||document.querySelector('h1');if(h){var spans=h.querySelectorAll('span');for(var i=0;i<spans.length;i++){if(/^v\d+$/i.test((spans[i].textContent||'').trim()))spans[i].textContent='v183';}}}catch(e){}}
+  forceWebVersion112();setTimeout(forceWebVersion112,800);setTimeout(forceWebVersion112,2000);setInterval(forceWebVersion112,10000);window.APP_WEB_VERSION='183';
+})();
+
+/* FIM v103-pdf-open.js */
+
+
+/* INICIO v112-payments.js */
+/* Compra e Venda de Gado — v112 parcelas e pagamentos consistentes */
+(function(){
+  'use strict';
+
+  function el(id){return document.getElementById(id);}
+  function numberValue(v){var x=Number(v);return Number.isFinite(x)?x:0;}
+  function isoToday(){return new Date().toISOString().slice(0,10);}
+  function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+  function cash(v){try{return money.format(numberValue(v));}catch(e){return 'R$ '+numberValue(v).toFixed(2).replace('.',',');}}
+  function sideOf(p){
+    var raw=String((p&&(p.type||p.tipo||p.side||p.operacao))||'').trim().toLowerCase();
+    return raw.indexOf('pagar')>=0||raw.indexOf('compra')>=0||raw.indexOf('vendedor')>=0?'Pagar':'Receber';
+  }
+  function isPaid(p){
+    var status=String((p&&p.status)||'').trim().toLowerCase();
+    return !!(p&&(p.paid===true||p.baixada===true||p.pago===true||status==='ok'||status==='pago'||status==='recebido'||status==='baixada'));
+  }
+  function valueOf(p){return numberValue(p&&(p.value!=null?p.value:(p.valor!=null?p.valor:p.amount)));}
+  function dateOf(p){return String((p&&(p.date||p.vencimento||p.dueDate))||'');}
+  function paidDateOf(p){return String((p&&(p.paidDate||p.dataBaixa||p.dataPagamento))||'');}
+  function normalizeInstallment(p,i){
+    return {
+      id:String((p&&p.id)||('parcela_'+Date.now().toString(36)+'_'+i+'_'+Math.random().toString(36).slice(2,7))),
+      type:sideOf(p),
+      date:dateOf(p),
+      value:valueOf(p),
+      paid:isPaid(p),
+      paidDate:paidDateOf(p)
+    };
+  }
+  function recordInstallments(r,side){
+    var list=Array.isArray(r&&r.installments)?r.installments:(Array.isArray(r&&r.parcelas)?r.parcelas:[]);
+    return list.map(normalizeInstallment).filter(function(p){return !side||p.type===side;});
+  }
+  function recordTotal(r,side){
+    if(side==='Pagar')return numberValue(r&&r.quantCompra)*numberValue(r&&r.precoCompra);
+    return numberValue(r&&r.quantVenda)*numberValue(r&&r.precoVenda);
+  }
+  function formTotal(side){
+    if(side==='Pagar')return numberValue(el('rqcomp')&&el('rqcomp').value)*numberValue(el('rpc')&&el('rpc').value);
+    return numberValue(el('rqv')&&el('rqv').value)*numberValue(el('rpv')&&el('rpv').value);
+  }
+  function statusValue(r,side){return String(side==='Pagar'?(r&&r.pg):(r&&r.pgComprador)||'').trim().toLowerCase();}
+  function stateForRecord(r,side){
+    var total=recordTotal(r,side),list=recordInstallments(r,side),manualOk=statusValue(r,side)==='ok';
+    var scheduled=list.reduce(function(s,p){return s+p.value;},0);
+    var paid=list.filter(function(p){return p.paid;}).reduce(function(s,p){return s+p.value;},0);
+    var unpaid=list.filter(function(p){return !p.paid;}).reduce(function(s,p){return s+p.value;},0);
+    var outstanding=0;
+    if(!manualOk){
+      if(list.length)outstanding=total>0?Math.max(0,total-paid):unpaid;
+      else outstanding=Math.max(0,total);
+    }
+    return {total:total,list:list,scheduled:scheduled,paid:paid,unpaid:unpaid,outstanding:outstanding,manualOk:manualOk};
+  }
+
+  function currentRows(){
+    return Array.prototype.slice.call(document.querySelectorAll('.installmentRow')).map(function(row,i){
+      var type=row.querySelector('.itype'),date=row.querySelector('.idate'),value=row.querySelector('.ivalue'),paid=row.querySelector('.ipaid'),paidDate=row.querySelector('.ipaiddate');
+      return {
+        id:String(row.getAttribute('data-id')||('parcela_'+Date.now().toString(36)+'_'+i)),
+        type:type?type.value:'Receber',
+        date:date?date.value:'',
+        value:numberValue(value&&value.value),
+        paid:!!(paid&&paid.value==='1'),
+        paidDate:paidDate?paidDate.value:''
+      };
+    }).filter(function(p){return p.date||p.value;});
+  }
+
+  function editorState(side){
+    var list=currentRows().filter(function(p){return p.type===side;}),total=formTotal(side);
+    var scheduled=list.reduce(function(s,p){return s+p.value;},0);
+    var paid=list.filter(function(p){return p.paid;}).reduce(function(s,p){return s+p.value;},0);
+    return {list:list,total:total,scheduled:scheduled,paid:paid,pending:Math.max(0,total-paid),difference:total-scheduled};
+  }
+
+  function updateEditorSummary(){
+    var box=el('installmentTotals');if(!box)return;
+    var pagar=editorState('Pagar'),receber=editorState('Receber');
+    function card(label,s,color){
+      var diff=Math.abs(s.difference)>0.01;
+      var note=!s.list.length?'Sem parcelas':(diff?(s.difference>0?'Falta distribuir '+cash(s.difference):'Parcelas excedem '+cash(Math.abs(s.difference))):'Total distribuído corretamente');
+      return '<div style="flex:1;min-width:220px;border:1px solid '+(diff?'#e4b6ad':'#cfe5d7')+';background:'+(diff?'#fff5f2':'#f2faf5')+';border-radius:10px;padding:10px">'+
+        '<b style="color:'+color+'">'+label+'</b><div style="margin-top:5px">Negociação: <b>'+cash(s.total)+'</b></div>'+
+        '<div>Parcelado: '+cash(s.scheduled)+' • Baixado: '+cash(s.paid)+'</div><div>Pendente real: <b>'+cash(s.pending)+'</b></div>'+
+        '<small style="color:'+(diff?'#a43d2d':'#31734d')+'">'+note+'</small></div>';
+    }
+    box.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px">'+card('A pagar ao vendedor',pagar,'#9a5b00')+card('A receber do comprador',receber,'#176b45')+'</div>';
+    var planSide=el('paymentPlanSide'),planTotal=el('paymentPlanTotal');
+    if(planSide&&planTotal)planTotal.textContent='Total: '+cash(formTotal(planSide.value));
+  }
+
+  window.renderInstallmentsEditor=function(list){
+    var target=el('installmentEditor');if(!target)return;
+    var normalized=(Array.isArray(list)?list:[]).map(normalizeInstallment);
+    target.innerHTML=normalized.map(function(p,i){
+      var overdue=!p.paid&&p.date&&p.date<isoToday(),dueToday=!p.paid&&p.date===isoToday();
+      var status=p.paid?'Baixada'+(p.paidDate?' em '+formatDateSafe(p.paidDate):''):(overdue?'Vencida':(dueToday?'Vence hoje':'Pendente'));
+      var border=p.paid?'#bcdcc8':(overdue?'#dfaaa1':'#dfe6e0'),bg=p.paid?'#f1faf4':(overdue?'#fff3f1':'#fff');
+      return '<div class="formgrid installmentRow" data-i="'+i+'" data-id="'+escapeHtml(p.id)+'" style="border:1px solid '+border+';background:'+bg+';padding:9px;border-radius:9px;margin-bottom:8px">'+
+        '<div class="field"><label>Parcela '+(i+1)+'</label><select class="itype"><option '+(p.type==='Pagar'?'selected':'')+'>Pagar</option><option '+(p.type==='Receber'?'selected':'')+'>Receber</option></select><small style="font-weight:800;color:'+(overdue?'#b42318':'#557064')+'">'+status+'</small></div>'+
+        '<div class="field"><label>Vencimento</label><input class="idate" type="date" value="'+escapeHtml(p.date)+'"></div>'+
+        '<div class="field"><label>Valor</label><input class="ivalue" type="number" min="0" step="0.01" value="'+(p.value||'')+'"></div>'+
+        '<div class="field"><label>Baixa</label><select class="ipaid" onchange="paymentInstallmentStatusChanged(this)"><option value="0" '+(!p.paid?'selected':'')+'>Pendente</option><option value="1" '+(p.paid?'selected':'')+'>Pago/Recebido</option></select></div>'+
+        '<div class="field"><label>Data da baixa</label><input class="ipaiddate" type="date" value="'+escapeHtml(p.paidDate)+'"></div>'+
+        '<div class="field"><label>Ações</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="mini" onclick="toggleInstallmentPaidV112('+i+')">'+(p.paid?'Reabrir':'Dar baixa hoje')+'</button><button type="button" class="mini" style="background:#fff0ee;color:#b42318" onclick="removeInstallmentRow('+i+')">Excluir</button></div></div>'+
+      '</div>';
+    }).join('');
+    updateEditorSummary();
+  };
+
+  window.collectInstallments=function(){return currentRows();};
+
+  window.addInstallmentRow=function(){
+    var list=currentRows(),buy=el('rpayBuy')&&el('rpayBuy').value==='Parcelado',sell=el('rpaySell')&&el('rpaySell').value==='Parcelado';
+    var side=buy&&!sell?'Pagar':'Receber';
+    list.push({id:'parcela_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),type:side,date:'',value:0,paid:false,paidDate:''});
+    window.renderInstallmentsEditor(list);
+  };
+
+  window.removeInstallmentRow=function(i){
+    var list=currentRows();list.splice(i,1);window.renderInstallmentsEditor(list);syncPgFields(false);
+  };
+
+  window.paymentInstallmentStatusChanged=function(select){
+    var row=select&&select.closest('.installmentRow'),date=row&&row.querySelector('.ipaiddate');
+    if(date){if(select.value==='1'&&!date.value)date.value=isoToday();if(select.value==='0')date.value='';}
+    window.renderInstallmentsEditor(currentRows());syncPgFields(false);
+  };
+
+  window.toggleInstallmentPaidV112=function(i){
+    var list=currentRows(),p=list[i];if(!p)return;p.paid=!p.paid;p.paidDate=p.paid?(p.paidDate||isoToday()):'';
+    window.renderInstallmentsEditor(list);syncPgFields(false);
+  };
+
+  function addMonths(dateText,months){
+    var parts=String(dateText||'').split('-').map(Number),y=parts[0],m=parts[1],d=parts[2];
+    if(!y||!m||!d)return '';
+    var targetMonth=(m-1)+months,targetYear=y+Math.floor(targetMonth/12);targetMonth=((targetMonth%12)+12)%12;
+    var last=new Date(Date.UTC(targetYear,targetMonth+1,0)).getUTCDate(),day=Math.min(d,last);
+    return String(targetYear).padStart(4,'0')+'-'+String(targetMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+  }
+
+  function generatePlan(){
+    var side=el('paymentPlanSide').value,count=Math.max(1,Math.min(60,Math.trunc(numberValue(el('paymentPlanCount').value)))),first=el('paymentPlanFirstDate').value,total=formTotal(side);
+    if(total<=0){alert('Preencha a quantidade e o preço da '+(side==='Pagar'?'compra':'venda')+' antes de gerar as parcelas.');return;}
+    if(!first){alert('Informe o primeiro vencimento.');return;}
+    var all=currentRows(),same=all.filter(function(p){return p.type===side;});
+    if(same.length&&!confirm('Substituir as '+same.length+' parcela(s) '+(side==='Pagar'?'a pagar':'a receber')+' já cadastradas?'))return;
+    var keep=all.filter(function(p){return p.type!==side;}),cents=Math.round(total*100),base=Math.floor(cents/count),used=0,created=[];
+    for(var i=0;i<count;i++){
+      var part=i===count-1?cents-used:base;used+=part;
+      created.push({id:'parcela_'+Date.now().toString(36)+'_'+i+'_'+Math.random().toString(36).slice(2,7),type:side,date:addMonths(first,i),value:part/100,paid:false,paidDate:''});
+    }
+    var method=side==='Pagar'?el('rpayBuy'):el('rpaySell'),pg=side==='Pagar'?el('rpg'):el('rpgc');
+    if(method)method.value='Parcelado';if(pg)pg.value='pendente';
+    window.renderInstallmentsEditor(keep.concat(created));
+  }
+
+  function syncPgFields(honorManualOk){
+    ['Pagar','Receber'].forEach(function(side){
+      var rows=currentRows().filter(function(p){return p.type===side;}),field=side==='Pagar'?el('rpg'):el('rpgc');if(!field||!rows.length)return;
+      if(honorManualOk&&String(field.value).toLowerCase()==='ok'){
+        var domRows=Array.prototype.slice.call(document.querySelectorAll('.installmentRow'));
+        domRows.forEach(function(row){
+          var type=row.querySelector('.itype'),paid=row.querySelector('.ipaid'),date=row.querySelector('.ipaiddate');
+          if(type&&type.value===side){if(paid)paid.value='1';if(date&&!date.value)date.value=isoToday();}
+        });
+        field.value='ok';return;
+      }
+      field.value=rows.every(function(p){return p.paid;})?'ok':'pendente';
+    });
+    updateEditorSummary();
+  }
+
+  function validatePlanBeforeSave(event){
+    syncPgFields(true);
+    var problems=[];
+    ['Pagar','Receber'].forEach(function(side){
+      var state=editorState(side);
+      if(state.list.length&&state.total>0&&Math.abs(state.scheduled-state.total)>0.01){
+        var label=side==='Pagar'?'a pagar ao vendedor':'a receber do comprador';
+        problems.push(label+': negociação '+cash(state.total)+' • parcelas '+cash(state.scheduled));
+      }
+    });
+    if(problems.length){
+      event.preventDefault();event.stopImmediatePropagation();
+      var submit=event.target&&event.target.querySelector('button[type="submit"]');if(submit)submit.disabled=false;
+      alert('O total das parcelas precisa ser exatamente igual ao total da negociação.\n\n'+problems.join('\n'));
+    }
+  }
+
+  function pendingItems(r,side){
+    var state=stateForRecord(r,side),result=[];if(state.outstanding<=0)return result;
+    var remaining=state.outstanding,name=side==='Pagar'?(r.vendedor||'Vendedor não informado'):(r.comprador||'Comprador não informado');
+    var typeLabel=side==='Pagar'?'A pagar':'A receber',unpaid=state.list.filter(function(p){return !p.paid;});
+    unpaid.sort(function(a,b){return (a.date||'9999').localeCompare(b.date||'9999');});
+    unpaid.forEach(function(p,i){
+      if(remaining<=0.005)return;var amount=state.total>0?Math.min(p.value,remaining):p.value;if(amount<=0)return;
+      remaining=Math.max(0,remaining-amount);
+      var st=!p.date?'Sem vencimento':(p.date<isoToday()?'Vencida':(p.date===isoToday()?'Vence hoje':'Parcela pendente'));
+      result.push({data:p.date||r.data,tipo:typeLabel,nome:name,q:'—',valor:amount,status:st+(unpaid.length>1?' • '+(i+1)+'ª parcela':'')});
+    });
+    if(remaining>0.005)result.push({data:r.data,tipo:typeLabel,nome:name,q:state.list.length?'—':(side==='Pagar'?numberValue(r.quantCompra):numberValue(r.quantVenda)),valor:remaining,status:state.list.length?'Saldo ainda não distribuído em parcelas':'Pagamento pendente'});
+    return result;
+  }
+
+  window.v73SellerOutstanding=function(r){return stateForRecord(r,'Pagar').outstanding;};
+  window.v73BuyerOutstanding=function(r){return stateForRecord(r,'Receber').outstanding;};
+
+  window.installmentSummary=function(r){
+    var pay=stateForRecord(r,'Pagar'),receive=stateForRecord(r,'Receber'),parts=[];
+    if(pay.list.length||pay.outstanding>0)parts.push('Pagar: '+cash(pay.outstanding));
+    if(receive.list.length||receive.outstanding>0)parts.push('Receber: '+cash(receive.outstanding));
+    return parts.length?parts.join(' • '):'ok';
+  };
+
+  window.renderPendingFiltered=function(list){
+    var source=Array.isArray(list)?list:[],items=[],pagar=0,receber=0;
+    source.forEach(function(r){items=items.concat(pendingItems(r,'Pagar'),pendingItems(r,'Receber'));});
+    items.forEach(function(x){if(x.tipo==='A pagar')pagar+=x.valor;else receber+=x.valor;});
+    var kpis=el('pendingKpis'),body=el('pendingBody'),saldo=receber-pagar;
+    if(kpis)kpis.innerHTML=[['Total a pagar',cash(pagar)],['Total a receber',cash(receber)],['Saldo a receber − pagar',cash(saldo)]].map(function(x){return '<div class="kpi"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>';}).join('');
+    items.sort(function(a,b){return (a.data||'9999').localeCompare(b.data||'9999');});
+    if(body)body.innerHTML=items.length?items.map(function(x){var bad=x.status.indexOf('Vencida')===0;return '<tr><td>'+formatDateSafe(x.data)+'</td><td><span class="badge '+(x.tipo==='A pagar'?'warn':'')+'">'+x.tipo+'</span></td><td>'+escapeHtml(x.nome)+'</td><td class="num">'+(typeof x.q==='number'?numberFormatSafe(x.q):x.q)+'</td><td class="num"><b>'+cash(x.valor)+'</b></td><td style="color:'+(bad?'#b42318':'inherit')+';font-weight:'+(bad?'800':'inherit')+'">'+escapeHtml(x.status)+'</td></tr>';}).join(''):'<tr><td colspan="6" class="hint">Nenhum pagamento ou recebimento pendente para os filtros selecionados.</td></tr>';
+  };
+
+  window.renderPending=function(){
+    var list;
+    try{list=typeof reportFilteredRecords==='function'?reportFilteredRecords():records;}catch(e){list=records;}
+    window.renderPendingFiltered(list);
+  };
+
+  function formatDateSafe(s){
+    try{return typeof fmtDate==='function'?fmtDate(s):s||'—';}catch(e){return s||'—';}
+  }
+  function numberFormatSafe(v){try{return num.format(v);}catch(e){return String(v);}}
+
+  function installTools(){
+    var editor=el('installmentEditor');if(!editor||el('paymentPlanTools'))return;
+    var tools=document.createElement('div');tools.id='paymentPlanTools';tools.style.cssText='border:1px solid #cfe5d7;background:#f5fbf7;border-radius:10px;padding:10px;margin:8px 0';
+    tools.innerHTML='<b style="color:#176b45">Gerar parcelas automaticamente</b><div class="formgrid" style="margin-top:8px">'+
+      '<div class="field"><label>Operação</label><select id="paymentPlanSide"><option value="Pagar">Pagar vendedor</option><option value="Receber">Receber comprador</option></select></div>'+
+      '<div class="field"><label>Quantidade de parcelas</label><input id="paymentPlanCount" type="number" min="1" max="60" step="1" value="1"></div>'+
+      '<div class="field"><label>Primeiro vencimento</label><input id="paymentPlanFirstDate" type="date"></div>'+
+      '<div class="field"><label id="paymentPlanTotal">Total: R$ 0,00</label><button type="button" class="btn secondary" id="generatePaymentPlanBtn">Gerar parcelas</button></div></div>';
+    editor.parentNode.insertBefore(tools,editor);
+    var totals=document.createElement('div');totals.id='installmentTotals';editor.parentNode.insertBefore(totals,editor.nextSibling);
+    el('paymentPlanFirstDate').value=(el('rdata')&&el('rdata').value)||isoToday();
+    el('generatePaymentPlanBtn').onclick=generatePlan;
+    el('paymentPlanSide').onchange=updateEditorSummary;
+    var add=el('addInstallmentBtn');if(add)add.onclick=window.addInstallmentRow;
+    var form=el('recordForm');if(form)form.addEventListener('submit',validatePlanBeforeSave,true);
+    ['rqcomp','rpc','rqv','rpv'].forEach(function(id){var input=el(id);if(input)input.addEventListener('input',updateEditorSummary);});
+    ['rpayBuy','rpaySell'].forEach(function(id){var input=el(id);if(input)input.addEventListener('change',function(){if(this.value==='Parcelado')el('paymentPlanSide').value=id==='rpayBuy'?'Pagar':'Receber';updateEditorSummary();});});
+    editor.addEventListener('input',updateEditorSummary);
+    editor.addEventListener('change',updateEditorSummary);
+    updateEditorSummary();
+  }
+
+  installTools();
+  try{
+    var add=el('addInstallmentBtn');if(add)add.onclick=window.addInstallmentRow;
+    if(typeof renderAll==='function')renderAll();
+  }catch(e){console.warn('Parcelas v112:',e);}
+  window.PAYMENTS_V112_READY=true;
+})();
+
+/* FIM v112-payments.js */
+
+
+/* INICIO v112-backup.js */
+(function(){
+  'use strict';
+
+  const BACKUP_FORMAT='gado-v112-backup';
+  const BACKUP_SCHEMA=1;
+  const APP_VERSION='112';
+  const MAX_BACKUP_BYTES=180*1024*1024;
+  const UNSAFE_KEYS=new Set(['__proto__','prototype','constructor']);
+  let restorePreview=null;
+
+  function byId(id){return document.getElementById(id)}
+  function nowIso(){return new Date().toISOString()}
+  function clone(value){return JSON.parse(JSON.stringify(value))}
+  function asArray(value){return Array.isArray(value)?value:[]}
+  function finite(value){const x=Number(value);return Number.isFinite(x)?x:0}
+  function safeName(value){return String(value||'').replace(/[\\/:*?"<>|\r\n]+/g,'_').trim()}
+  function stamp(value){const t=Date.parse(value&&value.updatedAt||'');return Number.isFinite(t)?t:0}
+  function dateTag(){
+    const d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'_'+String(d.getHours()).padStart(2,'0')+'-'+String(d.getMinutes()).padStart(2,'0');
+  }
+  function moneyText(value){
+    return Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  }
+  function html(value){
+    return String(value??'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]});
+  }
+  function currentRecords(){try{return asArray(records)}catch(_){return []}}
+  function currentCosts(){try{return asArray(costs)}catch(_){return []}}
+  function currentUser(){
+    try{
+      if(typeof cloudUser!=='undefined'&&cloudUser){
+        return {id:String(cloudUser.id||''),email:String(cloudUser.email||'')};
+      }
+    }catch(_){}
+    return {id:'',email:''};
+  }
+
+  function safeCopy(value,depth){
+    depth=depth||0;
+    if(depth>30)throw new Error('O backup contém dados aninhados demais.');
+    if(value===null||typeof value==='string'||typeof value==='boolean')return value;
+    if(typeof value==='number')return Number.isFinite(value)?value:0;
+    if(Array.isArray(value))return value.map(function(x){return safeCopy(x,depth+1)});
+    if(value&&typeof value==='object'){
+      const out={};
+      Object.keys(value).forEach(function(key){
+        if(!UNSAFE_KEYS.has(key))out[key]=safeCopy(value[key],depth+1);
+      });
+      return out;
+    }
+    return null;
+  }
+
+  function dedupe(list,prefix,backupCreatedAt){
+    const map=new Map();
+    let generated=0,duplicates=0;
+    asArray(list).forEach(function(raw,index){
+      if(!raw||typeof raw!=='object'||Array.isArray(raw))return;
+      const item=safeCopy(raw,0);
+      let id=String(item.id||'').trim();
+      if(!id){
+        id=prefix+'-restaurado-'+String(index+1)+'-'+String(Date.now());
+        generated++;
+      }
+      item.id=id;
+      if(!item.updatedAt&&backupCreatedAt)item.updatedAt=backupCreatedAt;
+      const old=map.get(id);
+      if(old){
+        duplicates++;
+        if(stamp(item)>=stamp(old))map.set(id,item);
+      }else map.set(id,item);
+    });
+    return {items:Array.from(map.values()),generated:generated,duplicates:duplicates};
+  }
+
+  function dataForChecksum(rec,cost){
+    return JSON.stringify({records:rec,costs:cost});
+  }
+  async function sha256(text){
+    try{
+      if(window.crypto&&window.crypto.subtle){
+        const bytes=new TextEncoder().encode(text);
+        const hash=await window.crypto.subtle.digest('SHA-256',bytes);
+        return Array.from(new Uint8Array(hash)).map(function(x){return x.toString(16).padStart(2,'0')}).join('');
+      }
+    }catch(_){}
+    let h=2166136261;
+    for(let i=0;i<text.length;i++){
+      h^=text.charCodeAt(i);
+      h=Math.imul(h,16777619);
+    }
+    return 'fnv32-'+(h>>>0).toString(16).padStart(8,'0');
+  }
+
+  function countPdfs(rec){
+    return asArray(rec).reduce(function(total,r){
+      return total+(r&&r.gtaPdf&&r.gtaPdf.data?1:0)+(r&&r.notaPdf&&r.notaPdf.data?1:0)+(r&&r.paymentPdf&&r.paymentPdf.data?1:0);
+    },0);
+  }
+
+  function countInstallments(rec){
+    return asArray(rec).reduce(function(total,r){return total+asArray(r&&r.installments).length},0);
+  }
+
+  function downloadBlob(name,blob){
+    try{
+      if(window.AndroidDownloads&&typeof window.AndroidDownloads.saveBase64==='function'){
+        const reader=new FileReader();
+        reader.onloadend=function(){
+          try{window.AndroidDownloads.saveBase64(String(reader.result||''),name,blob.type||'application/octet-stream')}
+          catch(error){if(window.AndroidDownloads.error)window.AndroidDownloads.error(String(error&&error.message||error))}
+        };
+        reader.onerror=function(){if(window.AndroidDownloads.error)window.AndroidDownloads.error('Falha ao preparar o arquivo')};
+        reader.readAsDataURL(blob);
+        return;
+      }
+    }catch(error){console.warn('Ponte de download Android:',error)}
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=name;
+    a.rel='noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url)},1500);
+  }
+
+  async function createFullBackup(){
+    const button=byId('backupBtn');
+    const oldText=button?button.textContent:'';
+    if(button){button.disabled=true;button.textContent='Preparando backup…'}
+    try{
+      const rec=clone(currentRecords());
+      const cost=clone(currentCosts());
+      const createdAt=nowIso();
+      const owner=currentUser();
+      const checksum=await sha256(dataForChecksum(rec,cost));
+      const payload={
+        format:BACKUP_FORMAT,
+        schemaVersion:BACKUP_SCHEMA,
+        appVersion:APP_VERSION,
+        createdAt:createdAt,
+        owner:{id:owner.id,email:owner.email},
+        summary:{records:rec.length,costs:cost.length,installments:countInstallments(rec),pdfs:countPdfs(rec)},
+        checksum:{algorithm:checksum.startsWith('fnv32-')?'FNV-1a-32':'SHA-256',value:checksum},
+        data:{records:rec,costs:cost}
+      };
+      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+      downloadBlob('backup_completo_gado_v112_'+dateTag()+'.json',blob);
+      alert('Backup completo criado. Ele inclui negociações, custos, parcelas e os PDFs anexados.');
+    }catch(error){
+      console.error('BACKUP V112',error);
+      alert('Não foi possível criar o backup: '+(error&&error.message?error.message:error));
+    }finally{
+      if(button){button.disabled=false;button.textContent=oldText||'Backup completo'}
+    }
+  }
+
+  function xml(value){
+    return String(value??'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[ch]});
+  }
+  function columnName(index){
+    let out='';
+    for(let n=index+1;n>0;n=Math.floor((n-1)/26))out=String.fromCharCode(65+(n-1)%26)+out;
+    return out;
+  }
+  function excelDate(value){
+    const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(!m)return null;
+    const ms=Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3]));
+    return Math.floor((ms-Date.UTC(1899,11,30))/86400000);
+  }
+  function xlsxCell(ref,value,type,header){
+    if(header)return '<c r="'+ref+'" s="1" t="inlineStr"><is><t>'+xml(value)+'</t></is></c>';
+    if(value===null||value===undefined||value==='')return '<c r="'+ref+'"/>';
+    if(type==='date'){
+      const serial=excelDate(value);
+      if(serial!==null)return '<c r="'+ref+'" s="3"><v>'+serial+'</v></c>';
+    }
+    if(type==='money')return '<c r="'+ref+'" s="2"><v>'+finite(value)+'</v></c>';
+    if(type==='integer')return '<c r="'+ref+'" s="4"><v>'+Math.round(finite(value))+'</v></c>';
+    if(type==='decimal'||typeof value==='number')return '<c r="'+ref+'" s="5"><v>'+finite(value)+'</v></c>';
+    if(type==='boolean')return '<c r="'+ref+'" t="inlineStr"><is><t>'+(value?'Sim':'Não')+'</t></is></c>';
+    return '<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xml(value)+'</t></is></c>';
+  }
+  function sheetXml(columns,rows){
+    const lastCol=columnName(Math.max(0,columns.length-1));
+    const lastRow=Math.max(1,rows.length+1);
+    const widths=columns.map(function(c,i){
+      let width=Number(c.width)||Math.max(10,String(c.label||'').length+2);
+      for(let j=0;j<Math.min(rows.length,80);j++)width=Math.max(width,Math.min(42,String(rows[j][c.key]??'').length+2));
+      return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+Math.min(width,42)+'" customWidth="1"/>';
+    }).join('');
+    const header='<row r="1" ht="24" customHeight="1">'+columns.map(function(c,i){return xlsxCell(columnName(i)+'1',c.label,c.type,true)}).join('')+'</row>';
+    const body=rows.map(function(row,rowIndex){
+      const r=rowIndex+2;
+      return '<row r="'+r+'">'+columns.map(function(c,i){return xlsxCell(columnName(i)+r,row[c.key],c.type,false)}).join('')+'</row>';
+    }).join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:'+lastCol+lastRow+'"/>'+
+      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'+
+      '<sheetFormatPr defaultRowHeight="18"/><cols>'+widths+'</cols><sheetData>'+header+body+'</sheetData>'+
+      '<autoFilter ref="A1:'+lastCol+lastRow+'"/></worksheet>';
+  }
+
+  const CRC_TABLE=(function(){
+    const table=new Uint32Array(256);
+    for(let i=0;i<256;i++){
+      let c=i;
+      for(let j=0;j<8;j++)c=(c&1)?0xedb88320^(c>>>1):c>>>1;
+      table[i]=c>>>0;
+    }
+    return table;
+  })();
+  function crc32(bytes){
+    let crc=0xffffffff;
+    for(let i=0;i<bytes.length;i++)crc=CRC_TABLE[(crc^bytes[i])&255]^(crc>>>8);
+    return (crc^0xffffffff)>>>0;
+  }
+  function u16(value){return new Uint8Array([value&255,(value>>>8)&255])}
+  function u32(value){return new Uint8Array([value&255,(value>>>8)&255,(value>>>16)&255,(value>>>24)&255])}
+  function joinBytes(parts){
+    const size=parts.reduce(function(total,x){return total+x.length},0);
+    const out=new Uint8Array(size);
+    let pos=0;
+    parts.forEach(function(x){out.set(x,pos);pos+=x.length});
+    return out;
+  }
+  function zipStore(files){
+    const encoder=new TextEncoder();
+    const locals=[],centrals=[];
+    let offset=0;
+    files.forEach(function(file){
+      const name=encoder.encode(file.name);
+      const data=typeof file.data==='string'?encoder.encode(file.data):file.data;
+      const crc=crc32(data);
+      const local=joinBytes([u32(0x04034b50),u16(20),u16(0x0800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data]);
+      const central=joinBytes([u32(0x02014b50),u16(20),u16(20),u16(0x0800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]);
+      locals.push(local);centrals.push(central);offset+=local.length;
+    });
+    const central=joinBytes(centrals);
+    const end=joinBytes([u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(central.length),u32(offset),u16(0)]);
+    return joinBytes(locals.concat([central,end]));
+  }
+
+  function paymentTotals(r,type){
+    const list=asArray(r&&r.installments).filter(function(p){return String(p&&p.type||'').toLowerCase()===type.toLowerCase()});
+    return {
+      count:list.length,
+      pending:list.filter(function(p){return !p.paid}).reduce(function(s,p){return s+finite(p.value)},0),
+      paid:list.filter(function(p){return !!p.paid}).reduce(function(s,p){return s+finite(p.value)},0)
+    };
+  }
+  function recordCalc(r){
+    try{if(typeof calc==='function')return calc(r)}catch(_){}
+    const qc=finite(r&&r.quantCompra),qv=finite(r&&r.quantVenda),pc=finite(r&&r.precoCompra),pv=finite(r&&r.precoVenda),kg=finite(r&&r.pesoKg);
+    const sold=Math.min(qc,qv),saldo=Math.max(0,qc-qv);
+    return {qc:qc,qv:qv,pc:pc,pv:pv,kg:kg,at:kg/30,totalC:qc*pc,totalV:qv*pv,pcKg:kg?pc/kg:0,pvKg:kg?pv/kg:0,saldo:saldo,capital:saldo*pc,custo:0,lucro:sold*(pv-pc),status:saldo===0&&qc>0?'Vendido':qv>0?'Parcial':'Em estoque'};
+  }
+  function buildWorkbookData(){
+    const rec=currentRecords(),cost=currentCosts();
+    let totalBuy=0,totalSell=0,totalStock=0,totalCosts=0,totalProfit=0,totalHeads=0,totalSold=0;
+    const negotiations=rec.map(function(r){
+      const c=recordCalc(r),pay=paymentTotals(r,'Pagar'),receive=paymentTotals(r,'Receber');
+      totalBuy+=finite(c.totalC);totalSell+=finite(c.totalV);totalStock+=finite(c.capital);totalCosts+=finite(c.custo);totalProfit+=finite(c.lucro);totalHeads+=finite(c.qc);totalSold+=Math.min(finite(c.qc),finite(c.qv));
+      return {
+        id:r.id||'',data:r.data||'',vendedor:r.vendedor||'',categoria:r.era||'',qtdCompra:c.qc,pesoKg:c.kg,arrobas:c.at,precoCompraCab:c.pc,precoCompraKg:c.pcKg,totalCompra:c.totalC,pgVendedor:r.pg||'',formaCompra:r.paymentBuy||'',contaVendedor:r.accountBuy||'',fazendaOrigem:r.originFarm||'',municipioOrigem:r.originCity||'',ufOrigem:r.originState||'',latitudeOrigem:r.originLat,longitudeOrigem:r.originLng,
+        comprador:r.comprador||'',marca:r.marca||'',qtdVenda:c.qv,precoVendaCab:c.pv,precoVendaKg:c.pvKg,totalVenda:c.totalV,pgComprador:r.pgComprador||'',formaVenda:r.paymentSell||'',contaComprador:r.accountSell||'',fazendaDestino:r.destFarm||'',municipioDestino:r.destCity||'',ufDestino:r.destState||'',latitudeDestino:r.destLat,longitudeDestino:r.destLng,
+        status:c.status,saldo:c.saldo,capitalEstoque:c.capital,custos:c.custo,lucro:c.lucro,gta:r.gta||'',nota:r.nota||'',gtaPdf:r.gtaPdf&&r.gtaPdf.name||'',notaPdf:r.notaPdf&&r.notaPdf.name||'',comprovantePdf:r.paymentPdf&&r.paymentPdf.name||'',parcelas:pay.count+receive.count,pendentePagar:pay.pending,pendenteReceber:receive.pending,observacoes:r.pagamento||r.observacoes||'',intermediario:r.parceiro||'',atualizadoEm:r.updatedAt||''
+      };
+    });
+    const installments=[];
+    rec.forEach(function(r){
+      asArray(r.installments).forEach(function(p,index){
+        installments.push({negociacaoId:r.id||'',negociacaoData:r.data||'',vendedor:r.vendedor||'',comprador:r.comprador||'',categoria:r.era||'',numero:index+1,tipo:p.type||'',vencimento:p.date||'',valor:finite(p.value),baixada:!!p.paid,dataBaixa:p.paidDate||'',status:p.paid?(String(p.type||'').toLowerCase()==='receber'?'Recebido':'Pago'):'Pendente'});
+      });
+    });
+    const byRecord=new Map(rec.map(function(r){return [r.id,r]}));
+    const costsRows=cost.map(function(c){
+      const r=byRecord.get(c.recordId);
+      return {id:c.id||'',data:c.date||'',mes:c.month||'',tipo:c.type||'',descricao:c.desc||'',negociacaoId:c.recordId||'',vendedor:r&&r.vendedor||'',valor:finite(c.value),atualizadoEm:c.updatedAt||''};
+    });
+    const summary=[
+      {indicador:'Data da exportação',valor:new Date().toLocaleString('pt-BR'),unidade:''},
+      {indicador:'Versão do programa',valor:'v'+APP_VERSION,unidade:''},
+      {indicador:'Negociações',valor:rec.length,unidade:'registros'},
+      {indicador:'Custos lançados',valor:cost.length,unidade:'lançamentos'},
+      {indicador:'Parcelas',valor:installments.length,unidade:'parcelas'},
+      {indicador:'PDFs anexados',valor:countPdfs(rec),unidade:'arquivos'},
+      {indicador:'Cabeças compradas',valor:totalHeads,unidade:'cabeças'},
+      {indicador:'Cabeças vendidas',valor:totalSold,unidade:'cabeças'},
+      {indicador:'Total de compras',valor:totalBuy,unidade:'R$'},
+      {indicador:'Total de vendas',valor:totalSell,unidade:'R$'},
+      {indicador:'Capital em estoque',valor:totalStock,unidade:'R$'},
+      {indicador:'Custos vinculados',valor:totalCosts,unidade:'R$'},
+      {indicador:'Lucro realizado',valor:totalProfit,unidade:'R$'}
+    ];
+    return {summary:summary,negotiations:negotiations,installments:installments,costs:costsRows};
+  }
+
+  function createWorkbookBytes(){
+    const data=buildWorkbookData();
+    const sheets=[
+      {name:'Resumo',columns:[{key:'indicador',label:'Indicador',width:25},{key:'valor',label:'Valor',width:20},{key:'unidade',label:'Unidade',width:14}],rows:data.summary},
+      {name:'Negociações',columns:[
+        {key:'id',label:'ID',width:18},{key:'data',label:'Data',type:'date',width:12},{key:'vendedor',label:'Vendedor',width:24},{key:'categoria',label:'Categoria',width:15},{key:'qtdCompra',label:'Qtd compra',type:'integer'},{key:'pesoKg',label:'Peso kg/cab',type:'decimal'},{key:'arrobas',label:'Arrobas/cab',type:'decimal'},{key:'precoCompraCab',label:'Preço compra/cab',type:'money'},{key:'precoCompraKg',label:'Preço compra/kg',type:'money'},{key:'totalCompra',label:'Total compra',type:'money'},{key:'pgVendedor',label:'PG vendedor'},{key:'formaCompra',label:'Forma pag. compra'},{key:'contaVendedor',label:'Conta/Pix vendedor',width:24},{key:'fazendaOrigem',label:'Fazenda origem',width:22},{key:'municipioOrigem',label:'Município origem',width:18},{key:'ufOrigem',label:'UF origem'},{key:'latitudeOrigem',label:'Latitude origem',type:'decimal'},{key:'longitudeOrigem',label:'Longitude origem',type:'decimal'},
+        {key:'comprador',label:'Comprador',width:24},{key:'marca',label:'Marca',width:15},{key:'qtdVenda',label:'Qtd venda',type:'integer'},{key:'precoVendaCab',label:'Preço venda/cab',type:'money'},{key:'precoVendaKg',label:'Preço venda/kg',type:'money'},{key:'totalVenda',label:'Total venda',type:'money'},{key:'pgComprador',label:'PG comprador'},{key:'formaVenda',label:'Forma pag. venda'},{key:'contaComprador',label:'Conta/Pix comprador',width:24},{key:'fazendaDestino',label:'Fazenda destino',width:22},{key:'municipioDestino',label:'Município destino',width:18},{key:'ufDestino',label:'UF destino'},{key:'latitudeDestino',label:'Latitude destino',type:'decimal'},{key:'longitudeDestino',label:'Longitude destino',type:'decimal'},
+        {key:'status',label:'Status'},{key:'saldo',label:'Saldo cabeças',type:'integer'},{key:'capitalEstoque',label:'Capital estoque',type:'money'},{key:'custos',label:'Custos',type:'money'},{key:'lucro',label:'Lucro realizado',type:'money'},{key:'gta',label:'GTA'},{key:'nota',label:'Nota'},{key:'gtaPdf',label:'PDF GTA',width:22},{key:'notaPdf',label:'PDF Nota',width:22},{key:'comprovantePdf',label:'PDF Comprovante',width:22},{key:'parcelas',label:'Parcelas',type:'integer'},{key:'pendentePagar',label:'Pendente pagar',type:'money'},{key:'pendenteReceber',label:'Pendente receber',type:'money'},{key:'observacoes',label:'Pagamento/Observações',width:30},{key:'intermediario',label:'Intermediário',width:22},{key:'atualizadoEm',label:'Atualizado em',width:23}
+      ],rows:data.negotiations},
+      {name:'Parcelas',columns:[{key:'negociacaoId',label:'ID negociação',width:18},{key:'negociacaoData',label:'Data negociação',type:'date'},{key:'vendedor',label:'Vendedor',width:24},{key:'comprador',label:'Comprador',width:24},{key:'categoria',label:'Categoria'},{key:'numero',label:'Nº',type:'integer'},{key:'tipo',label:'Tipo'},{key:'vencimento',label:'Vencimento',type:'date'},{key:'valor',label:'Valor',type:'money'},{key:'baixada',label:'Baixada',type:'boolean'},{key:'dataBaixa',label:'Data da baixa',type:'date'},{key:'status',label:'Status'}],rows:data.installments},
+      {name:'Custos',columns:[{key:'id',label:'ID',width:18},{key:'data',label:'Data',type:'date'},{key:'mes',label:'Mês'},{key:'tipo',label:'Tipo',width:18},{key:'descricao',label:'Descrição',width:30},{key:'negociacaoId',label:'ID negociação',width:18},{key:'vendedor',label:'Vendedor',width:24},{key:'valor',label:'Valor',type:'money'},{key:'atualizadoEm',label:'Atualizado em',width:23}],rows:data.costs}
+    ];
+    const workbookSheets=sheets.map(function(s,i){return '<sheet name="'+xml(s.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>'}).join('');
+    const workbookRels=sheets.map(function(_,i){return '<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>'}).join('')+'<Relationship Id="rId'+(sheets.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>';
+    const overrides=sheets.map(function(_,i){return '<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'}).join('');
+    const files=[
+      {name:'[Content_Types].xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>'+overrides+'</Types>'},
+      {name:'_rels/.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>'},
+      {name:'docProps/core.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Exportação Compra e Venda de Gado v112</dc:title><dc:creator>Compra e Venda de Gado</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">'+nowIso()+'</dcterms:created></cp:coreProperties>'},
+      {name:'docProps/app.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Compra e Venda de Gado v112</Application></Properties>'},
+      {name:'xl/workbook.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+workbookSheets+'</sheets></workbook>'},
+      {name:'xl/_rels/workbook.xml.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+workbookRels+'</Relationships>'},
+      {name:'xl/styles.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="3"><numFmt numFmtId="164" formatCode="[$R$-pt-BR] #,##0.00"/><numFmt numFmtId="165" formatCode="dd/mm/yyyy"/><numFmt numFmtId="166" formatCode="0.00"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF17633F"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'}
+    ];
+    sheets.forEach(function(s,i){files.push({name:'xl/worksheets/sheet'+(i+1)+'.xml',data:sheetXml(s.columns,s.rows)})});
+    return zipStore(files);
+  }
+
+  function exportExcel(){
+    const button=byId('csvBtn');
+    const oldText=button?button.textContent:'';
+    if(button){button.disabled=true;button.textContent='Gerando Excel…'}
+    try{
+      const bytes=createWorkbookBytes();
+      downloadBlob('gado_exportacao_completa_'+dateTag()+'.xlsx',new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+    }catch(error){
+      console.error('EXCEL V112',error);
+      alert('Não foi possível gerar o Excel: '+(error&&error.message?error.message:error));
+    }finally{
+      if(button){button.disabled=false;button.textContent=oldText||'Exportar Excel'}
+    }
+  }
+
+  async function readBackupFile(file){
+    if(!file)throw new Error('Nenhum arquivo foi selecionado.');
+    if(file.size>MAX_BACKUP_BYTES)throw new Error('O backup é maior que 180 MB.');
+    const text=await file.text();
+    let raw;
+    try{raw=JSON.parse(text)}catch(_){throw new Error('O arquivo não é um backup JSON válido.');}
+    let format='legado',createdAt='',owner={id:'',email:''},expectedChecksum='',rec,cost;
+    if(Array.isArray(raw)){
+      rec=raw;cost=[];
+    }else if(raw&&raw.format===BACKUP_FORMAT&&raw.data){
+      format=BACKUP_FORMAT;
+      createdAt=String(raw.createdAt||'');
+      owner=raw.owner&&typeof raw.owner==='object'?{id:String(raw.owner.id||''),email:String(raw.owner.email||'')}:{id:'',email:''};
+      expectedChecksum=String(raw.checksum&&raw.checksum.value||'');
+      rec=raw.data.records;cost=raw.data.costs;
+    }else if(raw&&typeof raw==='object'){
+      createdAt=String(raw.createdAt||'');
+      rec=raw.records;cost=raw.costs;
+    }
+    if(!Array.isArray(rec)||!Array.isArray(cost))throw new Error('O arquivo não contém as listas de negociações e custos.');
+    const cleanRecords=dedupe(rec,'n',createdAt||nowIso());
+    const cleanCosts=dedupe(cost,'c',createdAt||nowIso());
+    if(rec.length>100000||cost.length>200000)throw new Error('O backup contém registros demais para restauração pelo telefone.');
+    let checksumState='Não disponível (backup antigo)';
+    if(expectedChecksum){
+      const actual=await sha256(dataForChecksum(rec,cost));
+      if(actual!==expectedChecksum)throw new Error('A verificação de integridade falhou. O arquivo pode estar incompleto ou alterado.');
+      checksumState='Integridade confirmada';
+    }
+    return {
+      fileName:file.name,format:format,createdAt:createdAt,owner:owner,checksumState:checksumState,
+      records:cleanRecords.items,costs:cleanCosts.items,
+      duplicates:cleanRecords.duplicates+cleanCosts.duplicates,
+      generatedIds:cleanRecords.generated+cleanCosts.generated,
+      pdfs:countPdfs(cleanRecords.items),installments:countInstallments(cleanRecords.items)
+    };
+  }
+
+  function ensureRestoreModal(){
+    let modal=byId('restoreV112Modal');
+    if(modal)return modal;
+    modal=document.createElement('div');
+    modal.id='restoreV112Modal';
+    modal.className='modal';
+    modal.innerHTML='<div class="modalcard" style="max-width:760px"><div class="mh"><div><b>Restaurar backup com segurança</b><div class="hint">Confira o conteúdo antes de alterar os dados</div></div><button type="button" class="mini" id="restoreV112Close">Fechar</button></div><div class="mb"><div id="restoreV112Summary"></div><div style="margin-top:16px;padding:12px;border:1px solid #d7e9dc;background:#f3faf5;border-radius:12px"><b>Escolha como restaurar:</b><div class="hint" style="margin-top:6px"><b>Mesclar</b> acrescenta o que falta, evita duplicações e preserva edições atuais mais novas.<br><b>Substituir tudo</b> deixa o sistema exatamente como o backup e remove dados atuais que não estão nele.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:16px"><button type="button" class="btn secondary" id="restoreV112Cancel">Cancelar</button><button type="button" class="btn primary" id="restoreV112Merge">Mesclar com os atuais</button><button type="button" class="btn danger" id="restoreV112Replace">Substituir tudo</button></div></div></div>';
+    document.body.appendChild(modal);
+    byId('restoreV112Close').onclick=closeRestore;
+    byId('restoreV112Cancel').onclick=closeRestore;
+    byId('restoreV112Merge').onclick=function(){applyRestore('merge')};
+    byId('restoreV112Replace').onclick=function(){applyRestore('replace')};
+    return modal;
+  }
+  function closeRestore(){
+    const modal=byId('restoreV112Modal');
+    if(modal)modal.classList.remove('show');
+    restorePreview=null;
+  }
+  function showRestorePreview(preview){
+    restorePreview=preview;
+    const modal=ensureRestoreModal();
+    const user=currentUser();
+    const differentUser=preview.owner.id&&user.id&&preview.owner.id!==user.id;
+    const when=preview.createdAt?new Date(preview.createdAt).toLocaleString('pt-BR'):'Data não informada';
+    byId('restoreV112Summary').innerHTML=
+      '<div class="kpis" style="grid-template-columns:repeat(4,minmax(120px,1fr))"><div class="kpi"><span>Negociações</span><b>'+preview.records.length+'</b></div><div class="kpi"><span>Custos</span><b>'+preview.costs.length+'</b></div><div class="kpi"><span>Parcelas</span><b>'+preview.installments+'</b></div><div class="kpi"><span>PDFs</span><b>'+preview.pdfs+'</b></div></div>'+
+      '<div class="calc"><b>Arquivo:</b> '+html(preview.fileName)+'<br><b>Criado em:</b> '+html(when)+'<br><b>Verificação:</b> '+html(preview.checksumState)+(preview.duplicates?'<br><b>Duplicações internas removidas:</b> '+preview.duplicates:'')+(preview.generatedIds?'<br><b>IDs antigos recuperados:</b> '+preview.generatedIds:'')+'</div>'+
+      (differentUser?'<div style="margin-top:12px;padding:12px;border-radius:10px;background:#fff1d6;color:#7a5100"><b>Atenção:</b> este backup foi criado em outra conta. Confira antes de continuar.</div>':'');
+    modal.classList.add('show');
+  }
+
+  function mergeLists(current,incoming){
+    const map=new Map();
+    asArray(current).forEach(function(item){if(item&&item.id)map.set(String(item.id),clone(item))});
+    asArray(incoming).forEach(function(item){
+      if(!item||!item.id)return;
+      const id=String(item.id),old=map.get(id);
+      if(!old||stamp(item)>stamp(old))map.set(id,clone(item));
+    });
+    return Array.from(map.values());
+  }
+
+  async function applyRestore(mode){
+    if(!restorePreview)return;
+    const merge=mode==='merge';
+    if(!merge){
+      const ok=confirm('ATENÇÃO: substituir tudo removerá do sistema as negociações e os custos atuais que não estiverem neste backup. Deseja continuar?');
+      if(!ok)return;
+    }
+    const mergeBtn=byId('restoreV112Merge'),replaceBtn=byId('restoreV112Replace');
+    if(mergeBtn)mergeBtn.disabled=true;if(replaceBtn)replaceBtn.disabled=true;
+    try{
+      const oldRecords=clone(currentRecords()),oldCosts=clone(currentCosts());
+      if(typeof safetySnapshot==='function')safetySnapshot('antes-de-restaurar-backup-v112');
+      if(merge){
+        records=mergeLists(oldRecords,restorePreview.records);
+        costs=mergeLists(oldCosts,restorePreview.costs);
+      }else{
+        const incomingRecordIds=new Set(restorePreview.records.map(function(x){return String(x.id)}));
+        const incomingCostIds=new Set(restorePreview.costs.map(function(x){return String(x.id)}));
+        if(typeof addDeletedId==='function'){
+          oldRecords.forEach(function(x){if(x&&x.id&&!incomingRecordIds.has(String(x.id)))addDeletedId(DELETED_RECORDS_KEY,x.id)});
+          oldCosts.forEach(function(x){if(x&&x.id&&!incomingCostIds.has(String(x.id)))addDeletedId(DELETED_COSTS_KEY,x.id)});
+        }
+        const restoredAt=nowIso();
+        records=restorePreview.records.map(function(x){const y=clone(x);y.restoredAt=restoredAt;y.updatedAt=restoredAt;return y});
+        costs=restorePreview.costs.map(function(x){const y=clone(x);y.restoredAt=restoredAt;y.updatedAt=restoredAt;return y});
+      }
+      if(typeof persist!=='function')throw new Error('A rotina de salvamento não está disponível.');
+      persist();
+      if(typeof renderAll==='function')renderAll();
+      const recCount=records.length,costCount=costs.length;
+      closeRestore();
+      alert((merge?'Backup mesclado':'Backup substituído')+' com sucesso: '+recCount+' negociações e '+costCount+' custos. A nuvem será sincronizada.');
+      setTimeout(function(){try{if(window.syncPendingNow)window.syncPendingNow(true)}catch(_){}},500);
+    }catch(error){
+      console.error('RESTORE V112',error);
+      alert('Não foi possível restaurar: '+(error&&error.message?error.message:error));
+    }finally{
+      if(mergeBtn)mergeBtn.disabled=false;if(replaceBtn)replaceBtn.disabled=false;
+    }
+  }
+
+  async function onRestoreFile(event){
+    event.stopImmediatePropagation();
+    const input=event.currentTarget||event.target;
+    const file=input&&input.files&&input.files[0];
+    if(!file)return;
+    try{
+      const preview=await readBackupFile(file);
+      showRestorePreview(preview);
+    }catch(error){
+      console.error('READ BACKUP V112',error);
+      alert('Backup inválido: '+(error&&error.message?error.message:error));
+    }finally{
+      if(input)input.value='';
+    }
+  }
+
+  function bind(){
+    const excelBtn=byId('csvBtn'),backupBtn=byId('backupBtn'),restore=byId('restore');
+    if(excelBtn){excelBtn.textContent='Exportar Excel';excelBtn.onclick=exportExcel}
+    if(backupBtn){backupBtn.textContent='Backup completo';backupBtn.onclick=createFullBackup}
+    if(restore&&!restore.dataset.backupV112){
+      restore.dataset.backupV112='1';
+      restore.accept='.json,application/json';
+      restore.addEventListener('change',onRestoreFile,true);
+      const label=restore.closest('label');
+      if(label&&label.childNodes.length)label.childNodes[0].textContent='Restaurar backup';
+    }
+    try{exportCSV=exportExcel}catch(_){}
+    try{backup=createFullBackup}catch(_){}
+    window.exportExcelV112=exportExcel;
+    window.createFullBackupV112=createFullBackup;
+    window.__BACKUP_V112_READY=true;
+    window.__BACKUP_V112_TEST={zipStore:zipStore,createWorkbookBytes:createWorkbookBytes,mergeLists:mergeLists,readBackupFile:readBackupFile,sha256:sha256};
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});
+  else bind();
+  setTimeout(bind,700);
+})();
+
+/* FIM v112-backup.js */
