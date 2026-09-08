@@ -2,7 +2,7 @@
 (function(){
   // Bloqueio de acesso: nenhuma tela de dados fica visível sem sessão autenticada.
   function lockUntilLogin(){var app=document.getElementById('appShell'),gate=document.getElementById('loginGate');if(app)app.style.display='none';if(gate)gate.style.display='block';}
-  async function requireFreshLogin(){lockUntilLogin();try{if(window.sb&&window.sb.auth)await window.sb.auth.signOut({scope:'local'});}catch(e){}lockUntilLogin();}
+  async function requireFreshLogin(){window.__freshLoginRequired=true;lockUntilLogin();try{if(window.sb&&window.sb.auth){await window.sb.auth.signOut({scope:'local'});window.sb.auth.onAuthStateChange(function(event,session){if(event==='SIGNED_IN'&&session){window.__freshLoginRequired=false;}else if(!session){window.__freshLoginRequired=true;lockUntilLogin();}});}}catch(e){}lockUntilLogin();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',requireFreshLogin,{once:true});else requireFreshLogin();
   window.addEventListener('pageshow',requireFreshLogin);
 })();
@@ -157,7 +157,7 @@
   window.syncPendingNow=async function(manual){if(!navigator.onLine){setCloudStatus('Offline • pendente','warn');return false;}if(hasPending())return save96();return load96(!!manual);};
 
   var originalInitCloud=window.initCloud;var reconnectUntil=0;
-  function keepUi(){try{if(typeof cloudUser!=='undefined'&&cloudUser&&typeof setAuthenticatedUI==='function')setAuthenticatedUI(true);}catch(e){}}
+  function keepUi(){try{if(window.__freshLoginRequired){lockUntilLogin();return;}if(typeof cloudUser!=='undefined'&&cloudUser&&typeof setAuthenticatedUI==='function')setAuthenticatedUI(true);}catch(e){}}
   async function recoverSession(tryNo){try{bootLoginApproved=true;}catch(e){}keepUi();try{if(typeof sb!=='undefined'&&sb&&navigator.onLine){var r=await sb.auth.getSession();var s=r&&r.data&&r.data.session;if(s&&s.user){try{cloudUser=s.user;}catch(e){}try{bootLoginApproved=true;}catch(e){}keepUi();await window.syncPendingNow(true);return true;}}}catch(e){}if(Date.now()<reconnectUntil&&(tryNo||0)<8)setTimeout(function(){recoverSession((tryNo||0)+1);},800);return false;}
   window.initCloud=async function(){if(Date.now()<reconnectUntil){try{bootLoginApproved=true;}catch(e){}keepUi();recoverSession(0);return;}if(typeof originalInitCloud==='function')return originalInitCloud();};
   window.addEventListener('online',function(ev){reconnectUntil=Date.now()+10000;try{bootLoginApproved=true;}catch(e){}try{ev.stopImmediatePropagation();}catch(e){}keepUi();setTimeout(function(){recoverSession(0);},250);},true);
