@@ -2,8 +2,9 @@
 (function(){
   // Bloqueio de acesso: nenhuma tela de dados fica visível sem sessão autenticada.
   function lockUntilLogin(){var app=document.getElementById('appShell'),gate=document.getElementById('loginGate');if(app)app.style.display='none';if(gate)gate.style.display='block';}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',lockUntilLogin,{once:true});else lockUntilLogin();
-  window.addEventListener('pageshow',lockUntilLogin);
+  async function requireFreshLogin(){lockUntilLogin();try{if(window.sb&&window.sb.auth)await window.sb.auth.signOut({scope:'local'});}catch(e){}lockUntilLogin();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',requireFreshLogin,{once:true});else requireFreshLogin();
+  window.addEventListener('pageshow',requireFreshLogin);
 })();
 
 (function(){
