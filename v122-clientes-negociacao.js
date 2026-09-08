@@ -19,7 +19,25 @@
     var go=document.querySelector('[data-negv66-go="resumo"]');if(go)go.textContent='Continuar para documentos â';
     var form=document.getElementById('recordForm');if(form&&!form.dataset.v122){form.dataset.v122='1';form.addEventListener('submit',function(e){var a=document.getElementById('rclienteCompra'),b=document.getElementById('rclienteVenda');if(a&&document.getElementById('rqcomp')&&Number(document.getElementById('rqcomp').value)>0&&!a.value){e.preventDefault();alert('Selecione um cliente cadastrado para a compra.');return}if(b&&document.getElementById('rqv')&&Number(document.getElementById('rqv').value)>0&&!b.value){e.preventDefault();alert('Selecione um cliente cadastrado para a venda.');return}if(a&&document.getElementById('rvendedor'))document.getElementById('rvendedor').value=a.value;if(b&&document.getElementById('rcomprador'))document.getElementById('rcomprador').value=b.value})}
   }
-  function init(){reconcile();setup();setTimeout(function(){reconcile();setup()},500);setTimeout(function(){reconcile();setup()},1200)}
+  function hydrateEditClient(){
+    try{
+      var rid=document.getElementById('rid'),id=rid&&rid.value;
+      if(!id||typeof records==='undefined'||!Array.isArray(records))return;
+      var r=records.find(function(x){return String(x.id)===String(id)});if(!r)return;
+      [['rclienteCompra','rvendedor','vendedor'],['rclienteVenda','rcomprador','comprador']].forEach(function(a){
+        var sel=document.getElementById(a[0]),hidden=document.getElementById(a[1]),name=String(r[a[2]]||'').trim();
+        if(hidden&&name)hidden.value=name;
+        if(sel&&name){
+          var opt=Array.from(sel.options).find(function(o){return String(o.value||'').trim()===name||String(o.textContent||'').trim()===name;});
+          if(opt){sel.value=opt.value;sel.dispatchEvent(new Event('change',{bubbles:true}));}
+        }
+      });
+    }catch(e){}
+  }
+  function init(){
+    reconcile();setup();hydrateEditClient();
+    [150,500,1000,1800].forEach(function(ms){setTimeout(function(){reconcile();setup();hydrateEditClient()},ms)});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
   document.addEventListener('clientesAtualizados',function(e){
     var d=e.detail||{},oldName=String(d.oldName||'').trim(),newName=String(d.newName||'').trim(),clientId=String(d.id||'').trim();
