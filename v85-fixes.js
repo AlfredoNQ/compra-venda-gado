@@ -53,6 +53,20 @@
     if(navigator.onLine)setTimeout(function(){window.syncPendingNow(true);},100);
   };
 
+  async function hydrateMissingPdfs(list){
+    if(!sb||!cloudUser)return;
+    var res=await sb.from('gado_pdfs').select('record_id,kind,document').eq('user_id',cloudUser.id);
+    if(res.error)throw res.error;
+    var map={};(res.data||[]).forEach(function(x){map[String(x.record_id)+'|'+x.kind]=x.document;});
+    (Array.isArray(list)?list:[]).forEach(function(r){
+      if(!r||!r.id)return;
+      [['gta','gtaPdf'],['nota','notaPdf'],['payment','paymentPdf']].forEach(function(p){
+        var key=String(r.id)+'|'+p[0];
+        if(!r[p[1]]&&map[key])r[p[1]]=map[key];
+      });
+    });
+  }
+
   async function syncSeparatedPdfs(list){
     if(!sb||!cloudUser)return;
     var cache={};try{cache=JSON.parse(userGet('gado_pdf_sync_index_v1')||'{}')||{};}catch(e){cache={};}
@@ -101,6 +115,9 @@
     sync96Busy=true;
     try{
       var dels=applyDeleted();
+      // Reidrata os PDFs já confirmados antes de salvar qualquer edição.
+      // Assim um formulário que não carregou o anexo nunca o apaga.
+      await hydrateMissingPdfs(records);
       await syncSeparatedPdfs(records);
       var payload={user_id:cloudUser.id,records:recordsWithoutPdfs(records),costs:costs,clients:localClients(),animals:localObject(ANIMALS_KEY),lots:localObject(LOTS_KEY),deleted_records:dels,updated_at:new Date().toISOString()};
       var res=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'});
