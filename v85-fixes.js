@@ -150,6 +150,12 @@
       var cloudAnimals=res.data.animals&&typeof res.data.animals==='object'?res.data.animals:{};
       var cloudLots=res.data.lots&&typeof res.data.lots==='object'?res.data.lots:{};
       records=mergeById(cloudRecords,records,deleted).filter(function(r){return deleted.indexOf(r&&r.id)<0;});
+      // A mesclagem de registros nunca pode descartar anexos já confirmados.
+      var cloudPdfById={};cloudRecords.forEach(function(x){if(x&&x.id)cloudPdfById[String(x.id)]=x;});
+      records.forEach(function(r){
+        var c=cloudPdfById[String(r&&r.id)];if(!c)return;
+        ['gtaPdf','notaPdf','paymentPdf'].forEach(function(k){if(!r[k]&&c[k])r[k]=c[k];});
+      });
       costs=mergeById(cloudCosts,costs,getDeletedIds(DELETED_COSTS_KEY));
       var mergedClients=mergeById(cloudClients,localClients(),[]);
       var mergedAnimals=mergeObject(cloudAnimals,localObject(ANIMALS_KEY));
