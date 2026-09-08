@@ -3855,8 +3855,7 @@
   window.openStoredPdfV85=function(id){
     try{
       var doc=(window.__pdfDocsV85||{})[id];
-      var mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')||window.innerWidth<=800;
-      if(mobile && doc && doc.data && typeof window.showPdfMobileV85==='function'){
+      if(doc && doc.data && typeof window.showPdfMobileV85==='function'){
         window.showPdfMobileV85(doc);
         return;
       }
