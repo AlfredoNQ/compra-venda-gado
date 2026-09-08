@@ -55,10 +55,10 @@
       document.head.appendChild(s);
     });
   }
-  function closeViewer(){var m=document.getElementById('cvPdf116');if(m)m.remove();}
+  function closeViewer(){var m=document.getElementById('cvPdf116');if(m)m.remove();window.__pdfViewerOpen=false;}
   window.closePdf116=closeViewer;
   async function showMobile(doc){
-    closeViewer();
+    window.__pdfViewerOpen=true;closeViewer();window.__pdfViewerOpen=true;
     var m=document.createElement('div');
     m.id='cvPdf116';
     m.style.cssText='position:fixed;inset:0;z-index:100000;background:#181818;display:flex;flex-direction:column';
