@@ -47,15 +47,22 @@
 
   async function syncSeparatedPdfs(list){
     if(!sb||!cloudUser)return;
-    var jobs=[];
+    var cache={};try{cache=JSON.parse(userGet('gado_pdf_sync_index_v1')||'{}')||{};}catch(e){cache={};}
+    var jobs=[],next={};
     (Array.isArray(list)?list:[]).forEach(function(r){
       if(!r||!r.id)return;
       [['gta',r.gtaPdf],['nota',r.notaPdf],['payment',r.paymentPdf]].forEach(function(pair){
-        if(pair[1]&&pair[1].data)jobs.push(sb.from('gado_pdfs').upsert({user_id:cloudUser.id,record_id:String(r.id),kind:pair[0],document:pair[1],updated_at:r.updatedAt||new Date().toISOString()},{onConflict:'user_id,record_id,kind'}));
+        var doc=pair[1],key=String(r.id)+'|'+pair[0];
+        if(!doc||!doc.data)return;
+        var sig=String(doc.name||'')+'|'+String(doc.data.length)+'|'+String(r.updatedAt||'');
+        next[key]=sig;
+        if(cache[key]===sig)return;
+        jobs.push(sb.from('gado_pdfs').upsert({user_id:cloudUser.id,record_id:String(r.id),kind:pair[0],document:doc,updated_at:r.updatedAt||new Date().toISOString()},{onConflict:'user_id,record_id,kind'}));
       });
     });
     var results=await Promise.all(jobs);
     for(var i=0;i<results.length;i++)if(results[i]&&results[i].error)throw results[i].error;
+    try{userSet('gado_pdf_sync_index_v1',JSON.stringify(next));}catch(e){}
   }
   function recordsWithoutPdfs(list){
     return (Array.isArray(list)?list:[]).map(function(r){
