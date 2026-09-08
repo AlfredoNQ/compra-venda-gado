@@ -45,6 +45,39 @@
     if(navigator.onLine)setTimeout(function(){window.syncPendingNow(true);},100);
   };
 
+  async function syncSeparatedPdfs(list){
+    if(!sb||!cloudUser)return;
+    var jobs=[];
+    (Array.isArray(list)?list:[]).forEach(function(r){
+      if(!r||!r.id)return;
+      [['gta',r.gtaPdf],['nota',r.notaPdf],['payment',r.paymentPdf]].forEach(function(pair){
+        if(pair[1]&&pair[1].data)jobs.push(sb.from('gado_pdfs').upsert({user_id:cloudUser.id,record_id:String(r.id),kind:pair[0],document:pair[1],updated_at:r.updatedAt||new Date().toISOString()},{onConflict:'user_id,record_id,kind'}));
+      });
+    });
+    var results=await Promise.all(jobs);
+    for(var i=0;i<results.length;i++)if(results[i]&&results[i].error)throw results[i].error;
+  }
+  function recordsWithoutPdfs(list){
+    return (Array.isArray(list)?list:[]).map(function(r){
+      if(!r)return r;
+      var x=Object.assign({},r);delete x.gtaPdf;delete x.notaPdf;delete x.paymentPdf;return x;
+    });
+  }
+  async function loadSeparatedPdfs(list){
+    if(!sb||!cloudUser)return [];
+    var res=await sb.from('gado_pdfs').select('record_id,kind,document,updated_at').eq('user_id',cloudUser.id);
+    if(res.error)throw res.error;
+    var map={};(res.data||[]).forEach(function(x){map[String(x.record_id)+'|'+x.kind]=x.document;});
+    return (Array.isArray(list)?list:[]).map(function(r){
+      if(!r||!r.id)return r;
+      var x=Object.assign({},r);
+      if(map[String(r.id)+'|gta'])x.gtaPdf=map[String(r.id)+'|gta'];
+      if(map[String(r.id)+'|nota'])x.notaPdf=map[String(r.id)+'|nota'];
+      if(map[String(r.id)+'|payment'])x.paymentPdf=map[String(r.id)+'|payment'];
+      return x;
+    });
+  }
+
   async function save96(){
     if(!sb||!cloudUser)return false;
     if(!navigator.onLine){try{markOfflineDirty();}catch(e){}setCloudStatus('Offline • pendente','warn');return false;}
@@ -52,7 +85,8 @@
     sync96Busy=true;
     try{
       var dels=applyDeleted();
-      var payload={user_id:cloudUser.id,records:records,costs:costs,clients:localClients(),animals:localObject(ANIMALS_KEY),lots:localObject(LOTS_KEY),deleted_records:dels,updated_at:new Date().toISOString()};
+      await syncSeparatedPdfs(records);
+      var payload={user_id:cloudUser.id,records:recordsWithoutPdfs(records),costs:costs,clients:localClients(),animals:localObject(ANIMALS_KEY),lots:localObject(LOTS_KEY),deleted_records:dels,updated_at:new Date().toISOString()};
       var res=await sb.from(CLOUD_TABLE).upsert(payload,{onConflict:'user_id'});
       if(res.error)throw res.error;
       // Confirma o upsert sem devolver records/PDFs: reduz muito o tráfego no APK.
@@ -76,6 +110,7 @@
       if(!res.data){sync96Busy=false;return await save96();}
       var deleted=applyDeleted(Array.isArray(res.data.deleted_records)?res.data.deleted_records:[]);
       var cloudRecords=Array.isArray(res.data.records)?res.data.records:[];
+      cloudRecords=await loadSeparatedPdfs(cloudRecords);
       var cloudCosts=Array.isArray(res.data.costs)?res.data.costs:[];
       var cloudClients=Array.isArray(res.data.clients)?res.data.clients:[];
       cloudClients=cloudClients.map(function(x){if(!x||x.id)return x;return Object.assign({},x,{id:'cad-'+String(x.documento||x.nome||'cliente').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')});});
