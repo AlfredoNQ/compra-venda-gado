@@ -2687,7 +2687,8 @@
     });
   }
   function closeViewer(){var m=document.getElementById('cvPdf116');if(m)m.remove();window.__pdfViewerOpen=false;}
-  window.closePdf116=closeViewer;\n  window.showPdfMobileV85=showMobile;
+  window.closePdf116=closeViewer;
+  window.showPdfMobileV85=showMobile;
   async function showMobile(doc){
     window.__pdfViewerOpen=true;closeViewer();window.__pdfViewerOpen=true;
     var m=document.createElement('div');
