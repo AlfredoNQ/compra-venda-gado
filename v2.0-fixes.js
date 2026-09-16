@@ -118,7 +118,8 @@
     if(!sb||!cloudUser)return [];
     var res=await sb.from('gado_pdfs').select('record_id,kind,document,updated_at').eq('user_id',cloudUser.id);
     if(res.error)throw res.error;
-    var map={};(res.data||[]).forEach(function(x){map[String(x.record_id)+'|'+x.kind]=x.document;});
+    var deleted={};try{deleted=JSON.parse(userGet(PDF_DELETE_KEY)||'{}')||{};}catch(e){}
+    var map={};(res.data||[]).forEach(function(x){if(!deleted[String(x.record_id)+'|'+x.kind])map[String(x.record_id)+'|'+x.kind]=x.document;});
     return (Array.isArray(list)?list:[]).map(function(r){
       if(!r||!r.id)return r;
       var x=Object.assign({},r);
@@ -136,6 +137,9 @@
     sync96Busy=true;
     try{
       var dels=applyDeleted();
+      // Mantém exclusões marcadas no formulário antes de reidratar PDFs antigos.
+      var pdfDeleted={};try{pdfDeleted=JSON.parse(userGet(PDF_DELETE_KEY)||'{}')||{};}catch(e){pdfDeleted={};}
+      records.forEach(function(r){if(!r||!r.id)return;[['gta','gtaPdf'],['nota','notaPdf'],['payment','paymentPdf']].forEach(function(p){if(pdfDeleted[String(r.id)+'|'+p[0]])r[p[1]]=null;});});
       // Reidrata os PDFs já confirmados antes de salvar qualquer edição.
       // Assim um formulário que não carregou o anexo nunca o apaga.
       await hydrateMissingPdfs(records);
@@ -3064,7 +3068,7 @@
     var id=registerDoc(doc),nm=doc.name||c.label+'.pdf';
     st.innerHTML='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px"><span class="hint" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+htmlEsc(nm)+'">'+htmlEsc(nm)+'</span><button type="button" class="mini" onclick="openStoredPdfV85(\''+id+'\')">Abrir PDF</button><button type="button" class="mini" style="background:#fff0ee;color:#b42318" onclick="markPdfDeleteV106(\''+key+'\')">Excluir PDF</button></div>';
   }
-  window.markPdfDeleteV106=function(key){var c=cfg[key];if(!c)return;var inp=document.getElementById(c.input),st=document.getElementById(c.status);if(!inp||!st)return;inp.dataset.deletePdf='1';inp.value='';try{var id=(document.getElementById('rid')||{}).value||'';var deleted=JSON.parse((window.userGet?userGet('gado_pdf_deletions_v20'):localStorage.getItem('gado_pdf_deletions_v20'))||'{}');deleted[id+'|'+(key==='pay'?'payment':key)] = true;if(window.userSet)userSet('gado_pdf_deletions_v20',JSON.stringify(deleted));else localStorage.setItem('gado_pdf_deletions_v20',JSON.stringify(deleted));}catch(e){}st.innerHTML='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px"><span class="hint" style="color:#b42318;font-weight:700">PDF será excluído ao salvar</span><button type="button" class="mini" onclick="cancelPdfDeleteV106(\''+key+'\')">Cancelar exclusão</button></div>';};
+  window.markPdfDeleteV106=function(key){var c=cfg[key];if(!c)return;var inp=document.getElementById(c.input),st=document.getElementById(c.status);if(!inp||!st)return;inp.dataset.deletePdf='1';inp.value='';try{var id=(document.getElementById('rid')||{}).value||'';var deleted=JSON.parse((window.userGet?userGet('gado_pdf_deletions_v20'):localStorage.getItem('gado_pdf_deletions_v20'))||'{}');deleted[id+'|'+(key==='pay'?'payment':key)] = true;if(window.userSet)userSet('gado_pdf_deletions_v20',JSON.stringify(deleted));else localStorage.setItem('gado_pdf_deletions_v20',JSON.stringify(deleted));var r=currentRecord();if(r){r[c.field]=null;r.updatedAt=new Date().toISOString();if(typeof persist==='function')persist();if(window.scheduleCloudSave)window.scheduleCloudSave();}}catch(e){}st.innerHTML='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px"><span class="hint" style="color:#b42318;font-weight:700">PDF será excluído ao salvar</span><button type="button" class="mini" onclick="cancelPdfDeleteV106(\''+key+'\')">Cancelar exclusão</button></div>';};
   window.cancelPdfDeleteV106=function(key){try{var id=(document.getElementById('rid')||{}).value||'';var deleted=JSON.parse((window.userGet?userGet('gado_pdf_deletions_v20'):localStorage.getItem('gado_pdf_deletions_v20'))||'{}');delete deleted[id+'|'+(key==='pay'?'payment':key)];if(window.userSet)userSet('gado_pdf_deletions_v20',JSON.stringify(deleted));else localStorage.setItem('gado_pdf_deletions_v20',JSON.stringify(deleted));}catch(e){}var r=currentRecord();if(r)renderOne(key,r[cfg[key].field]);};
   function renderCurrentDocs(){var r=currentRecord();Object.keys(cfg).forEach(function(k){renderOne(k,r?r[cfg[k].field]:null);});}
   var oldFileToStoredObject=window.fileToStoredObject;
