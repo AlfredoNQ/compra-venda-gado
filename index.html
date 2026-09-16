@@ -2882,6 +2882,17 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       var a=latField?Number(latField.value):NaN;
       var b=lngField?Number(lngField.value):NaN;
 
+      if(type==='cliente'){
+        try{
+          var clients=JSON.parse((window.userGet?userGet('gado_cadastros_v120'):localStorage.getItem('gado_cadastros_v120'))||'[]');
+          var client=clients.find(function(x){return x&&x.id===window.__clientMapId});
+          var clat=client?Number(client.lat):NaN,clng=client?Number(client.lng):NaN;
+          if(Number.isFinite(clat)&&Number.isFinite(clng))setPoint(clat,clng,15);
+          else{lat=null;lng=null;if(marker){pickMap.removeLayer(marker);marker=null;}showCoords();}
+          return;
+        }catch(e){}
+      }
+
       if(latField && lngField && latField.value!=='' && lngField.value!=='' && Number.isFinite(a) && Number.isFinite(b)){
         setPoint(a,b,15);
       }else{
