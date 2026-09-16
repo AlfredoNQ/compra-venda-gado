@@ -1089,13 +1089,21 @@ async function fileToStoredObject(input,oldDoc){
  return {name:f.name,type:f.type,size:f.size,data,updatedAt:new Date().toISOString()};
 }
 
+function clientHasMap(name){
+  try{
+    var list=JSON.parse((window.userGet?userGet('gado_cadastros_v120'):localStorage.getItem('gado_cadastros_v120'))||'[]');
+    var n=String(name||'').trim();
+    var c=list.find(function(x){return String(x&&x.nome||'').trim()===n;});
+    return !!(c&&c.lat!=null&&c.lng!=null&&Number.isFinite(Number(c.lat))&&Number.isFinite(Number(c.lng)));
+  }catch(e){return false;}
+}
 function hasOriginMap(r){
-  return r && r.originLat!=null && r.originLng!=null &&
-    Number.isFinite(Number(r.originLat)) && Number.isFinite(Number(r.originLng));
+  return r && ((r.originLat!=null && r.originLng!=null &&
+    Number.isFinite(Number(r.originLat)) && Number.isFinite(Number(r.originLng))) || clientHasMap(r.vendedor));
 }
 function hasDestMap(r){
-  return r && r.destLat!=null && r.destLng!=null &&
-    Number.isFinite(Number(r.destLat)) && Number.isFinite(Number(r.destLng));
+  return r && ((r.destLat!=null && r.destLng!=null &&
+    Number.isFinite(Number(r.destLat)) && Number.isFinite(Number(r.destLng))) || clientHasMap(r.comprador));
 }
 function mapBadge(ok,label){
   if(!ok)return '';
