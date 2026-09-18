@@ -2730,7 +2730,7 @@
     dl.onclick=function(){
       try{var b=new Blob([bytesFromDataUrl(doc.data)],{type:'application/pdf'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=safeName(doc.name);a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},60000);}catch(e){alert('Falha ao baixar PDF: '+e.message);}
     };
-    var x=document.createElement('button');x.type='button';x.textContent='Fechar';x.onclick=closeViewer;x.style.cssText='border:0;border-radius:8px;padding:8px 12px;font-weight:800';
+    var x=document.createElement('button');x.type='button';x.textContent='×';x.title='Fechar arquivo';x.setAttribute('aria-label','Fechar arquivo');x.onclick=closeViewer;x.style.cssText='border:0;border-radius:8px;padding:4px 12px;font-size:24px;line-height:1;font-weight:900';
     bar.appendChild(title);bar.appendChild(dl);bar.appendChild(x);
     var body=document.createElement('div');body.style.cssText='flex:1;overflow:auto;padding:10px;background:#2b2b2b;text-align:center';body.innerHTML='<div style="color:white;padding:30px;font-weight:700">Carregando PDF...</div>';
     m.appendChild(bar);m.appendChild(body);document.body.appendChild(m);
