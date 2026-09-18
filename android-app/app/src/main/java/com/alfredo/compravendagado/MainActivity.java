@@ -33,7 +33,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class MainActivity extends Activity {
-    private static final String HOME = "https://compra-venda-gado-app.pages.dev/?v=183";
+    private static final String HOME = "https://compra-venda-gado-app.pages.dev/?v=185";
     private static final String HOME_HOST = "compra-venda-gado-app.pages.dev";
     private static final int FILE_CHOOSER = 1001;
     private static final int PERMISSIONS = 1002;
