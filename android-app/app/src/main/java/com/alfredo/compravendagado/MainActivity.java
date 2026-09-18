@@ -115,7 +115,7 @@ public class MainActivity extends Activity {
                 byte[] bytes=Base64.decode(payload,Base64.DEFAULT);
                 String mime=meta.startsWith("data:")?meta.substring(5).split(";",2)[0]:"application/pdf";
                 if(mime==null||mime.isEmpty())mime="application/pdf";
-                String safe=(fileName==null||fileName.trim().isEmpty())?"documento.pdf":fileName.replaceAll("[\\\\/:*?\\"<>|]","_");
+                String safe=(fileName==null||fileName.trim().isEmpty())?"documento.pdf":fileName.replace("/","_").replace("\\","_").replace(":","_").replace("?","_").replace("\"","_").replace("<","_").replace(">","_").replace("|","_");
                 ContentValues values=new ContentValues(); values.put(MediaStore.Downloads.DISPLAY_NAME,safe); values.put(MediaStore.Downloads.MIME_TYPE,mime); values.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS); values.put(MediaStore.Downloads.IS_PENDING,1);
                 Uri uri=getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values); if(uri==null)throw new java.io.IOException("Não foi possível criar o anexo");
                 try(OutputStream out=getContentResolver().openOutputStream(uri)){if(out==null)throw new java.io.IOException("Não foi possível abrir o anexo");out.write(bytes);out.flush();}
