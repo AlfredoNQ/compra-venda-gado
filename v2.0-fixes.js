@@ -3882,6 +3882,11 @@
   window.openStoredPdfV85=function(id){
     try{
       var doc=(window.__pdfDocsV85||{})[id];
+      if(doc && doc.data && doc.type && doc.type!=='application/pdf'){
+        var blob=dataUrlToBlob(doc.data),url=URL.createObjectURL(blob),a=document.createElement('a');
+        a.href=url;a.download=String(doc.name||'anexo');a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+        setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},120000);return;
+      }
       if(doc && doc.data && typeof window.showPdfMobileV85==='function'){
         window.showPdfMobileV85(doc);
         return;
