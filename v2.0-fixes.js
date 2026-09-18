@@ -3882,6 +3882,7 @@
   window.openStoredPdfV85=function(id){
     try{
       var doc=(window.__pdfDocsV85||{})[id];
+      if(doc && doc.data && window.AndroidPdf && typeof window.AndroidPdf.openPdf==='function'){window.AndroidPdf.openPdf(doc.data,String(doc.name||'documento.pdf'));return;}
       if(doc && doc.data && doc.type && doc.type!=='application/pdf'){
         var blob=dataUrlToBlob(doc.data),url=URL.createObjectURL(blob),a=document.createElement('a');
         a.href=url;a.download=String(doc.name||'anexo');a.style.display='none';document.body.appendChild(a);a.click();a.remove();
