@@ -3880,9 +3880,26 @@
 /* CORRECAO FINAL PDF — garante fechamento no celular/iPhone */
 (function(){
   var previous=window.openStoredPdfV85;
+  function showImageAttachment(doc){
+    var old=document.getElementById('cvPdf116');if(old)old.remove();
+    var m=document.createElement('div');m.id='cvPdf116';m.style.cssText='position:fixed;inset:0;z-index:100000;background:#181818;display:flex;flex-direction:column';
+    var bar=document.createElement('div');bar.style.cssText='display:flex;align-items:center;gap:8px;padding:10px;background:#173b28;color:#fff;min-height:54px';
+    var title=document.createElement('div');title.textContent=String(doc.name||'Arquivo');title.style.cssText='flex:1;font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    var x=document.createElement('button');x.type='button';x.textContent='×';x.title='Fechar arquivo';x.setAttribute('aria-label','Fechar arquivo');x.onclick=function(){m.remove()};x.style.cssText='border:0;border-radius:8px;padding:4px 12px;font-size:24px;line-height:1;font-weight:900';
+    bar.appendChild(title);bar.appendChild(x);m.appendChild(bar);
+    var body=document.createElement('div');body.style.cssText='flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:16px';
+    var img=document.createElement('img');img.src=doc.data;img.alt=title.textContent;img.style.cssText='max-width:100%;max-height:100%;object-fit:contain';body.appendChild(img);m.appendChild(body);document.body.appendChild(m);
+  }
+  function isRealPdf(doc){
+    try{var s=String(doc.data||'');if(/^data:application\/pdf/i.test(s))return true;var raw=atob(s.split(',')[1]||'');return raw.slice(0,5)==='%PDF-';}catch(e){return false;}
+  }
   window.openStoredPdfV85=function(id){
     try{
       var doc=(window.__pdfDocsV85||{})[id];
+      if(doc && doc.data && !isRealPdf(doc)){
+        showImageAttachment(doc);
+        return;
+      }
       if(doc && doc.data && typeof window.showPdfMobileV85==='function'){
         window.showPdfMobileV85(doc);
         return;
