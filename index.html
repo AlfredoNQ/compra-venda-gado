@@ -816,9 +816,9 @@ Escolha uma etapa da negociação. Os dados de Compra e Venda ficam em telas sep
 
   <div class="sectiontitle">Documentos da negociação</div>
   <div class="formgrid">
-    <div class="field"><label>PDF GTA</label><input type="file" accept="application/pdf" id="rgtaFile"><div class="hint" id="rgtaFileStatus"></div></div>
-    <div class="field"><label>PDF Nota</label><input type="file" accept="application/pdf" id="rnotaFile"><div class="hint" id="rnotaFileStatus"></div></div>
-    <div class="field"><label>Comprovante pagamento</label><input type="file" accept="application/pdf" id="rpayFile"><div class="hint" id="rpayFileStatus"></div></div>
+    <div class="field"><label>Arquivo GTA</label><input type="file" accept="*/*" id="rgtaFile"><div class="hint" id="rgtaFileStatus"></div></div>
+    <div class="field"><label>Arquivo Nota</label><input type="file" accept="*/*" id="rnotaFile"><div class="hint" id="rnotaFileStatus"></div></div>
+    <div class="field"><label>Comprovante de pagamento</label><input type="file" accept="*/*" id="rpayFile"><div class="hint" id="rpayFileStatus"></div></div>
   </div>
 
   <div class="sectiontitle">Parcelas / vencimentos</div>
@@ -1083,8 +1083,7 @@ function removeInstallmentRow(i){let a=collectInstallments();a.splice(i,1);rende
 async function fileToStoredObject(input,oldDoc){
  let f=input&&input.files&&input.files[0];
  if(!f)return oldDoc||null;
- if(f.type!=='application/pdf')throw new Error('O arquivo precisa ser PDF.');
- if(f.size>8*1024*1024)throw new Error('PDF maior que 8 MB. Reduza o arquivo antes de enviar.');
+ if(f.size>8*1024*1024)throw new Error('Arquivo maior que 8 MB. Reduza o arquivo antes de enviar.');
  let data=await new Promise((resolve,reject)=>{let rd=new FileReader();rd.onload=()=>resolve(rd.result);rd.onerror=reject;rd.readAsDataURL(f)});
  return {name:f.name,type:f.type,size:f.size,data,updatedAt:new Date().toISOString()};
 }
