@@ -57,6 +57,7 @@ public class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         web.addJavascriptInterface(new AndroidDownloads(), "AndroidDownloads");
+        web.addJavascriptInterface(new AndroidPdf(), "AndroidPdf");
 
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -103,6 +104,26 @@ public class MainActivity extends Activity {
             } catch(Exception e) { Toast.makeText(this,"Nao foi possivel baixar o arquivo",Toast.LENGTH_LONG).show(); }
         });
         if (savedInstanceState == null) web.loadUrl(HOME); else web.restoreState(savedInstanceState);
+    }
+
+    public class AndroidPdf {
+        @JavascriptInterface public void openPdf(String dataUrl, String fileName) {
+            try {
+                int comma=dataUrl.indexOf(',');
+                String meta=comma>0?dataUrl.substring(0,comma):"data:application/pdf;base64";
+                String payload=comma>=0?dataUrl.substring(comma+1):dataUrl;
+                byte[] bytes=Base64.decode(payload,Base64.DEFAULT);
+                String mime=meta.startsWith("data:")?meta.substring(5).split(";",2)[0]:"application/pdf";
+                if(mime==null||mime.isEmpty())mime="application/pdf";
+                String safe=(fileName==null||fileName.trim().isEmpty())?"documento.pdf":fileName.replaceAll("[\\\\/:*?\\"<>|]","_");
+                ContentValues values=new ContentValues(); values.put(MediaStore.Downloads.DISPLAY_NAME,safe); values.put(MediaStore.Downloads.MIME_TYPE,mime); values.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS); values.put(MediaStore.Downloads.IS_PENDING,1);
+                Uri uri=getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values); if(uri==null)throw new java.io.IOException("Não foi possível criar o anexo");
+                try(OutputStream out=getContentResolver().openOutputStream(uri)){if(out==null)throw new java.io.IOException("Não foi possível abrir o anexo");out.write(bytes);out.flush();}
+                ContentValues done=new ContentValues();done.put(MediaStore.Downloads.IS_PENDING,0);getContentResolver().update(uri,done,null,null);
+                Intent i=new Intent(Intent.ACTION_VIEW,uri);i.setDataAndType(uri,mime);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);
+                runOnUiThread(() -> {try{startActivity(i);}catch(Exception e){Toast.makeText(MainActivity.this,"Nenhum aplicativo encontrado para abrir este arquivo",Toast.LENGTH_LONG).show();}});
+            } catch(Exception e) { runOnUiThread(() -> Toast.makeText(MainActivity.this,"Não foi possível abrir o arquivo",Toast.LENGTH_LONG).show()); }
+        }
     }
 
     private void installBlobDownloadBridge() {
