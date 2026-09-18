@@ -1,5 +1,5 @@
-const CACHE='gado-app-v184-auth-clientes';
-const APP_SHELL=['/index.html?v=2.0','/app-v68.html?v=2.0','/manifest.webmanifest?v=2.0','/v2.0-fixes.js?v=2.0','/v103-pdf-open.js?v=2.0','/v116-pdf-mobile.js?v=2.0','/v112-payments.js?v=2.0','/v112-backup.js?v=2.0','/v120-cadastros-lotes.js?v=2.0','/icon.svg'];
+const CACHE='gado-app-v185-anexos';
+const APP_SHELL=['/index.html?v=2.0','/app-v68.html?v=2.0','/manifest.webmanifest?v=2.0','/v2.0-fixes.js?v=2.1','/v103-pdf-open.js?v=2.0','/v116-pdf-mobile.js?v=2.0','/v112-payments.js?v=2.0','/v112-backup.js?v=2.0','/v120-cadastros-lotes.js?v=2.0','/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
