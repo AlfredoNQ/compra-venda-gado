@@ -1,4 +1,4 @@
-/* Compra e Venda de Gado — v183 fixes */
+/* Compra e Venda de Gado — v184 fixes */
 (function(){
   // Bloqueio de acesso: nenhuma tela de dados fica visível sem sessão autenticada.
   function lockUntilLogin(){var app=document.getElementById('appShell'),gate=document.getElementById('loginGate');if(app)app.style.display='none';if(gate)gate.style.display='block';}
@@ -169,7 +169,14 @@
       var res=await sb.from(CLOUD_TABLE).select('records,costs,clients,animals,lots,deleted_records,updated_at').eq('user_id',cloudUser.id).maybeSingle();
       if(res.error)throw res.error;
       if(!res.data){sync96Busy=false;return await save96();}
-      var deleted=applyDeleted(Array.isArray(res.data.deleted_records)?res.data.deleted_records:[]);
+      var cloudDeleted=Array.isArray(res.data.deleted_records)?res.data.deleted_records:[];
+      if(!pendingBefore){
+        // Ao abrir sem alteração pendente, a nuvem é a fonte da verdade.
+        // Não misture tombstones locais antigos, pois eles podem apagar
+        // registros restaurados no Supabase.
+        saveTombstones(cloudDeleted);
+      }
+      var deleted=applyDeleted(cloudDeleted);
       var cloudRecords=Array.isArray(res.data.records)?res.data.records:[];
       cloudRecords=await loadSeparatedPdfs(cloudRecords);
       var cloudCosts=Array.isArray(res.data.costs)?res.data.costs:[];
@@ -198,7 +205,6 @@
       userSet(LOTS_KEY,JSON.stringify(mergedLots));
       document.dispatchEvent(new CustomEvent('clientesAtualizados',{detail:{source:'cloud'}}));
       userSet(KEY,JSON.stringify(records));userSet(COSTKEY,JSON.stringify(costs));renderAll();
-      var cloudDeleted=Array.isArray(res.data.deleted_records)?res.data.deleted_records:[];
       var needsPush=pendingBefore && (
         stable(records)!==stable(cloudRecords.filter(function(r){return deleted.indexOf(r&&r.id)<0;})) ||
         stable(costs)!==stable(cloudCosts) ||
