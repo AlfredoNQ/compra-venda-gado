@@ -1,4 +1,4 @@
-/* Compra e Venda de Gado — v185 fixes */
+/* Compra e Venda de Gado — v186 fixes */
 (function(){
   // Bloqueio de acesso: nenhuma tela de dados fica visível sem sessão autenticada.
   function lockUntilLogin(){var app=document.getElementById('appShell'),gate=document.getElementById('loginGate');if(app)app.style.display='none';if(gate)gate.style.display='block';}
@@ -55,6 +55,19 @@
   function clearConfirmedFlags(){try{userRemove(OFFLINE_DIRTY_KEY);userRemove(DELETED_RECORDS_KEY);userRemove(DELETED_COSTS_KEY);userRemove(LEGACY_PENDING);localStorage.removeItem(LEGACY_RETRY);}catch(e){}}
   function markSynced(){setCloudStatus('Sincronizado ✓','ok');var s=document.getElementById('saveStatus');if(s)s.textContent='Dados sincronizados • '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});var o=document.getElementById('offlineStatus');if(o){o.textContent='Online • sincronizado';o.className='cloudpill ok';}var b=document.getElementById('syncNowBtn');if(b)b.style.display='none';}
   function hasPending(){try{return isOfflineDirty()||!!userGet(LEGACY_PENDING)||getDeletedIds(DELETED_RECORDS_KEY).length>0||getDeletedIds(DELETED_COSTS_KEY).length>0;}catch(e){return false;}}
+  function stockCount(list){return (Array.isArray(list)?list:[]).reduce(function(sum,r){return sum+Number(r&&r.quantCompra||0)-Number(r&&r.quantVenda||0);},0);}
+  function syncAudit(localRecords,cloudRecords,cloudDeleted){
+    try{
+      var localCount=Array.isArray(localRecords)?localRecords.length:0;
+      var cloudCount=Array.isArray(cloudRecords)?cloudRecords.length:0;
+      var localStock=stockCount(localRecords);
+      var cloudStock=stockCount(cloudRecords);
+      var deletedCount=Array.isArray(cloudDeleted)?cloudDeleted.length:0;
+      var text='Conferência: local '+localCount+' / nuvem '+cloudCount+' • estoque '+localStock+'/'+cloudStock+' • excluídos '+deletedCount;
+      var s=document.getElementById('saveStatus');if(s)s.textContent=text;
+      var o=document.getElementById('offlineStatus');if(o){o.textContent=(localCount===cloudCount&&localStock===cloudStock?'Sincronizado conferido':'Conferir sincronização');o.className='cloudpill '+(localCount===cloudCount&&localStock===cloudStock?'ok':'warn');}
+    }catch(e){}
+  }
 
   window.delRecord=function(id){
     if(!confirm('Excluir esta negociação?'))return;
@@ -153,6 +166,7 @@
       sync96RetryDelay=1500;
       if(sync96RetryTimer){clearTimeout(sync96RetryTimer);sync96RetryTimer=null;}
       markSynced();
+      syncAudit(records,records,dels);
       return true;
     }catch(e){
       var msg=String((e&&e.message)||e||'');
@@ -215,6 +229,7 @@
       userSet(LOTS_KEY,JSON.stringify(mergedLots));
       document.dispatchEvent(new CustomEvent('clientesAtualizados',{detail:{source:'cloud'}}));
       userSet(KEY,JSON.stringify(records));userSet(COSTKEY,JSON.stringify(costs));renderAll();
+      syncAudit(records,cloudRecords.filter(function(r){return deleted.indexOf(r&&r.id)<0;}),deleted);
       var needsPush=pendingBefore && (
         stable(records)!==stable(cloudRecords.filter(function(r){return deleted.indexOf(r&&r.id)<0;})) ||
         stable(costs)!==stable(cloudCosts) ||
