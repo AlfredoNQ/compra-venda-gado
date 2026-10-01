@@ -1,4 +1,4 @@
-/* Compra e Venda de Gado — v186 fixes */
+/* Compra e Venda de Gado — v187 fixes */
 (function(){
   // Bloqueio de acesso: nenhuma tela de dados fica visível sem sessão autenticada.
   function lockUntilLogin(){var app=document.getElementById('appShell'),gate=document.getElementById('loginGate');if(app)app.style.display='none';if(gate)gate.style.display='block';}
@@ -63,9 +63,11 @@
       var localStock=stockCount(localRecords);
       var cloudStock=stockCount(cloudRecords);
       var deletedCount=Array.isArray(cloudDeleted)?cloudDeleted.length:0;
-      var text='Conferência: local '+localCount+' / nuvem '+cloudCount+' • estoque '+localStock+'/'+cloudStock+' • excluídos '+deletedCount;
+      var ok=localCount===cloudCount&&localStock===cloudStock;
+      if(ok)return;
+      var text='Atenção: local '+localCount+' / nuvem '+cloudCount+' • estoque '+localStock+'/'+cloudStock+' • excluídos '+deletedCount;
       var s=document.getElementById('saveStatus');if(s)s.textContent=text;
-      var o=document.getElementById('offlineStatus');if(o){o.textContent=(localCount===cloudCount&&localStock===cloudStock?'Sincronizado conferido':'Conferir sincronização');o.className='cloudpill '+(localCount===cloudCount&&localStock===cloudStock?'ok':'warn');}
+      var o=document.getElementById('offlineStatus');if(o){o.textContent='Conferir sincronização';o.className='cloudpill warn';}
     }catch(e){}
   }
 
