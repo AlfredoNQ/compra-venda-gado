@@ -1,4 +1,4 @@
-/* Compra e Venda de Gado — v184 fixes */
+/* Compra e Venda de Gado — v185 fixes */
 (function(){
   // Bloqueio de acesso: nenhuma tela de dados fica visível sem sessão autenticada.
   function lockUntilLogin(){var app=document.getElementById('appShell'),gate=document.getElementById('loginGate');if(app)app.style.display='none';if(gate)gate.style.display='block';}
@@ -154,7 +154,17 @@
       if(sync96RetryTimer){clearTimeout(sync96RetryTimer);sync96RetryTimer=null;}
       markSynced();
       return true;
-    }catch(e){try{markOfflineDirty();}catch(_){}setCloudStatus('Pendente de sincronização','warn');var st=document.getElementById('saveStatus');if(st)st.textContent='Salvo no aparelho • nova tentativa automática';console.error('SYNC96 SAVE',e);if(!sync96RetryTimer&&navigator.onLine){var wait=sync96RetryDelay;sync96RetryDelay=Math.min(sync96RetryDelay*2,30000);sync96RetryTimer=setTimeout(function(){sync96RetryTimer=null;if(hasPending())save96();},wait);}return false;}
+    }catch(e){
+      var msg=String((e&&e.message)||e||'');
+      if(msg.indexOf('Blocked stale overwrite')>=0){
+        clearConfirmedFlags();
+        saveTombstones([]);
+        setCloudStatus('Atualizando pela nuvem…','warn');
+        var stale=document.getElementById('saveStatus');if(stale)stale.textContent='Pendência antiga descartada • baixando nuvem';
+        sync96Busy=false;
+        return await load96(true);
+      }
+      try{markOfflineDirty();}catch(_){}setCloudStatus('Pendente de sincronização','warn');var st=document.getElementById('saveStatus');if(st)st.textContent='Salvo no aparelho • nova tentativa automática';console.error('SYNC96 SAVE',e);if(!sync96RetryTimer&&navigator.onLine){var wait=sync96RetryDelay;sync96RetryDelay=Math.min(sync96RetryDelay*2,30000);sync96RetryTimer=setTimeout(function(){sync96RetryTimer=null;if(hasPending())save96();},wait);}return false;}
     finally{sync96Busy=false;}
   }
 
