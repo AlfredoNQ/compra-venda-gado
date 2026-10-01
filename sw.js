@@ -1,5 +1,5 @@
-const CACHE='gado-app-v187-cloud-tombstone-reset';
-const APP_SHELL=['/index.html?v=2.0','/app-v68.html?v=2.0','/manifest.webmanifest?v=2.0','/v2.0-fixes.js?v=202','/v103-pdf-open.js?v=2.0','/v116-pdf-mobile.js?v=2.0','/v112-payments.js?v=2.0','/v112-backup.js?v=2.0','/v120-cadastros-lotes.js?v=2.0','/icon.svg'];
+const CACHE='gado-app-v188-stale-pending-reset';
+const APP_SHELL=['/index.html?v=2.0','/app-v68.html?v=2.0','/manifest.webmanifest?v=2.0','/v2.0-fixes.js?v=203','/v103-pdf-open.js?v=2.0','/v116-pdf-mobile.js?v=2.0','/v112-payments.js?v=2.0','/v112-backup.js?v=2.0','/v120-cadastros-lotes.js?v=2.0','/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
@@ -18,7 +18,7 @@ self.addEventListener('activate',event=>{
     await self.clients.claim();
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     for(const client of clients){
-          try{client.postMessage({type:'CVG_CACHE_RESET',version:'187-cloud-tombstone-reset'});}catch(e){}
+          try{client.postMessage({type:'CVG_CACHE_RESET',version:'188-stale-pending-reset'});}catch(e){}
     }
   })());
 });
