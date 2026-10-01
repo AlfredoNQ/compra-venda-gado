@@ -165,7 +165,7 @@
     if(!force && Date.now()-lastPullAt<5000)return true;
     sync96Busy=true;lastPullAt=Date.now();
     try{
-      var localBefore=stable(records), costsBefore=stable(costs), clientsBefore=stable(localClients()), pendingBefore=hasPending();
+      var pendingBefore=hasPending();
       var res=await sb.from(CLOUD_TABLE).select('records,costs,clients,animals,lots,deleted_records,updated_at').eq('user_id',cloudUser.id).maybeSingle();
       if(res.error)throw res.error;
       if(!res.data){sync96Busy=false;return await save96();}
@@ -177,24 +177,36 @@
       cloudClients=cloudClients.map(function(x){if(!x||x.id)return x;return Object.assign({},x,{id:'cad-'+String(x.documento||x.nome||'cliente').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')});});
       var cloudAnimals=res.data.animals&&typeof res.data.animals==='object'?res.data.animals:{};
       var cloudLots=res.data.lots&&typeof res.data.lots==='object'?res.data.lots:{};
-      records=mergeById(cloudRecords,records,deleted).filter(function(r){return deleted.indexOf(r&&r.id)<0;});
+      if(pendingBefore){
+        records=mergeById(cloudRecords,records,deleted).filter(function(r){return deleted.indexOf(r&&r.id)<0;});
+        costs=mergeById(cloudCosts,costs,getDeletedIds(DELETED_COSTS_KEY));
+      }else{
+        records=cloudRecords.filter(function(r){return deleted.indexOf(r&&r.id)<0;});
+        costs=cloudCosts;
+      }
       // A mesclagem de registros nunca pode descartar anexos já confirmados.
       var cloudPdfById={};cloudRecords.forEach(function(x){if(x&&x.id)cloudPdfById[String(x.id)]=x;});
       records.forEach(function(r){
         var c=cloudPdfById[String(r&&r.id)];if(!c)return;
         ['gtaPdf','notaPdf','paymentPdf'].forEach(function(k){if(!r[k]&&c[k])r[k]=c[k];});
       });
-      costs=mergeById(cloudCosts,costs,getDeletedIds(DELETED_COSTS_KEY));
-      var mergedClients=mergeById(cloudClients,localClients(),[]);
-      var mergedAnimals=mergeObject(cloudAnimals,localObject(ANIMALS_KEY));
-      var mergedLots=mergeObject(cloudLots,localObject(LOTS_KEY));
+      var mergedClients=pendingBefore?mergeById(cloudClients,localClients(),[]):cloudClients;
+      var mergedAnimals=pendingBefore?mergeObject(cloudAnimals,localObject(ANIMALS_KEY)):cloudAnimals;
+      var mergedLots=pendingBefore?mergeObject(cloudLots,localObject(LOTS_KEY)):cloudLots;
       userSet(CLIENTS_KEY,JSON.stringify(mergedClients));
       userSet(ANIMALS_KEY,JSON.stringify(mergedAnimals));
       userSet(LOTS_KEY,JSON.stringify(mergedLots));
       document.dispatchEvent(new CustomEvent('clientesAtualizados',{detail:{source:'cloud'}}));
       userSet(KEY,JSON.stringify(records));userSet(COSTKEY,JSON.stringify(costs));renderAll();
       var cloudDeleted=Array.isArray(res.data.deleted_records)?res.data.deleted_records:[];
-      var needsPush=pendingBefore || stable(records)!==stable(cloudRecords.filter(function(r){return deleted.indexOf(r&&r.id)<0;})) || stable(costs)!==stable(cloudCosts) || stable(mergedClients)!==stable(cloudClients) || stable(mergedAnimals)!==stable(cloudAnimals) || stable(mergedLots)!==stable(cloudLots) || stable(deleted)!==stable(cloudDeleted);
+      var needsPush=pendingBefore && (
+        stable(records)!==stable(cloudRecords.filter(function(r){return deleted.indexOf(r&&r.id)<0;})) ||
+        stable(costs)!==stable(cloudCosts) ||
+        stable(mergedClients)!==stable(cloudClients) ||
+        stable(mergedAnimals)!==stable(cloudAnimals) ||
+        stable(mergedLots)!==stable(cloudLots) ||
+        stable(deleted)!==stable(cloudDeleted)
+      );
       sync96Busy=false;
       if(needsPush)return await save96();
       clearConfirmedFlags();markSynced();return true;
