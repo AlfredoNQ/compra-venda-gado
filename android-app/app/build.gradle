@@ -3,6 +3,9 @@ plugins { id 'com.android.application' }
 android {
     namespace 'com.alfredo.compravendagado'
     compileSdk 35
+    useLibrary 'android.test.runner'
+    useLibrary 'android.test.base'
+    useLibrary 'android.test.mock'
 
     signingConfigs {
         release {
@@ -17,8 +20,9 @@ android {
         applicationId 'com.alfredo.compravendagado.offline'
         minSdk 24
         targetSdk 35
-        versionCode 183
-        versionName '183.0'
+        versionCode 184
+        versionName '184.0'
+        testInstrumentationRunner 'android.test.InstrumentationTestRunner'
     }
 
     buildTypes {
@@ -28,3 +32,11 @@ android {
         }
     }
 }
+
+android.sourceSets.main.assets.srcDir(layout.buildDirectory.dir('generated/offline-assets'))
+tasks.register('prepareOfflineSite', Exec) {
+    workingDir rootProject.projectDir.parentFile
+    commandLine 'python3', 'android-app/prepare_offline.py',
+        layout.buildDirectory.dir('generated/offline-assets/site').get().asFile.absolutePath
+}
+tasks.named('preBuild').configure { dependsOn 'prepareOfflineSite' }

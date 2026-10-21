@@ -2,10 +2,13 @@ name: Gerar APK Compra e Venda de Gado
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/offline-v184]
     paths:
       - "android-app/**"
       - ".github/workflows/build-apk.yml"
+      - "*.html"
+      - "*.js"
+      - "*.webmanifest"
   workflow_dispatch:
 
 jobs:
@@ -14,14 +17,6 @@ jobs:
     steps:
       - name: Baixar código
         uses: actions/checkout@v4
-
-      - name: Restaurar ícone original
-        shell: bash
-        run: |
-          set -e
-          mkdir -p android-app/app/src/main/res/drawable
-          curl -fsSL "https://raw.githubusercontent.com/AlfredoNQ/compra-venda-gado/main/app-boi-512.png" -o android-app/app/src/main/res/drawable/app_boi.png
-          test -s android-app/app/src/main/res/drawable/app_boi.png
 
       - name: Configurar Java
         uses: actions/setup-java@v5
@@ -51,7 +46,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: gradle clean assembleRelease
+        run: gradle clean assembleRelease assembleDebug assembleDebugAndroidTest
 
       - name: Verificar identidade do aplicativo
         shell: bash
@@ -63,12 +58,33 @@ jobs:
           test -s "$APK"
           "$APKSIGNER" verify --verbose --print-certs "$APK"
           test "$("$APKANALYZER" manifest application-id "$APK")" = "com.alfredo.compravendagado.offline"
-          test "$("$APKANALYZER" manifest version-code "$APK")" = "183"
-          echo "APK oficial: com.alfredo.compravendagado.offline v183"
+          test "$("$APKANALYZER" manifest version-code "$APK")" = "184"
+          python3 android-app/prepare_offline.py --verify-apk "$APK"
+          echo "APK oficial: com.alfredo.compravendagado.offline v184"
+
+      - name: Habilitar aceleracao do emulador
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Testar APK sem internet no Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          disable-animations: true
+          script: |
+            adb install android-app/app/build/outputs/apk/debug/app-debug.apk
+            adb install android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            adb shell svc wifi disable
+            adb shell svc data disable
+            adb shell am instrument -w com.alfredo.compravendagado.offline.test/android.test.InstrumentationTestRunner | tee /tmp/offline-test.txt
+            grep -q 'OK (1 test)' /tmp/offline-test.txt
 
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
-          name: compra-venda-gado-v182-oficial
+          name: compra-venda-gado-v184-oficial-offline
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error

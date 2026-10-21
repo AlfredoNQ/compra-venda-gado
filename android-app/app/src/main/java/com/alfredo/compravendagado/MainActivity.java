@@ -31,14 +31,18 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
-    private static final String HOME = "https://compra-venda-gado-app.pages.dev/?v=185";
+    private static final String HOME = "https://compra-venda-gado-app.pages.dev/?v=184";
     private static final String HOME_HOST = "compra-venda-gado-app.pages.dev";
     private static final int FILE_CHOOSER = 1001;
     private static final int PERMISSIONS = 1002;
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
+    private JSONObject offlineResources;
+    private ConnectivityManager.NetworkCallback networkCallback;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,7 +57,22 @@ public class MainActivity extends Activity {
         s.setCacheMode(WebSettings.LOAD_NO_CACHE);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setGeolocationEnabled(true);
-        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/183");
+        s.setUserAgentString(s.getUserAgentString() + " CompraVendaGadoApp/184");
+        try (InputStream in = getAssets().open("site/offline-manifest.json")) {
+            java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+            byte[] buffer = new byte[8192];
+            int length;
+            while ((length = in.read(buffer)) != -1) bytes.write(buffer, 0, length);
+            offlineResources = new JSONObject(new String(bytes.toByteArray(), StandardCharsets.UTF_8)).getJSONObject("remote");
+        } catch (Exception e) { throw new IllegalStateException("Pacote offline ausente ou inválido", e); }
+        updateNetworkAvailability();
+        ConnectivityManager connectivity = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override public void onAvailable(Network network) { runOnUiThread(() -> updateNetworkAvailability()); }
+            @Override public void onLost(Network network) { runOnUiThread(() -> updateNetworkAvailability()); }
+            @Override public void onCapabilitiesChanged(Network network, NetworkCapabilities capabilities) { runOnUiThread(() -> updateNetworkAvailability()); }
+        };
+        connectivity.registerDefaultNetworkCallback(networkCallback);
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         web.addJavascriptInterface(new AndroidDownloads(), "AndroidDownloads");
@@ -185,8 +204,11 @@ public class MainActivity extends Activity {
         try {
             String host=uri.getHost()==null?"":uri.getHost();
             String path=uri.getPath()==null?"/":uri.getPath();
-            if("cdn.jsdelivr.net".equals(host) && path.contains("supabase")) return new WebResourceResponse("application/javascript","UTF-8",getAssets().open("site/supabase.js"));
-            if(!HOME_HOST.equals(host)) return null;
+            String external = uri.buildUpon().clearQuery().fragment(null).build().toString();
+            if (!HOME_HOST.equals(host)) {
+                if (offlineResources == null || !offlineResources.has(external)) return null;
+                path = offlineResources.getString(external);
+            }
             if(path.equals("/")||path.isEmpty())path="/index.html";
             if(path.startsWith("/"))path=path.substring(1);
             if(path.contains(".."))return null;
@@ -196,6 +218,19 @@ public class MainActivity extends Activity {
             if(mime==null){ if(path.endsWith(".js"))mime="application/javascript"; else if(path.endsWith(".css"))mime="text/css"; else if(path.endsWith(".html"))mime="text/html"; else if(path.endsWith(".json")||path.endsWith(".webmanifest"))mime="application/json"; else mime="application/octet-stream"; }
             return new WebResourceResponse(mime,"UTF-8",in);
         } catch(Exception e){return null;}
+    }
+
+    private void updateNetworkAvailability() {
+        if (web != null) web.setNetworkAvailable(isOnline());
+    }
+
+    @Override protected void onResume() { super.onResume(); updateNetworkAvailability(); }
+    @Override protected void onDestroy() {
+        if (networkCallback != null) {
+            ((ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE)).unregisterNetworkCallback(networkCallback);
+        }
+        if (web != null) web.destroy();
+        super.onDestroy();
     }
 
     @Override protected void onSaveInstanceState(Bundle outState) { web.saveState(outState); super.onSaveInstanceState(outState); }

@@ -9,7 +9,7 @@
 
 <meta name="theme-color" content="#245b3b">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 
 
 <style id="modern-ui-v3">
@@ -899,8 +899,31 @@ function lastAuthenticatedUserId(){
   try{return localStorage.getItem(LAST_USER_KEY)||'';}catch(e){return '';}
 }
 function rememberAuthenticatedUser(user){
-  try{if(user&&user.id)localStorage.setItem(LAST_USER_KEY,user.id);}catch(e){}
+  try{
+    if(user&&user.id){
+      localStorage.setItem(LAST_USER_KEY,user.id);
+      localStorage.setItem('gado_offline_auth_v1',JSON.stringify({ok:true,userId:user.id,at:new Date().toISOString()}));
+    }
+  }catch(e){}
 }
+function offlineAuthorizedUser(){
+  try{
+    var grant=JSON.parse(localStorage.getItem('gado_offline_auth_v1')||'null');
+    return grant&&grant.ok&&grant.userId&&grant.userId===lastAuthenticatedUserId()?grant.userId:'';
+  }catch(e){return '';}
+}
+function openOfflineApp(){
+  if(navigator.onLine||!offlineAuthorizedUser())return false;
+  window.__freshLoginRequired=false;
+  bootLoginApproved=true;
+  loadScopedLocalData();
+  setAuthenticatedUI(true);
+  setCloudStatus('Offline • dados locais','warn');
+  var status=document.getElementById('saveStatus');
+  if(status)status.textContent='Modo offline • alterações serão sincronizadas depois';
+  return true;
+}
+window.addEventListener('offline',function(){openOfflineApp();});
 function userStorageSuffix(){
   try{
     if(cloudUser && cloudUser.id) return '__u_'+cloudUser.id;
@@ -1635,6 +1658,13 @@ async function initCloud(){
   $('signInBtn').onclick=cloudLogin;
   $('signUpBtn').onclick=cloudSignup;
   $('resendBtn').onclick=cloudResendConfirmation;
+  if(!navigator.onLine){
+    if(!openOfflineApp()){
+      setAuthenticatedUI(false);
+      $('cloudStatus').textContent='Faça o primeiro login com internet neste aparelho';
+    }
+    return;
+  }
   const {data:{session}}=await sb.auth.getSession();
 
   // v81: a sessão persistida não libera a tela automaticamente.
@@ -1655,6 +1685,7 @@ async function initCloud(){
   });
 }
 async function onCloudSession(session){
+  if(!navigator.onLine){openOfflineApp();return;}
   cloudUser=session?.user||null;
   if(cloudUser) rememberAuthenticatedUser(cloudUser);
   if(!cloudUser){
@@ -1665,6 +1696,7 @@ async function onCloudSession(session){
     $('logoutBtn').style.display='none';
     return;
   }
+  window.__freshLoginRequired=false;
   $('loginBtn').style.display='none';
   $('logoutBtn').style.display='';
   setAuthenticatedUI(true);
@@ -1726,7 +1758,11 @@ async function cloudResendConfirmation(){
 }
 
 async function cloudLogout(){
-  if(sb)await sb.auth.signOut();
+  localStorage.removeItem('gado_offline_auth_v1');
+  window.__freshLoginRequired=true;
+  bootLoginApproved=false;
+  setAuthenticatedUI(false);
+  if(sb)try{await sb.auth.signOut({scope:'local'});}catch(e){}
   cloudUser=null;
   records=[];
   costs=[];
@@ -1963,6 +1999,8 @@ async function cloudSaveNow(){
 
       if(result.data && result.data.session){
         cloudUser=result.data.user||result.data.session.user||null;
+        rememberAuthenticatedUser(cloudUser);
+        window.__freshLoginRequired=false;
         setAuthenticatedUI(true);
         var gate=document.getElementById('loginGate');
         var app=document.getElementById('appShell');
@@ -2061,280 +2099,7 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 
 
-<script id="v12-offline-login-fix">
-(function(){
-  const OFFLINE_AUTH_KEY = 'gado_offline_auth_v1';
 
-  function markOfflineAuthorized(user){
-    try{
-      localStorage.setItem(OFFLINE_AUTH_KEY, JSON.stringify({
-        ok:true,
-        userId:user && user.id ? user.id : '',
-        at:new Date().toISOString()
-      }));
-    }catch(e){}
-  }
-
-  function hasOfflineAuthorization(){
-    try{
-      const x = JSON.parse(localStorage.getItem(OFFLINE_AUTH_KEY) || 'null');
-      return !!(x && x.ok);
-    }catch(e){
-      return false;
-    }
-  }
-
-  function showOfflineApp(){
-    if(!hasOfflineAuthorization()) return false;
-
-    try{
-      const a=JSON.parse(localStorage.getItem(OFFLINE_AUTH_KEY)||'null');
-      if(a&&a.userId){
-        localStorage.setItem(LAST_USER_KEY,a.userId);
-      }
-      if(typeof loadScopedLocalData==='function') loadScopedLocalData();
-      if(typeof setAuthenticatedUI === 'function') setAuthenticatedUI(true);
-    }catch(e){}
-
-    var gate = document.getElementById('loginGate');
-    var app = document.getElementById('appShell');
-    var login = document.getElementById('loginBtn');
-    var logout = document.getElementById('logoutBtn');
-
-    if(gate) gate.style.display='none';
-    if(app) app.style.display='';
-    if(login) login.style.display='none';
-    if(logout) logout.style.display='';
-
-    try{
-      if(typeof setCloudStatus === 'function'){
-        setCloudStatus('Offline • dados locais','warn');
-      }
-    }catch(e){}
-
-    var s = document.getElementById('saveStatus');
-    if(s) s.textContent='Modo offline • alterações serão sincronizadas depois';
-
-    return true;
-  }
-
-  // Intercepta sessões válidas para autorizar acesso offline futuro.
-  const waitForAuth = setInterval(function(){
-    try{
-      if(window.sb && window.sb.auth){
-        clearInterval(waitForAuth);
-
-        window.sb.auth.getSession().then(function(res){
-          var session = res && res.data && res.data.session;
-          if(session && session.user){ rememberAuthenticatedUser(session.user); markOfflineAuthorized(session.user); }
-          else if(!navigator.onLine) showOfflineApp();
-        }).catch(function(){
-          if(!navigator.onLine) showOfflineApp();
-        });
-
-        window.sb.auth.onAuthStateChange(function(event, session){
-          if(session && session.user){
-            markOfflineAuthorized(session.user);
-          }
-        });
-      }
-    }catch(e){}
-  },300);
-
-  // Ao abrir sem internet, libera o app se esse aparelho já teve login válido.
-  function bootOffline(){
-    if(!navigator.onLine){
-      showOfflineApp();
-    }
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', bootOffline);
-  }else{
-    bootOffline();
-  }
-
-  // Quando cair a conexão durante o uso, mantém o app aberto.
-  window.addEventListener('offline', function(){
-    if(hasOfflineAuthorization()) showOfflineApp();
-  });
-
-  // Quando voltar internet, tenta retomar a sincronização.
-  window.addEventListener('online', function(){
-    try{
-      if(typeof initCloud === 'function') initCloud();
-    }catch(e){}
-    try{
-      if(typeof cloudLoad === 'function') setTimeout(cloudLoad, 900);
-    }catch(e){}
-  });
-})();
-</script>
-
-
-<script id="v13-offline-auth-fix">
-(function(){
-  const OFFLINE_AUTH_KEY='gado_offline_auth_v1';
-
-  function saveOfflineOk(userId){
-    try{
-      localStorage.setItem(OFFLINE_AUTH_KEY, JSON.stringify({
-        ok:true,
-        userId:userId||'',
-        at:new Date().toISOString()
-      }));
-    }catch(e){}
-  }
-
-  function hasSupabaseSavedSession(){
-    try{
-      for(let i=0;i<localStorage.length;i++){
-        const k=localStorage.key(i)||'';
-        if(k.indexOf('sb-')===0 && k.indexOf('-auth-token')>0){
-          const raw=localStorage.getItem(k);
-          if(raw && raw.length>20) return true;
-        }
-      }
-    }catch(e){}
-    return false;
-  }
-
-  function offlineAllowed(){
-    try{
-      const x=JSON.parse(localStorage.getItem(OFFLINE_AUTH_KEY)||'null');
-      if(x && x.ok) return true;
-    }catch(e){}
-    return hasSupabaseSavedSession();
-  }
-
-  function openAppOffline(){
-    if(!offlineAllowed()) return false;
-
-    saveOfflineOk('');
-
-    var gate=document.getElementById('loginGate');
-    var app=document.getElementById('appShell');
-    var login=document.getElementById('loginBtn');
-    var logout=document.getElementById('logoutBtn');
-
-    if(gate) gate.style.display='none';
-    if(app) app.style.display='';
-    if(login) login.style.display='none';
-    if(logout) logout.style.display='';
-
-    try{
-      if(typeof setCloudStatus==='function'){
-        setCloudStatus('Offline • dados locais','warn');
-      }
-    }catch(e){}
-
-    var st=document.getElementById('saveStatus');
-    if(st) st.textContent='Modo offline • sincroniza quando a internet voltar';
-
-    return true;
-  }
-
-  function showLoginMessage(text){
-    var el=document.getElementById('authMsg');
-    if(el) el.textContent=text;
-  }
-
-  // Se o aparelho já tinha sessão válida de versões anteriores, autoriza offline.
-  if(hasSupabaseSavedSession()) saveOfflineOk('');
-
-  // Sem internet: abre diretamente, sem tentar falar com a nuvem.
-  function offlineBoot(){
-    if(!navigator.onLine){
-      if(!openAppOffline()){
-        showLoginMessage('Este aparelho precisa fazer o primeiro login com internet antes de usar offline.');
-      }
-    }
-  }
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',offlineBoot);
-  }else{
-    offlineBoot();
-  }
-
-  // Reforça o botão central.
-  function bindGate(){
-    var btn=document.getElementById('gateLoginBtn');
-    if(!btn) return;
-    btn.onclick=function(e){
-      if(e)e.preventDefault();
-
-      if(!navigator.onLine){
-        if(openAppOffline()) return;
-        var m=document.getElementById('authModal');
-        if(m)m.classList.add('show');
-        showLoginMessage('Sem internet. Faça o primeiro login online neste aparelho; depois o acesso offline ficará liberado.');
-        return;
-      }
-
-      var m=document.getElementById('authModal');
-      if(m)m.classList.add('show');
-    };
-  }
-
-  // Após login online bem-sucedido, detecta o app aberto e grava a autorização local.
-  const authWatcher=setInterval(function(){
-    try{
-      var app=document.getElementById('appShell');
-      if(app && app.style.display!=='none'){
-        if(navigator.onLine){
-          saveOfflineOk(window.cloudUser && window.cloudUser.id ? window.cloudUser.id : '');
-        }
-      }
-    }catch(e){}
-  },700);
-
-  window.addEventListener('offline',function(){
-    openAppOffline();
-  });
-
-  window.addEventListener('online',function(){
-    try{
-      setCloudStatus('Reconectando…','warn');
-      if(sb && sb.auth){
-        setTimeout(async function(){
-          try{
-            var result=await sb.auth.getSession();
-            var session=result&&result.data&&result.data.session;
-            if(session&&session.user){
-              cloudUser=session.user;
-              bootLoginApproved=true;
-              rememberAuthenticatedUser(session.user);
-              setAuthenticatedUI(true);
-              await cloudLoad();
-              return;
-            }
-            var refreshed=await sb.auth.refreshSession();
-            session=refreshed&&refreshed.data&&refreshed.data.session;
-            if(session&&session.user){
-              cloudUser=session.user;
-              bootLoginApproved=true;
-              rememberAuthenticatedUser(session.user);
-              setAuthenticatedUI(true);
-              await cloudLoad();
-            }
-          }catch(e){
-            console.warn('v102 web reconnect',e);
-          }
-        },300);
-      }
-    }catch(e){}
-  });
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',bindGate);
-  }else{
-    bindGate();
-  }
-  setTimeout(bindGate,500);
-  setTimeout(bindGate,1500);
-})();
-</script>
 <script id="v31-report-filter-bind">
 (function(){
   function getRecords(){
@@ -3115,7 +2880,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
 })();
 </script>
-<script id="auth-gate-early-v187">(function(){try{var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&/auth-token|supabase/i.test(k))keys.push(k);}keys.forEach(function(k){localStorage.removeItem(k);});}catch(e){}var a=document.getElementById('appShell'),g=document.getElementById('loginGate');if(a)a.style.display='none';if(g)g.style.display='block';})();</script><script src="/v2.0-fixes.js?v=205"></script>
+<script id="auth-gate-early-v187">(function(){if(!navigator.onLine)return;try{var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&/auth-token|supabase/i.test(k))keys.push(k);}keys.forEach(function(k){localStorage.removeItem(k);});}catch(e){}setAuthenticatedUI(false);})();</script><script src="/v2.0-fixes.js?v=206"></script>
 
 </body>
 </html>

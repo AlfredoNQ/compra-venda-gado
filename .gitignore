@@ -1,0 +1,5 @@
+android-app/.gradle/
+android-app/app/build/
+android-app/app/src/main/res/drawable/app_boi.png
+android-app/app-release.jks
+__pycache__/
