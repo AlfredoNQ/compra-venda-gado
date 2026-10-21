@@ -21,6 +21,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -43,6 +44,7 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCallback;
     private JSONObject offlineResources;
     private ConnectivityManager.NetworkCallback networkCallback;
+    private boolean offlineFallback;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,10 +91,17 @@ public class MainActivity extends Activity {
                 installBlobDownloadBridge();
             }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                return isOnline() ? super.shouldInterceptRequest(view,request) : offlineResponse(request.getUrl());
+                return isOnline() && !offlineFallback ? super.shouldInterceptRequest(view,request) : offlineResponse(request.getUrl());
             }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-                return isOnline() ? super.shouldInterceptRequest(view,url) : offlineResponse(Uri.parse(url));
+                return isOnline() && !offlineFallback ? super.shouldInterceptRequest(view,url) : offlineResponse(Uri.parse(url));
+            }
+            @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (request.isForMainFrame() && isTrustedUrl(request.getUrl()) && !offlineFallback) {
+                    offlineFallback = true;
+                    view.setNetworkAvailable(false);
+                    view.loadUrl(HOME);
+                }
             }
         });
         web.setWebChromeClient(new WebChromeClient() {
@@ -221,7 +230,9 @@ public class MainActivity extends Activity {
     }
 
     private void updateNetworkAvailability() {
-        if (web != null) web.setNetworkAvailable(isOnline());
+        boolean online = isOnline();
+        if (online) offlineFallback = false;
+        if (web != null) web.setNetworkAvailable(online && !offlineFallback);
     }
 
     @Override protected void onResume() { super.onResume(); updateNetworkAvailability(); }

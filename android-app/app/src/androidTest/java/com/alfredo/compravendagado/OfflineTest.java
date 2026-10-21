@@ -29,7 +29,7 @@ public class OfflineTest extends ActivityInstrumentationTestCase2<MainActivity> 
             if ("true".equals(js(expression))) return;
             Thread.sleep(100);
         }
-        fail("Timed out: " + expression + "; value=" + js(expression));
+        fail("Timed out: " + expression + "; value=" + js(expression) + "; page=" + js("JSON.stringify({url:location.href,state:document.readyState,title:document.title,body:document.body&&document.body.innerText.slice(0,1000),offline:typeof openOfflineApp,supabase:typeof supabase,leaflet:typeof L})"));
     }
 
     private void reload() throws Exception {
